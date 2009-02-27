@@ -1,0 +1,25 @@
+bas.lm                  Bayesian Adaptive Sampling Without Replacement
+                        for Variable Selection in Linear Models
+BAS-package             Bayesian Model Averaging using Bayesian
+                        Adaptive Sampling
+bin2int                 Convert binary model representation into an
+                        integer
+coef.bma                Coefficients of a Bayesian Model Average object
+cv.summary.bma          Summaries for Out of Sample Prediction
+EB.global               Finds the global Empirical Bayes estimates for
+                        BMA
+eplogprob               eplogprob - Compute approximate marginal
+                        inclusion probabilities from pvalues
+fitted.bma              Fitted values for a BMA objects
+Hald                    Hald Data
+image.bma               Images of models used in Bayesian model
+                        averaging
+list2matrix.bma         Coerce a BMA list object into a matrix
+plot.bma                Plot Diagnostics for an blm Object
+plot.coef.bma           Plots the posterior distributions of
+                        coefficients derived from Bayesian model
+                        averaging
+predict.bma             Prediction Method for an object of class BMA
+protein                 Protein Activity Data
+summary.bma             Summaries of Bayesian Model Averaging objects
+update.bma              Update BMA object using a new prior
