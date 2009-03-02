@@ -1,0 +1,3 @@
+PKG_CFLAGS = -g
+BLAS_LIBS= -lRblas
+PKG_LIBS = -lRblas
