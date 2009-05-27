@@ -5,17 +5,20 @@ NODEPTR make_node(double pr) {
   newnode = (struct Node *) R_alloc(1, sizeof(struct Node));
   newnode->prob = pr;
   newnode->update = 0;
-  newnode->done = 0;
+  newnode->logmarg = 0.0;
   newnode->one = NULL;
   newnode->zero = NULL;
   return(newnode);
 }
+
+typedef int (*compfn)( const void* , const void*);
 
 int sortvars(struct Var *vars, double *prob, int p)
 {
   int i, n;
 
   /* Fill in variable information. */
+
 
   for (i = 0; i < p; i++) {
     vars[i].prob = prob[i];
@@ -59,10 +62,11 @@ int sortvars(struct Var *vars, double *prob, int p)
     error("Probabilities are all 0 or 1 - Quitting!\n");
   }
   /* Ok, vars is set up.  Need to sort to get "list". */
-  qsort((char *) vars, p, sizeof(struct Var), compare);
+  qsort((char *) vars, p, sizeof(struct Var),(compfn) compare);
 
   return(n);
 }
+
 
 int compare(struct Var *i, struct Var *j)
 {

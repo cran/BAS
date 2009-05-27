@@ -29,17 +29,21 @@ typedef struct Node *NODEPTR;
 struct Node {
   double prob;
   int update;
-  int done;
+  double logmarg;
   NODEPTR zero;
   NODEPTR one;  
 };
 
 
 /* Subroutines. */
+double hyp2f1(double a, double b, double c, double x);
 void compute_margprobs(SEXP modelspace, SEXP modeldim, SEXP Rmodelprobs, double *margprobs, int k, int p);
 void compute_margprobs_file(SEXP modeldim, SEXP Rmodelprobs, double *margprobs, int k, int p, FILE *file, int *model);
+double beta_binomial(int modeldim, int p, double *hyper);
+double Bernoulli(int *model, int p, double *hyper);
+double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior);
 void compute_margprobs_old(Bit **models, SEXP Rmodelprobs, double *margprobs, int k, int p);
-void compute_modelprobs(SEXP modelprobs,  SEXP logmarg, int k);
+void compute_modelprobs(SEXP modelprobs, SEXP logmarg, SEXP priorprobs,  int k);
 void set_bits(char *bits, int subset, int *pattern, int *position, int n);
 int compare(struct Var *i, struct Var *j);
 	/* For sim. */
@@ -66,6 +70,9 @@ void dposl_(double *a, int *lda, int *n, double  *b);
 void dpoco_(double *a, int *lda, int *n, double *rcond, double *z, int  *info);
 void dpodi_(double *a, int *lda, int *n, double *det,int  *job);
 void dcopy_(int *n, double *x, int *incx, double *y, int *incy);
+void dqrls_(double *x, int *n, int *p, double *y, int *inc, double *tol,
+	    double *start, double *residuals, double *effects, int *rank, 
+	    int *pivot, double *qraux, double *work);
 void dsymv_(char *uplo, int *n, double *alpha, double *A, int *lda, double *X, int *incx, double *beta, double *Y, int *incy);
 void dsyrk_(const char *uplo, const char *trans,
 		const int *n, const int *k,
@@ -108,3 +115,4 @@ double E_ZS_approx_null(double R2, int n, int d);
 double BIC(double Rsquare, int n,  int p, double SSY);
 double AIC(double Rsquare, int n,  int p, double SSY);
 NODEPTR make_node(double pr);
+SEXP getListElement(SEXP list, char *str);

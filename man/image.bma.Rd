@@ -20,9 +20,9 @@ vlas=2,plas=0,rlas=0, ...)
     each model should be proportional to the posterior probability (or log
     probability) of the model (TRUE) or with equal area (FALSE). }
   \item{log}{Logical variable indicating whether the intensities should
-    be based on log Bayes Factors (TRUE) or posterior
-    probabilities  (FALSE).  The log of the Bayes factor is for
-    comparing the each  model to the worst model in the set.}
+    be based on log posterior odds (TRUE) or posterior
+    probabilities  (FALSE).  The log of the posterior odds is for
+    comparing the each  model to the worst model in the top.models.}
   \item{rotate}{Should the image of models be rotated so that models are
     on the y-axis and variables are on the x-axis (TRUE)}
   \item{color}{The color scheme for image intensities. The value
@@ -49,8 +49,8 @@ vlas=2,plas=0,rlas=0, ...)
 \seealso{\code{\link{bas}}}
 \examples{
 data("Hald")
-hald.gprior =  bas.lm(Y~ ., data=Hald, n.models=2^4, alpha=13, prior="ZS-null", initprobs="Uniform", update=10)
-image(hald.gprior, subset=-1)
+hald.ZSprior =  bas.lm(Y~ ., data=Hald,  prior="ZS-null")
+image(hald.ZSprior, subset=-1)
 }
 \note{Suggestion to allow area of models be proportional to posterior
   probability due to Thomas Lumley} 

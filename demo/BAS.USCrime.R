@@ -2,6 +2,7 @@ library(MASS)
 data(UScrime)
 UScrime[,-2] = log(UScrime[,-2])
 crime.bic =  bas.lm(y ~ ., data=UScrime, n.models=2^15, prior="BIC",
+                    modelprior=beta.binomial(1,1),
                     initprobs= "eplogp") 
 summary(crime.bic)
 plot(crime.bic)

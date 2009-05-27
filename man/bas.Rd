@@ -4,36 +4,47 @@
 \title{Bayesian Adaptive Sampling Without Replacement for Variable
   Selection in Linear Models}
 \description{Sample without replacement from a posterior distribution on models}
-\usage{bas.lm(formula, data, n.models, alpha=NULL, 
- prior="ZS", initprobs="Uniform", random=TRUE, update=NULL,
- bestmodel = NULL, bestmarg = NULL, prob.local = 0, user.prob=NULL) }
+\usage{bas.lm(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
+ modelprior=uniform(),
+ initprobs="Uniform", random=TRUE, method="BAS", update=NULL,
+ bestmodel = NULL, bestmarg = NULL, prob.local = 0) }
 \arguments{
   \item{formula}{linear model formula for the full model with all
     predictors, Y ~ X.  All code assumes that an intercept will be
     included in each model.}
   \item{data}{data frame}
-  \item{n.models}{number of models to sample}
-  \item{initprobs}{vector of initial marginal inclusion
-    probabilities used for sampling without replacement or method,
+  \item{n.models}{number of models to sample. If NULL, BAS will
+    enumerate unless p > 25}
+  \item{prior}{prior distribution for regression coefficients.  Choices include
+    "AIC", "BIC", "g-prior", "ZS-null", "ZS-full", "hyper-g",
+    "hyper-g-laplace", "EB-local", and "EB-global" }
+ \item{alpha}{optional hyperparameter in g-prior or hyper g-prior.  For Zellner's
+    g-prior, alpha = g, for the Liang et al hyper-g method, recommended
+    choice is alpha are between (2, 4), with alpha = 3 recommended.}
+  \item{modelprior}{Family of prior distribution on the models.  Choices
+    include \code{\link{uniform}}
+    \code{\link{Bernoulli}} or \code{\link{beta.binomial}}}
+  \item{initprobs}{vector of length p with the initial  inclusion
+    probabilities used for sampling without replacement (the intercwept
+    should be included with probability one) or a character
+    string giving the method used to construct the sampling probabilities
     if "Uniform" each predictor variable is equally likely to be
     sampled (equivalent to random sampling without replacement). If
     "eplogp", use the \code{\link{eplogprob}} function to aproximate the 
     Bayes factor to find initial marginal inclusion probabilitites and
-    sample without replacement the model probabilities using these
-    inclusion probabilaties. If "user", the user may specify a vector of
-  probabilities using the optional argument user.prob.  This should
-  include the intercept with probability one.} 
-  \item{alpha}{optional hyperparameter in g-prior or hyper g-prior.  For Zellner's
-    g-prior, alpha = g, for the Liang et al hyper-g method, recommended choice is alpha
-    = 3 or 4.}
-  \item{prior}{prior distribution for regression coefficients.  Choices include
-"AIC", "BIC", "g-prior", "ZS-null", "ZS-full", "hyper-g", "hyper-g-laplace", "EB-local", and "EB-global" }
-  \item{random}{A logical variable indicating whether to use the
-    stochastic (random=TRUE) or deterministic (random=FALSE) algorithm
-    for sampling models without replacement}
+    sample without replacement using these
+    inclusion probabilaties. For variables that should always be
+    included set the corresponding initprobs to 1.} 
+  \item{random}{Logical variable; if TRUE use random sampling (see
+    method) or deterministic sampling}
+  \item{method}{A character variable indicating whether to use BAS
+    Bayesian Adaptive Sampling (without replacement) (BAS) or Adaptive
+    MCMC (AMCMC) (not yet implemented)} 
   \item{update}{number of iterations between potential updates of the
     sampling probabilities. If NULL do not update, otherwise the
-    algorithm will update using the marginal inclusion probabilities}
+    algorithm will update using the marginal inclusion probabilities as
+    they change while sampling takes place.  For large model spaces,
+    updating is recommended. }
   \item{bestmodel}{optional binary vector representing a model to
     initialize the sampling. If  NULL sampling starts with the Full
     model}
@@ -42,18 +53,30 @@
   \item{prob.local}{An experimental option to allow sampling of models
     "near" the median probability model.  Not recommended for use at
     this time}
-  \item{user.prob}{User specified probabilities for sampling}
-}
-\details{
-BAS provides two search algorithms to find high probability models for
-use in  Bayesian Model Averaging or Bayesian model selection. 
+}  
+\details{BAS provides two search algorithms to find high probability models for
+use in  Bayesian Model Averaging or Bayesian model selection. For p less than
+20-25, BAS can enumerate all models depending on memory availability, for
+larger p, BAS samples without replacement using random or deteminestic sampling. The
+Bayesian Adaptive Sampling algorithm of 
+Clyde, Ghosh, Littman (2009) samples models without replacement using the
+initial sampling probabilities, and will optionally update the sampling
+probabilities every "update" models using the estimated marginal
+inclusion probabilties.  If the predictor variables are orthogonal
+the deterinistic sampler provides a list of the top models in order of
+their approximate posterior probabiity, and provides an effective search
+if the correlations of variables is small to modest.  The priors on
+coefficients include  Zellner's g-prior, the Hyper-g prior (Liang et al
+2008, the Zellner-Siow Cauchy prior, Empirical Bayes (local and gobal)
+g-priors.  AIC and BIC are also included.
 }
 \value{
   \code{bas} returns an object of class \code{BMA}
 
 An object of class \code{BMA} is a list containing at least the following components:
 
-  \item{postprob}{the posterior probabilities of the models selected}
+\item{postprob}{the posterior probabilities of the models selected}
+\item{priorprobs}{the prior probabilities of the models selected}
   \item{namesx}{the names of the variables}
   \item{R2}{R2 values for the models}
   \item{logmarg}{values of the log of the marginal likelihood for the
@@ -70,7 +93,8 @@ estimate of each (nonzero) coefficient for each model}
   \item{ols.se}{list of lists with one list per model giving the OLS standard error of each coefficient for each model}
   \item{prior}{the name of the prior  that created the BMA object}
   \item{alpha}{value of hyperparameter in prior used to create the BMA
-object.}
+    object.}
+  \item{modelprior}{the prior distribution on models that created the BMA object}
   \item{Y}{response}
   \item{X}{matrix of predictors}
   
@@ -137,12 +161,6 @@ demo(BAS.hald)
 \dontrun{demo(BAS.USCrime) }
 }
 
-\note{Uniform prior probabilities on  models are the only option
-  currently.  A future update should allow alternative priors on models
-  to be incorporated into the sampling and posterior inference.  For
-  now, users may manually reweight output using the log marginal
-  likelihoods to update posterior model probabilities and probne0.
-}
 \keyword{regression}
-\keyword{models}
+
 

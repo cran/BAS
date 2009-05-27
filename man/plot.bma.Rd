@@ -18,7 +18,7 @@
                  getOption("add.smooth"), label.pos = c(4, 2))
 }
 \arguments{
-  \item{x}{\code{blm} object, typically result of 'blm'}
+  \item{x}{\code{bma} object result of 'bas'}
    \item{which}{ if a subset of the plots is required, specify a subset of the
           numbers '1:4'}.
  \item{caption}{captions to appear above the plots}
@@ -41,15 +41,26 @@
 \item{label.pos}{positioning of labels, for the left half and right half of
           the graph respectively, for plots 1-3}
 }
-\details{
-}
+\details{This provides a panel of 4 plots:
+  the first is a plot of the residuals versus fitted values under
+  BMA. The second is a plot of the cumulative marginal likelihoods of
+  models; if the model space cannot be enumerated then this provides
+  some indication of whether the probabilities are leveling off. The
+  third is a   plot of log marginal likelihood versus model dimension
+  and the fourth plot show the posterior marginal inclusion probabilities.
+  }
 \author{Merlise Clyde, based on plot.lm by John Maindonald and Martin Maechler}
 \references{
 }
 \seealso{ \code{\link{plot.coef.bma}} and \code{\link{image.bma}}.
 }
 \examples{
+data(Hald)
+hald.gprior =  bas.lm(Y~ ., data=Hald, prior="g-prior", alpha=13,
+                      modelprior=beta.binomial(1,1),
+                      initprobs="eplogp")
 
+plot(hald.gprior)
 }
 
 \keyword{regression}

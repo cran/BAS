@@ -1,8 +1,7 @@
-bas.lm = function(formula, data, n.models, alpha=NULL, prior="ZS",
-                  initprobs="Uniform", random=TRUE, update=NULL,
-                  bestmodel=NULL, bestmarg=NULL, prob.local=0.0,
-                  user.prob=NULL)
-{
+bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
+                  modelprior=uniform(),
+                  initprobs="Uniform", random=TRUE, method="BAS", update=NULL, 
+                  bestmodel=NULL, bestmarg=NULL, prob.local=0.0)  {
   call = match.call()
   lm.obj = lm(formula, data, y=TRUE, x=TRUE)
   Y = lm.obj$y
@@ -13,12 +12,12 @@ bas.lm = function(formula, data, n.models, alpha=NULL, prior="ZS",
   if (!is.numeric(initprobs)) {
     initprobs = switch(initprobs,
       "Uniform"= c(1, rep(.5, p-1)),
-      "eplogp" = eplogprob(lm.obj),
-      "user" = user.prob
+      "eplogp" = eplogprob(lm.obj)
       )
   }
-
-  if (length(initprobs) != p)
+   if (length(initprobs) == (p-1))
+     initprobs = c(1, initprobs)
+   if (length(initprobs) != p)
     stop(simpleError(paste("length of initprobs is not", p)))
 
   pval = summary(lm.obj)$coefficients[,4]
@@ -29,19 +28,29 @@ bas.lm = function(formula, data, n.models, alpha=NULL, prior="ZS",
     initprobs[is.na(pval)] = 0.0
   }
   prob = as.numeric(initprobs)
-  
-  if (n.models > 2^(p-1)) n.models = 2^(p-1)
+
+  if (is.null(n.models)) n.models = 2^(p-1)
   deg = sum(initprobs >= 1) + sum(initprobs <= 0)
   if (deg > 1 & n.models == 2^(p - 1)) {
     n.models = 2^(p - deg)
     print(paste("There are", as.character(deg),
-                "degerate sampling probabilities; decreasing the number of models to",                 as.character(n.models)))
+                "degerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
+  }
+
+  if (n.models > 2^30) stop("Dimension of model space is too big to enumerate\n  Rerun with a smaller value for n.models")
+  if (n.models > 2^23)
+    print("Number of models is REALLY BIG -this may take a while")
+
+
+  if (modelprior$family == "Bernoulli") {
+    if (length(modelprior$hyper.parameters) == 1) 
+      modelprior$hyper.parameters = c(1, rep(modelprior$hyper.parameters, p-1))
+    if  (length(modelprior$hyper.parameters) == (p-1)) 
+     modelprior$hyper.parameters = c(1, modelprior$hyper.parameters)
+    if  (length(modelprior$hyper.parameters) != p)
+      stop(" Number of probabilities in Bernoulli family is not equal to the number of variables or 1")
   }
   
-  if (n.models > 2^25)
-    print("Number of models is REALLY BIG -this will take a while")
-
-
   int = TRUE  # assume that an intercept is always included 
   method.num = switch(prior,
     "g-prior"=0,
@@ -75,42 +84,46 @@ bas.lm = function(formula, data, n.models, alpha=NULL, prior="ZS",
   mse = as.numeric(rep(0.0, n.models))
   modelspace = as.list(1:n.models)
   modelprobs = as.numeric(rep(0.0, n.models))
+  priorprobs = as.numeric(rep(1.0, n.models))
   logmargy = as.numeric(rep(0.0, n.models))
   shrinkage = as.numeric(rep(0.0, n.models))
   modeldim = as.integer(rep(0, n.models))
   sampleprobs = as.double(rep(0.0, n.models))
   modeltree = list(NULL, NULL, NULL, NULL, FALSE)
-
-  if (random)
+  if (random) { 
+  if (method == "BAS")
     ans = .Call("sampleworep",
       Yvec, X,
       prob, R2,beta, se, mse, modelspace, modelprobs,
-      logmargy, sampleprobs,
+      priorprobs,logmargy, sampleprobs,
       modeldim, shrinkage, incint=as.integer(int), 
       alpha= as.numeric(alpha),
-      method=as.integer(method.num), update=as.integer(update),
+      method=as.integer(method.num), modelprior=modelprior,
+      update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
       plocal=as.numeric(prob.local),
       PACKAGE="BAS")
-  else
+}
+  else {
     ans = .Call("deterministic",
       Yvec, X,
       prob,
       R2,beta, se, mse, modelspace,  modelprobs,
-      logmargy, sampleprobs,
+      priorprobs,logmargy, sampleprobs,
       modeldim, shrinkage, incint=as.integer(int),
       alpha= as.numeric(alpha),
-      method=as.integer(method.num),
+      method=as.integer(method.num),modelprior=modelprior,
       PACKAGE="BAS")
+  }
 
   namesx = dimnames(X)[[2]]
   namesx[1] = "Intercept"
   n.models = as.integer(n.models)
-  result =  list(namesx=namesx, which=modelspace, postprobs=modelprobs,
+  result =  list(namesx=namesx, which=modelspace, postprobs=modelprobs, priorprobs=priorprobs,
     logmarg=logmargy, R2=R2, mse=mse, ols=beta, ols.se=se,
     shrinkage=shrinkage, probne0=prob, size=modeldim, n=length(Yvec),
-    prior=prior, alpha=alpha, n.models=n.models, n.vars=p,
+    prior=prior, modelprior=modelprior,alpha=alpha, n.models=n.models, n.vars=p,
     sampleprobs=sampleprobs, Y=Yvec, X=X, call=call)
 
   class(result) = "bma"
