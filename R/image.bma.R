@@ -19,7 +19,7 @@ image.bma <- function (x, top.models=20, intensity=TRUE, prob=TRUE, log=TRUE, ro
   
   if (log)   {
     scale = log(postprob) - min(log(postprob)) 
-    prob.lab="Log Bayes Factor"
+    prob.lab="Log Posterior Odds"
   }
 
   if (intensity)  which.mat = sweep(which.mat, 1, scale+offset,"*")

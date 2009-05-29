@@ -2,6 +2,9 @@ bas.lm                  Bayesian Adaptive Sampling Without Replacement
                         for Variable Selection in Linear Models
 BAS-package             Bayesian Model Averaging using Bayesian
                         Adaptive Sampling
+Bernoulli               Independent Bernoulli Prior Distribution for
+                        Models
+beta.binomial           Beta-Binomial Prior Distribution for Models
 bin2int                 Convert binary model representation into an
                         integer
 coef.bma                Coefficients of a Bayesian Model Average object
@@ -22,4 +25,5 @@ plot.coef.bma           Plots the posterior distributions of
 predict.bma             Prediction Method for an object of class BMA
 protein                 Protein Activity Data
 summary.bma             Summaries of Bayesian Model Averaging objects
+uniform                 Uniform Prior Distribution for Models
 update.bma              Update BMA object using a new prior

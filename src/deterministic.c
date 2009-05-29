@@ -1,7 +1,7 @@
 #include "sampling.h"
 
 
-SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP logmarg, SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha, SEXP method)
+SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP priorprobs, SEXP logmarg, SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha, SEXP method, SEXP modelprior)
 {
   SEXP Rse_m, Rcoef_m, RYwork,  RXwork,Rmodel_m;
   double *Xwork, *Ywork, *coefficients,*probs,
@@ -10,7 +10,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   double *XtX, *XtY, *XtXwork, *XtYwork;
   double one, zero;
   int inc, p2;
-  int nobs, p, k, i, j, m, n, l, pmodel, *xdims, *model_m;
+  int nobs, p, k, i, j, m, n, l, pmodel, *xdims, *model_m, *model;
   char uplo[] = "U", trans[]="T";
   Bit **models;		
   struct Var *vars;	/* Info about the model variables. */
@@ -65,6 +65,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
 
 
   models = cmatalloc(k,p);
+  model = (int *) R_alloc(p, sizeof(int));
  
   k = topk(models, probs, k, vars, n, p);
 
@@ -92,6 +93,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
       pmodel = 0; 
       pigamma = 1.0;
       for (j = 0; j < p; j++) { 
+          model[j] = (int) models[m][j];
           pmodel += (int) models[m][j];
           pigamma *= (double)((int) models[m][j])*probs[j] + 
 	  (1.0 - (double)((int) models[m][j]))*(1.0 -  probs[j]);
@@ -141,12 +143,13 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
       gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull,
                     SSY, &logmarg_m, &shrinkage_m);
       REAL(logmarg)[m] = logmarg_m;
+      REAL(priorprobs)[m] = compute_prior_probs( model, pmodel,p, modelprior);
       REAL(shrinkage)[m] = shrinkage_m;
       UNPROTECT(2);
   }
 
-    compute_modelprobs(modelprobs, logmarg,k);
-    compute_margprobs_old(models, modelprobs, probs, k, p); 
+  compute_modelprobs(modelprobs, logmarg, priorprobs, k);
+  compute_margprobs_old(models, modelprobs, probs, k, p); 
 
     /*    freechmat(models,k); */
  

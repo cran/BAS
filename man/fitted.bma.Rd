@@ -38,7 +38,7 @@
 }
 \examples{
 data(Hald)
-hald.gprior =  bas.lm(Y~ ., data=Hald, n.models=2^4, alpha=13, prior="ZS-null", initprobs="Uniform")
+hald.gprior =  bas.lm(Y~ ., data=Hald, prior="ZS-null", initprobs="Uniform")
 plot(Hald$Y, fitted(hald.gprior, type="HPM"))
 plot(Hald$Y, fitted(hald.gprior, type="BMA"))
 plot(Hald$Y, fitted(hald.gprior, type="MPM"))

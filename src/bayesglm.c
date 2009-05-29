@@ -1,7 +1,86 @@
 #include "sampling.h"
 
+/* Version of glm.fit that can be called directly from R or C*/
+SEXP glm_fit(SEXP RX, SEXP RY, SEXP Reta, SEXP Rcoef, 
+	     SEXP Rse, SEXP Rdeviance, 
+             SEXP Rweights, SEXP Rresiduals,
+	     SEXP Reffects,
+             SEXP Rpivot,  SEXP Rqrauxmat, SEXP Rworkmat)
+	     
+
+{
+  SEXP RYwork, RXwork, Rstart;
+  double  *Xwork, *Ywork, *coef,*start, *work, *qraux, *residuals,*effects,
+           one, zero, tol;
+  int  job, l, i, j, info, inc, n, p, rank, *pivot, *xdims;
+
+
+  zero = 0.0;
+  one = 1.0;
+  inc = 1;
+  job = 01;
+  info = 1;
+  xdims = INTEGER(getAttrib(RX,R_DimSymbol));
+  n = xdims[0];
+  p = xdims[1];
+  rank = 1;
+  tol = DBL_EPSILON;
+ 
+
+  PROTECT(RYwork = coerceVector(RY, REALSXP));
+  Ywork = REAL(RYwork);
+  PROTECT(RXwork =  coerceVector(RX, REALSXP));
+  Xwork = REAL(RXwork);
+  PROTECT(Rstart = coerceVector(Rcoef, REALSXP));
+  start = REAL(Rstart);
+
+  pivot = INTEGER(Rpivot);
+  coef = REAL(Rcoef);
+  residuals = REAL(Rresiduals);
+  qraux = REAL(Rqrauxmat);
+  effects = REAL(Reffects);
+  work = REAL(Rworkmat);
+  
+  /*  eta <- rep.int(0, nobs) + offset
+  mu <- linkinv(eta);
+  dev <- sum(dev.resids(y, mu, weights))
+  w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
+  residuals <- (y - mu)/mu.eta(eta)
+  z <- (eta - offset)[good] + (y - mu)[good]/mu.eta.val[good]
+  w <- sqrt((weights[good] * mu.eta.val[good]^2)/variance(mu)[good])
+  ngoodobs <- as.integer(nobs - sum(!good))
+  */ 
+  Rprintf("calling dqrls\n");
+  dqrls_(&Xwork[0], &n, &p, &Ywork[0], &inc, &tol,  &start[0],
+	 &residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
+  for (j=0; j<p; j++) { coef[pivot[j]] = start[j];}
+  /* eta = drop(x %*% start)+ offset;
+  mu  = linkinv(eta);
+  dev = sum(dev.resids(y, mu, weights));
+  */
+  UNPROTECT(2);
+  
+  return(Rcoef);
+  //  dpofa_(&XtX[0],&p,&p, &info);
+  //  dposl_(&XtX[0],&p,&p,&coefficients[0]);
+  //  dpodi_(&XtX[0],&p,&p, &det, &job);
+
+  //  ete = ddot_(&p, &coefficients[0], &inc, &XtY[0], &inc);
+  //  *mse = (*mse - ete)/((double) (n - p)); 
+
+  /*  for (j=0, l=0; j < p; j++)  {
+    for (i=0; i <  p; i++) {
+       if (i == j)  {
+	se[j] = sqrt(XtX[l] * *mse);
+       }
+      l += 1;    }}
+  */
+}
+
+
+
 /* Version of gexpectations that can be called directly from R */
-void gexpectations_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2, double *alpha, int *method,
+void gexpectations_glm_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2, double *alpha, int *method,
                         double *RSquareFull, double *SSY, double *logmarg, double *shrinkage) {
 
   int i; 
@@ -13,7 +92,7 @@ void gexpectations_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2
 }
 
 
-void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int method,  double RSquareFull, double SSY, double *logmarg, double *shrinkage) {  
+void gexpectations_glm(int p, int pmodel, int nobs, double R2, double alpha, int method,  double RSquareFull, double SSY, double *logmarg, double *shrinkage) {  
     
     *shrinkage = 1.0;
 
@@ -62,38 +141,9 @@ void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int met
 
 
 
-void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double *mse,  int p, int n)
-{
-  /* On entry *coefficients equals X'Y, which is over written with the OLS estimates */
-  /* On entry MSE = Y'Y */
- 
-  double  det, ete, one, zero;
-  int  job, l, i, j, info, inc;
-  zero = 0.0;
-  one = 1.0;
-  inc = 1;
-  job = 01;
-  info = 1;
-  det = 1.0;
-
-  dpofa_(&XtX[0],&p,&p, &info);
-  dposl_(&XtX[0],&p,&p,&coefficients[0]);
-  dpodi_(&XtX[0],&p,&p, &det, &job);
-
-  ete = ddot_(&p, &coefficients[0], &inc, &XtY[0], &inc);
-  *mse = (*mse - ete)/((double) (n - p)); 
-
-  for (j=0, l=0; j < p; j++)  {
-    for (i=0; i <  p; i++) {
-      if (i == j)  {
-	se[j] = sqrt(XtX[l] * *mse);
-      }
-      l += 1;    }}
-} 
 
 
-
-double logBF_gprior( double Rsquare, int n,  int p, double g)
+double logBF_gprior_glm( double Rsquare, int n,  int p, double g)
   {  double logmargy;
   /* log Marginal under reference prior for phi, intercept and
      g prior for regression coefficients 
@@ -103,7 +153,7 @@ double logBF_gprior( double Rsquare, int n,  int p, double g)
   return(logmargy);
   }
 
-double BIC(double Rsquare, int n,  int p, double SSY)
+double BIC_glm(double Rsquare, int n,  int p, double SSY)
   {  double logmargy, sigma2, dn, dp;
   dn = (double) n;
   dp = (double) p;
@@ -112,7 +162,7 @@ double BIC(double Rsquare, int n,  int p, double SSY)
   return(logmargy);
   }
 
-double AIC(double Rsquare, int n,  int p, double SSY)
+double AIC_glm(double Rsquare, int n,  int p, double SSY)
   {  double logmargy, sigma2, dn, dp;
   dn = (double) n;
   dp = (double) p;
@@ -121,7 +171,7 @@ double AIC(double Rsquare, int n,  int p, double SSY)
   return(logmargy);
   }
 
-double shrinkage_EB_local(double R2, int n, int p, double alpha)
+double shrinkage_EB_local_glm(double R2, int n, int p, double alpha)
  {  
    /* R2 = Y'PxY/Y'Y  
       n = sample size
@@ -141,25 +191,7 @@ double shrinkage_EB_local(double R2, int n, int p, double alpha)
   return(shrinkage);
 }
 
-extern double hyp2f1(double a, double b, double c, double x);
-
-double shrinkage_hyperg(double R2, int n, int p, double alpha)
-{ double bnum, bden, a, c, Eg, Egplus1, z,s;
- a = ((double) n - 1.0 ) / 2.0;
- bnum = 2.0;
- bden = 1.0;
- c = (double) p  - 1.0 + alpha;
- z = R2;
- Eg = hyp2f1(a, bnum, (c + 2.0)/2.0, z);
- Egplus1 =  hyp2f1(a, bden, c/2.0, z);
- s = 2.0*(Eg/Egplus1)/c;
- if ( p == 1) s = 1.0;
- if (! R_FINITE(s)) s = shrinkage_laplace(R2, n, p, alpha);
- return(s); 
-  }
-
-
-double logBF_hyperGprior(double R2, int n, int p, double alpha)
+double logBF_hyperGprior_glm(double R2, int n, int p, double alpha)
   {  double logmargy,  a, b, c, z1, hf1;
   /* log Marginal under reference prior for phi & intercept
      hyperg prior for regression coefficients; alpha > 2 
@@ -180,7 +212,7 @@ double logBF_hyperGprior(double R2, int n, int p, double alpha)
     return(logmargy);
   }
 
-double logBF_hyperGprior_laplace(double R2, int n, int p, double alpha)
+double logBF_hyperGprior_laplace_glm(double R2, int n, int p, double alpha)
  {  
    /* R2 = usual coefficient of determination
       n = sample size
@@ -222,7 +254,7 @@ double logBF_hyperGprior_laplace(double R2, int n, int p, double alpha)
   return(logmarg);
 }
 
-double shrinkage_laplace(double R2, int n, int p, double alpha)
+double shrinkage_laplace_glm(double R2, int n, int p, double alpha)
  {  
    /* R2 = usual R2
       n = sample size
@@ -260,7 +292,7 @@ double shrinkage_laplace(double R2, int n, int p, double alpha)
   return(shrinkage);
 }
 
-double log_laplace_2F1(double a, double b, double c, double z)
+double log_laplace_2F1_glm(double a, double b, double c, double z)
  {  
    
    double  ghat,logmarg,sigmahat, D, A, B, C,root1, root2;
@@ -302,7 +334,7 @@ double log_laplace_2F1(double a, double b, double c, double z)
  }	
 
 
-double logBF_EB(double R2, int n, int p, double alpha)
+double logBF_EB_glm(double R2, int n, int p, double alpha)
  {
    double  ghat, dn, dp, logmarg;
     dn = (double) n -1.0;
@@ -314,3 +346,4 @@ double logBF_EB(double R2, int n, int p, double alpha)
     if (p == 1) logmarg = 0.0;
     return(logmarg);
 }
+

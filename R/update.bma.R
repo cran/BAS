@@ -34,8 +34,8 @@ update.bma = function(object, newprior, alpha=NULL, ...) {
       PACKAGE="BAS")
     object$logmarg = tmp$logmarg
     object$shrinkage=tmp$shrinkage
-    object$postprob = exp(object$logmarg - min(object$logmarg))
-    object$postprob = object$postprob/sum(object$postprob)
+    object$postprobs = exp(object$logmarg - min(object$logmarg))*object$priorprobs
+    object$postprobs = object$postprobs/sum(object$postprobs)
     which = which.matrix(object$which, object$n.vars)
     object$probne0 = object$postprobs %*% which
   }

@@ -1,5 +1,9 @@
 predict.bma = function(object, newdata, top=NULL, ...) {
-  n <- dim(newdata)[1]
+  if (is.data.frame(newdata)) stop("newdata must be a matrix or vector")
+  if (is.vector(newdata)) newdata=matrix(newdata, nrow=1)    
+  n <- nrow(newdata)[1]
+  if (ncol(newdata) == object$n.vars) newdata=newdata[,-1, drop=FALSE]  # drop intercept
+  if (ncol(newdata) != (object$n.vars -1)) stop("Dimension of newdata does not match orginal model")
   postprobs <- object$postprobs
   best <- order(-postprobs)
   if (!is.null(top)) best <- best[1:top]
@@ -13,11 +17,11 @@ predict.bma = function(object, newdata, top=NULL, ...) {
   for (i in 1:M) {
     beta.m <- beta[[i]]
     model.m <- models[[i]]
-      Ypred[i,] <-  (newdata[,model.m[-1],drop=FALSE] %*% beta.m[-1])*gg[i]  + beta.m[1]
+    Ypred[i,] <-  (newdata[,model.m[-1],drop=FALSE] %*% beta.m[-1])*gg[i]  + beta.m[1]
   }
   Ybma <- t(Ypred) %*% postprobs
- return(list(Ybma=Ybma, Ypred=Ypred, best=best))
-}  
+  return(list(Ybma=Ybma, Ypred=Ypred, best=best))
+}
 
 
 fitted.bma = function(object,  type="HPM", top=NULL, ...) {

@@ -17,7 +17,7 @@
 /* Includes. */
 #include "sampling.h"
 
-SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP logmarg,  SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha,SEXP method, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal)
+SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP priorprobs, SEXP logmarg,  SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal)
 {
   SEXP   Rse_m, Rcoef_m, RYwork, RXwork, Rmodel_m;
   double *Xwork, *Ywork, *coefficients,*probs, shrinkage_m, 
@@ -25,7 +25,7 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
          R2_m, RSquareFull, alpha, prone, denom, logmargy;
   int nobs, p, k, i, j, m, n, l, pmodel, *xdims, *model_m, *bestmodel, local;
   int mcurrent,  update;
-  double  mod, rem, problocal, *pigamma, eps;
+  double  mod, rem, problocal, *pigamma, eps, *hyper_parameters;
   double *XtX, *XtY, *XtXwork, *XtYwork;
   double one, zero;
   int inc, p2;
@@ -43,6 +43,9 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
   update = INTEGER(Rupdate)[0];
   eps = DBL_EPSILON;
   problocal = REAL(plocal)[0];
+
+  /* Extract prior on models  */
+  hyper_parameters = REAL(getListElement(modelprior,"hyper.parameters"));
 
   /*  Rprintf("n %d p %d \n", nobs, p);  */
 
@@ -248,6 +251,9 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
     REAL(sampleprobs)[m] = 1.0;
     REAL(logmarg)[m] = logmargy;
     REAL(shrinkage)[m] = shrinkage_m;
+    //    REAL(priorprobs)[m] = beta_binomial(pmodel,p,
+    //    hyper_parameters);
+    REAL(priorprobs)[m] = compute_prior_probs(model,pmodel,p, modelprior);
     REAL(Rbestmarg)[0] = REAL(logmarg)[m];
     UNPROTECT(3);
 
@@ -387,7 +393,8 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
    gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0],  RSquareFull, SSY, &logmargy, &shrinkage_m);
    REAL(logmarg)[m] = logmargy;
    REAL(shrinkage)[m] = shrinkage_m;
-
+   REAL(priorprobs)[m] = compute_prior_probs(model,pmodel,p, modelprior);
+   //   REAL(priorprobs)[m] = beta_binomial(pmodel,p, hyper_parameters);
    if (REAL(logmarg)[m] > REAL(Rbestmarg)[0]) {
       for (i=0; i < p; i++) {
 	bestmodel[i] = model[i];}
@@ -400,7 +407,7 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
       rem = modf((double) m/(double) update, &mod);
       if (rem  == 0.0) {
 	mcurrent = m;
-	compute_modelprobs(modelprobs, logmarg, mcurrent);
+	compute_modelprobs(modelprobs, logmarg, priorprobs,mcurrent);
 	compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
 	if (update_probs(probs, vars, mcurrent, k, p) == 1) {
 	  Rprintf("Updating Model Tree %d \n", m);
@@ -410,8 +417,8 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
     UNPROTECT(3);  
   }
 
-
-  compute_modelprobs(modelprobs, logmarg, k);
+  
+  compute_modelprobs(modelprobs, logmarg, priorprobs,k);
   compute_margprobs(modelspace, modeldim, modelprobs, probs, k,
       p);  
   UNPROTECT(2);
