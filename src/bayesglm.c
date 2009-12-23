@@ -10,6 +10,7 @@ typedef struct glmfamilystruc {
   void (*variance)(double * mu, double *var, int n);
   void (*dev_resids)(double *y, double *mu, double *weights, double *resids, int n);
   void (*linkinv)(double *eta, double *mu, int n);
+  void (*initialize)(double *Y, double *mu, double *weights, int n);
   double (*dispersion)(double *resid,  double *weights, int n, int rank);
 } glmstptr;
 
@@ -56,28 +57,38 @@ double log_marginal_likelihood_gprior(double dev, double regSS, int n, int p, in
 
 /* Version of glm.fit that can be called directly from R or C*/
 
-SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rstarteta, SEXP Rstartcoef, SEXP Rpriorcoef, SEXP Repsilon)
+SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpriorcoef, SEXP Repsilon)
 {
   int   *xdims = INTEGER(getAttrib(RX,R_DimSymbol)), n=xdims[0], p = xdims[1];
-  int inc = 1,  job = 01, info = 1, nmodels=1;
+  int inc = 1,  job = 01, info = 1, nmodels=1,  nProtected = 0;
   
-  SEXP ANS = PROTECT(allocVector(VECSXP, 10));
-  SEXP RXwork = PROTECT(duplicate(RX)), 
-    RYwork = PROTECT(duplicate(RY)),  
-    RWwork = PROTECT(duplicate(RY)), Rvariance = PROTECT(duplicate(RY)), 
-    Rmu_eta = PROTECT(duplicate(RY)), Reta= PROTECT(duplicate(Rstarteta)),  
-    Rmu = PROTECT(duplicate(RY)),
-    Rcoef= PROTECT(duplicate(Rstartcoef)),
-    Rcoefwork = PROTECT(duplicate(Rstartcoef)), Rrank=PROTECT(allocVector(INTSXP,1)),
-    Rresdf = Rrank=PROTECT(allocVector(INTSXP,1)),
-    Rcov = PROTECT(allocVector(REALSXP, p*p)),      RR = PROTECT(allocVector(REALSXP, p*p)),  
-    Rse= PROTECT(allocVector(REALSXP, p)),  
-    Rresiduals= PROTECT(duplicate(RY)), Reffects= PROTECT(duplicate(RY)),
-    Rpivot=PROTECT(allocVector(INTSXP,p)),
-    Rqrauxmat=PROTECT(allocVector(REALSXP,p)), 
-    Rworkmat=PROTECT(allocVector(REALSXP,2*p)), Rlog_marg_lik=PROTECT(allocVector(REALSXP,nmodels)), 
-    Rdeviance=PROTECT(allocVector(REALSXP,nmodels)), RregSS=PROTECT(allocVector(REALSXP,nmodels)), 
-    Rg = PROTECT(allocVector(REALSXP, nmodels)), Rshrinkage = PROTECT(allocVector(REALSXP, nmodels));
+
+  SEXP ANS = PROTECT(allocVector(VECSXP, 10)); ++nProtected;
+  SEXP ANS_names = PROTECT(allocVector(STRSXP, 10)); ++nProtected;
+  SEXP RXwork = PROTECT(duplicate(RX)); ++nProtected;
+  SEXP RYwork = PROTECT(duplicate(RY)); ++nProtected;  
+  SEXP RWwork = PROTECT(duplicate(RY)); ++nProtected; 
+  SEXP Rvariance = PROTECT(duplicate(RY)); ++nProtected; 
+  SEXP Rmu_eta = PROTECT(duplicate(RY)); ++nProtected;
+  SEXP Reta = PROTECT(duplicate(RY)); ++nProtected;
+  SEXP Rmu = PROTECT(duplicate(RY)); ++nProtected;
+  SEXP Rcoef= PROTECT(allocVector(REALSXP,p)); ++nProtected;
+  SEXP Rcoefwork= PROTECT(allocVector(REALSXP,p)); ++nProtected;
+  SEXP Rrank=PROTECT(allocVector(INTSXP,1)); ++nProtected;
+  SEXP Rresdf = PROTECT(allocVector(INTSXP,1)); ++nProtected;
+  SEXP Rcov = PROTECT(allocVector(REALSXP, p*p)); ++nProtected;    
+  SEXP RR = PROTECT(allocVector(REALSXP, p*p)); ++nProtected;  
+  SEXP Rse= PROTECT(allocVector(REALSXP, p)); ++nProtected;  
+  SEXP Rresiduals= PROTECT(duplicate(RY)); ++nProtected;
+  SEXP Reffects= PROTECT(duplicate(RY)); ++nProtected;
+  SEXP Rpivot=PROTECT(allocVector(INTSXP,p)); ++nProtected;
+  SEXP Rqrauxmat=PROTECT(allocVector(REALSXP,p)); ++nProtected; 
+  SEXP Rworkmat=PROTECT(allocVector(REALSXP,2*p)); ++nProtected;
+  SEXP Rlog_marg_lik=PROTECT(allocVector(REALSXP,nmodels)); ++nProtected; 
+  SEXP Rdeviance=PROTECT(allocVector(REALSXP,nmodels)); ++nProtected; 
+  SEXP RregSS=PROTECT(allocVector(REALSXP,nmodels)); ++nProtected; 
+  SEXP Rg = PROTECT(allocVector(REALSXP, nmodels)); ++nProtected; 
+  SEXP Rshrinkage = PROTECT(allocVector(REALSXP, nmodels)); ++nProtected; 
 
 
   double *X=REAL(RX), *Y=REAL(RY), *Xwork=REAL(RXwork),
@@ -126,6 +137,7 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rst
   if  (strcmp(glmfamily->family, "binomial") == 0) {
     glmfamily->dev_resids = binomial_dev_resids;
     glmfamily->dispersion = binomial_dispersion;
+    glmfamily->initialize = binomial_initialize;
     if (strcmp(glmfamily->link, "logit") == 0) {
        glmfamily->linkfun = logit_link;	
        glmfamily->mu_eta = logit_mu_eta;
@@ -139,6 +151,8 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rst
    
 
   for (m=0; m< nmodels; m++){
+    glmfamily->initialize(Y, mu, weights, n);
+    glmfamily->linkfun(mu, eta, n);
     glmfamily->linkinv(eta, mu, n);
     glmfamily->dev_resids(Y, mu, weights, residuals, n);
     devold = deviance(residuals, n);
@@ -210,10 +224,21 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rst
   SET_VECTOR_ELT(ANS, 6, Rshrinkage);
   SET_VECTOR_ELT(ANS, 7, RregSS);
   SET_VECTOR_ELT(ANS, 8, Rlog_marg_lik);
-
+  
+  SET_STRING_ELT(ANS_names, 0, mkChar("coefficients"));
+  SET_STRING_ELT(ANS_names, 1, mkChar("se"));
+  SET_STRING_ELT(ANS_names, 2, mkChar("mu"));	
+  SET_STRING_ELT(ANS_names, 3, mkChar("deviance"));
+  SET_STRING_ELT(ANS_names, 4, mkChar("rank"));
+  SET_STRING_ELT(ANS_names, 5, mkChar("g"));
+  SET_STRING_ELT(ANS_names, 6, mkChar("shrinkage"));
+  SET_STRING_ELT(ANS_names, 7, mkChar("RegSS"));
+  SET_STRING_ELT(ANS_names, 8, mkChar("logmarglik"));
+ 
+  setAttrib(ANS, R_NamesSymbol, ANS_names);
   // SET_VECTOR_ELT(ANS, 5, Rresdf);
   
-  UNPROTECT(25);
+  UNPROTECT(nProtected);
   
   return(ANS);
   }

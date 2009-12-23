@@ -35,7 +35,7 @@ void logit_linkinv(double *eta, double *mu, int n);
 void logit_mu_eta(double *eta, double *mu, int n);
 void binomial_dev_resids(double *y, double *mu, double *wt, double *res, int n);
 double binomial_dispersion(double *resid,  double *weights, int n, int rank); 
-
+void binomial_initialize(double *Y, double *mu,  double *weights, int n);
 // Poisson
 double poisson_dispersion(double *resid,  double *weights, int n, int rank) ;
 

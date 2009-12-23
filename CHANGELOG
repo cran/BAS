@@ -1,29 +1,28 @@
+CHANGES for BAS 0.45
+
+- fixed ch2inv that prevented building on Windows in bayes glm_fit
+
 CHANGES for BAS 0.4
 
 - fixed fortran calls to use F77_NAME macro 
 - changed  allocation of objects for .Call to prevent some
-  objects from being overwritten.  
+  objects from being overwritten.  (still need to replace more)
 
 CHANGES for BAS 0.3
 
 - fixed EB.global function to include prior probabilities on models
-
 - fixed update function 
 
 CHANGES for BAS 0.2
 
 - fixed predict.bma to allow newdata to be a matrix or vector with the
   column of ones for the intercept optionally included.
-
 - fixed help file for predict 
-
 - added modelprior argument to bas.lm so that users may now use the
   beta-binomial prior distribution on model size in addition to the
   default uniform distribution
-
 - added functions uniform(), beta-binomial() and Bernoulli() to create
   model prior objects
-
 - added a vector of user specified initial probabilities as an option for
   argument initprobs in bas.lm and removed the separate argument user.prob
 

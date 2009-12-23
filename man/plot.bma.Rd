@@ -50,10 +50,7 @@
   and the fourth plot show the posterior marginal inclusion probabilities.
   }
 \author{Merlise Clyde, based on plot.lm by John Maindonald and Martin Maechler}
-\references{
-}
-\seealso{ \code{\link{plot.coef.bma}} and \code{\link{image.bma}}.
-}
+\seealso{\code{\link{plot.coef.bma}} and \code{\link{image.bma}}.}
 \examples{
 data(Hald)
 hald.gprior =  bas.lm(Y~ ., data=Hald, prior="g-prior", alpha=13,
