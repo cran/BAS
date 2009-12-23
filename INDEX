@@ -14,7 +14,11 @@ EB.global               Finds the global Empirical Bayes estimates for
 eplogprob               eplogprob - Compute approximate marginal
                         inclusion probabilities from pvalues
 fitted.bma              Fitted values for a BMA objects
+g.prior                 Families of G-Prior Distribution for
+                        Coefficients in BMA Models
 Hald                    Hald Data
+IC.prior                Families of Prior Distribution for Coefficients
+                        in BMA Models
 image.bma               Images of models used in Bayesian model
                         averaging
 list2matrix.bma         Coerce a BMA list object into a matrix

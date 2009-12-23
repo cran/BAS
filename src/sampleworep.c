@@ -17,10 +17,16 @@
 /* Includes. */
 #include "sampling.h"
 
-SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP priorprobs, SEXP logmarg,  SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal)
+SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprobinit, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP priorprobs, SEXP logmarg,  SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal)
 {
-  SEXP   Rse_m, Rcoef_m, RYwork, RXwork, Rmodel_m;
-  double *Xwork, *Ywork, *coefficients,*probs, shrinkage_m, 
+  SEXP   Rse_m, Rcoef_m, Rmodel_m; 
+  SEXP   RXwork = PROTECT(duplicate(X)),  
+         Rprobs=PROTECT(duplicate(Rprobinit)), 
+    //    Rprobs,
+    RYwork = PROTECT(duplicate(Y)),
+    ANS = PROTECT(allocVector(VECSXP, 1));
+
+  double *Xwork, *Ywork, *coefficients,*probs, *initprobs, shrinkage_m, 
     SSY, yty, ybar, mse_m, *se_m, 
          R2_m, RSquareFull, alpha, prone, denom, logmargy;
   int nobs, p, k, i, j, m, n, l, pmodel, *xdims, *model_m, *bestmodel, local;
@@ -36,6 +42,7 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
 
   /* get dimsensions of all variables */
 
+
   nobs = LENGTH(Y);
   xdims = INTEGER(getAttrib(X,R_DimSymbol));
   p = xdims[1];
@@ -49,9 +56,7 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
 
   /*  Rprintf("n %d p %d \n", nobs, p);  */
 
-  PROTECT(RYwork = coerceVector(Y, REALSXP));
   Ywork = REAL(RYwork);
-  PROTECT(RXwork =  coerceVector(X, REALSXP));
   Xwork = REAL(RXwork);
 
  
@@ -73,12 +78,18 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
        } */
   }
 
+  //  PROTECT(Rprobs = NEW_NUMERIC(p));
+  //initprobs = REAL(Rprobinit);
+  probs =  REAL(Rprobs);
+  //memcpy(probs, initprobs,  p*sizeof(double));
+
+
  p2 = p*p;
  one = 1.0; zero = 0.0; ybar = 0.0; SSY = 0.0; yty = 0.0; 
  inc = 1;
  
- dsyrk_(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, &XtX[0], &p); 
- yty = ddot_(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
+ F77_NAME(dsyrk)(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, &XtX[0], &p); 
+ yty = F77_NAME(ddot)(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
  for (i = 0; i< nobs; i++) {
      ybar += Ywork[i];
   }
@@ -86,12 +97,11 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
   ybar = ybar/ (double) nobs;
   SSY = yty - (double) nobs* ybar *ybar;
 
-  dgemv_(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
+  F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
   
   alpha = REAL(Ralpha)[0];
 
   vars = (struct Var *) R_alloc(p, sizeof(struct Var));
-  probs =  REAL(Rprob);
   n = sortvars(vars, probs, p); 
 
   /* Make space for the models and working variables. */ 
@@ -411,7 +421,8 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
 	compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
 	if (update_probs(probs, vars, mcurrent, k, p) == 1) {
 	  Rprintf("Updating Model Tree %d \n", m);
-	  update_tree(modelspace, tree, modeldim, vars, k,p,n,mcurrent, modelwork);}
+	  update_tree(modelspace, tree, modeldim, vars, k,p,n,mcurrent, modelwork);     
+	}
 
       }}
     UNPROTECT(3);  
@@ -419,13 +430,15 @@ SEXP sampleworep(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP m
 
   
   compute_modelprobs(modelprobs, logmarg, priorprobs,k);
-  compute_margprobs(modelspace, modeldim, modelprobs, probs, k,
-      p);  
-  UNPROTECT(2);
+  compute_margprobs(modelspace, modeldim, modelprobs, probs, k, p);  
+   
+
+  SET_VECTOR_ELT(ANS, 0, Rprobs);
+  UNPROTECT(4);
 
   PutRNGstate();
 
-  return(R_NilValue);  
+  return(ANS);  
 }
 
 

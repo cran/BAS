@@ -44,8 +44,8 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
  one = 1.0; zero = 0.0; ybar = 0.0; SSY = 0.0; yty = 0.0; 
  inc = 1;
  
-  dsyrk_(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, &XtX[0], &p); 
-  yty = ddot_(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
+ F77_NAME(dsyrk)(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, &XtX[0], &p); 
+ yty = F77_NAME(ddot)(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
   for (i = 0; i< nobs; i++) {
      ybar += Ywork[i];
   }
@@ -53,7 +53,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   ybar = ybar/ (double) nobs;
   SSY = yty - (double) nobs* ybar *ybar;
 
-  dgemv_(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
+  F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
  
   alpha = REAL(Ralpha)[0];
 

@@ -4,7 +4,7 @@
 \title{Bayesian Adaptive Sampling Without Replacement for Variable
   Selection in Linear Models}
 \description{Sample without replacement from a posterior distribution on models}
-\usage{bas.lm(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
+\usage{bas.lm(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
  modelprior=uniform(),
  initprobs="Uniform", random=TRUE, method="BAS", update=NULL,
  bestmodel = NULL, bestmarg = NULL, prob.local = 0) }
@@ -111,8 +111,8 @@ estimate of each (nonzero) coefficient for each model}
 
 \references{
   Clyde, M. Ghosh, J. and Littman, M. (2009) Bayesian Adaptive Sampling
-  for Variable Selection. Department of Statistical Science Discussion
-  Paper. Duke University.
+  for Variable Selection and Model Averaging. Department of Statistical
+  Science Discussion Paper 2009-16. Duke University.
   
   Clyde, M. and George, E. I. (2004) Model Uncertainty. Statist. Sci.,
   19, 81-94. \cr \url{http://www.isds.duke.edu/~clyde/papers/statsci.pdf}

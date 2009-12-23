@@ -1,349 +1,221 @@
 #include "sampling.h"
+#include "family.h"
+#include <R_ext/BLAS.h>
+
+typedef struct glmfamilystruc {
+  const char *family;
+  const char *link;
+  void (*mu_eta)(double *eta, double *mu, int n);
+  void (*linkfun)(double *mu, double *eta, int n);
+  void (*variance)(double * mu, double *var, int n);
+  void (*dev_resids)(double *y, double *mu, double *weights, double *resids, int n);
+  void (*linkinv)(double *eta, double *mu, int n);
+  double (*dispersion)(double *resid,  double *weights, int n, int rank);
+} glmstptr;
+
+typedef struct coefpriorstruc {
+  const char *family;
+  const char *class;
+  double *hyper;
+  double (*log_marginal_likelihood)(double dev, double regSS, int n, int p, int pgamma, double g, double *hyper);
+  double (*shrinkage)(double dev,  double regSS, int n, int p, int pgamma, double g, double *hyper);
+  double (*g)(double dev,  double regSS, int n, int p, int pgamma, double *hyper);
+} coefdistptr;
+
+
+
+
+ double no_shrinkage(double dev,  double regSS, int n, int p, int pgamma, double g,  double *hyper) {
+  return 1.0;
+}
+
+ double shrinkage_gprior(double dev,  double regSS, int n, int p, int pgamma,  double g, double *hyper) {
+  return g/(1.0 + g) ;
+}
+
+ double g_EB_local(double dev,  double regSS, int n, int p, int pgamma, double *hyper) { 
+  double g = regSS/pgamma - 1.0;
+  return g > 0.0 ? g : 0.0;
+}
+
+ double g_gprior(double dev,  double regSS, int n, int p, int pgamma, double *hyper) { 
+  return hyper[0];
+}
+
+ double no_g(double dev,  double regSS, int n, int p, int pgamma, double *hyper) { 
+  return 1.0;
+}
+
+double log_marginal_likelihood_IC(double dev, double regSS, int n, int p, int pgamma, double g, double *hyper) {
+  return -.5*(dev +  pgamma*hyper[0]);
+}
+double log_marginal_likelihood_gprior(double dev, double regSS, int n, int p, int pgamma, double g, double *hyper) {
+  return -.5*(dev  + pgamma*log(g + 1.0) + regSS/(g + 1.0));
+}
+
 
 /* Version of glm.fit that can be called directly from R or C*/
-SEXP glm_fit(SEXP RX, SEXP RY, SEXP Reta, SEXP Rcoef, 
-	     SEXP Rse, SEXP Rdeviance, 
-             SEXP Rweights, SEXP Rresiduals,
-	     SEXP Reffects,
-             SEXP Rpivot,  SEXP Rqrauxmat, SEXP Rworkmat)
-	     
 
+SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rstarteta, SEXP Rstartcoef, SEXP Rpriorcoef, SEXP Repsilon)
 {
-  SEXP RYwork, RXwork, Rstart;
-  double  *Xwork, *Ywork, *coef,*start, *work, *qraux, *residuals,*effects,
-           one, zero, tol;
-  int  job, l, i, j, info, inc, n, p, rank, *pivot, *xdims;
-
-
-  zero = 0.0;
-  one = 1.0;
-  inc = 1;
-  job = 01;
-  info = 1;
-  xdims = INTEGER(getAttrib(RX,R_DimSymbol));
-  n = xdims[0];
-  p = xdims[1];
-  rank = 1;
-  tol = DBL_EPSILON;
- 
-
-  PROTECT(RYwork = coerceVector(RY, REALSXP));
-  Ywork = REAL(RYwork);
-  PROTECT(RXwork =  coerceVector(RX, REALSXP));
-  Xwork = REAL(RXwork);
-  PROTECT(Rstart = coerceVector(Rcoef, REALSXP));
-  start = REAL(Rstart);
-
-  pivot = INTEGER(Rpivot);
-  coef = REAL(Rcoef);
-  residuals = REAL(Rresiduals);
-  qraux = REAL(Rqrauxmat);
-  effects = REAL(Reffects);
-  work = REAL(Rworkmat);
+  int   *xdims = INTEGER(getAttrib(RX,R_DimSymbol)), n=xdims[0], p = xdims[1];
+  int inc = 1,  job = 01, info = 1, nmodels=1;
   
-  /*  eta <- rep.int(0, nobs) + offset
-  mu <- linkinv(eta);
-  dev <- sum(dev.resids(y, mu, weights))
-  w <- ((weights * mu.eta(eta)^2)/variance(mu))^0.5
-  residuals <- (y - mu)/mu.eta(eta)
-  z <- (eta - offset)[good] + (y - mu)[good]/mu.eta.val[good]
-  w <- sqrt((weights[good] * mu.eta.val[good]^2)/variance(mu)[good])
-  ngoodobs <- as.integer(nobs - sum(!good))
-  */ 
-  Rprintf("calling dqrls\n");
-  dqrls_(&Xwork[0], &n, &p, &Ywork[0], &inc, &tol,  &start[0],
-	 &residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
-  for (j=0; j<p; j++) { coef[pivot[j]] = start[j];}
-  /* eta = drop(x %*% start)+ offset;
-  mu  = linkinv(eta);
-  dev = sum(dev.resids(y, mu, weights));
-  */
-  UNPROTECT(2);
+  SEXP ANS = PROTECT(allocVector(VECSXP, 10));
+  SEXP RXwork = PROTECT(duplicate(RX)), 
+    RYwork = PROTECT(duplicate(RY)),  
+    RWwork = PROTECT(duplicate(RY)), Rvariance = PROTECT(duplicate(RY)), 
+    Rmu_eta = PROTECT(duplicate(RY)), Reta= PROTECT(duplicate(Rstarteta)),  
+    Rmu = PROTECT(duplicate(RY)),
+    Rcoef= PROTECT(duplicate(Rstartcoef)),
+    Rcoefwork = PROTECT(duplicate(Rstartcoef)), Rrank=PROTECT(allocVector(INTSXP,1)),
+    Rresdf = Rrank=PROTECT(allocVector(INTSXP,1)),
+    Rcov = PROTECT(allocVector(REALSXP, p*p)),      RR = PROTECT(allocVector(REALSXP, p*p)),  
+    Rse= PROTECT(allocVector(REALSXP, p)),  
+    Rresiduals= PROTECT(duplicate(RY)), Reffects= PROTECT(duplicate(RY)),
+    Rpivot=PROTECT(allocVector(INTSXP,p)),
+    Rqrauxmat=PROTECT(allocVector(REALSXP,p)), 
+    Rworkmat=PROTECT(allocVector(REALSXP,2*p)), Rlog_marg_lik=PROTECT(allocVector(REALSXP,nmodels)), 
+    Rdeviance=PROTECT(allocVector(REALSXP,nmodels)), RregSS=PROTECT(allocVector(REALSXP,nmodels)), 
+    Rg = PROTECT(allocVector(REALSXP, nmodels)), Rshrinkage = PROTECT(allocVector(REALSXP, nmodels));
+
+
+  double *X=REAL(RX), *Y=REAL(RY), *Xwork=REAL(RXwork),
+    *w=REAL(RWwork),*Ywork=REAL(RYwork), *effects=REAL(Reffects),
+    *coef=REAL(Rcoef),*coefwork=REAL(Rcoefwork), *se=REAL(Rse), *cov = REAL(Rcov), *R = REAL(RR),
+    *work=REAL(Rworkmat), *qraux=REAL(Rqrauxmat), *weights=REAL(Rweights),
+    *mu=REAL(Rmu), *offset=REAL(Roffset),*eta=REAL(Reta),  *mu_eta=REAL(Rmu_eta),
+    *residuals=REAL(Rresiduals), *dev=REAL(Rdeviance), *regSS = REAL(RregSS), *g = REAL(Rg),
+    *variance=REAL(Rvariance), *hyper;
+
+  double  zero = 0.0, one = 1.0,  tol = DBL_EPSILON, devold, devnew, regss;
+
+  int   i, j, l, m, rank=1, *pivot=INTEGER(Rpivot), conv=0;
+
+  glmstptr *glmfamily;
+  coefdistptr *coefprior;
+  char uplo[] = "U", trans[]="N";
   
-  return(Rcoef);
-  //  dpofa_(&XtX[0],&p,&p, &info);
-  //  dposl_(&XtX[0],&p,&p,&coefficients[0]);
-  //  dpodi_(&XtX[0],&p,&p, &det, &job);
+  coefprior = (struct coefpriorstruc *) R_alloc(1, sizeof(struct coefpriorstruc));
+  coefprior->family = CHAR(STRING_ELT(getListElement(Rpriorcoef, "family"),0));
+  coefprior->class  = CHAR(STRING_ELT(getListElement(Rpriorcoef, "class"),0));
+  if (getListElement(Rpriorcoef, "hyper") != R_NilValue) 	
+    hyper = REAL(getListElement(Rpriorcoef, "hyper"));	
 
-  //  ete = ddot_(&p, &coefficients[0], &inc, &XtY[0], &inc);
-  //  *mse = (*mse - ete)/((double) (n - p)); 
-
-  /*  for (j=0, l=0; j < p; j++)  {
-    for (i=0; i <  p; i++) {
-       if (i == j)  {
-	se[j] = sqrt(XtX[l] * *mse);
-       }
-      l += 1;    }}
-  */
+  if  (strcmp(coefprior->class, "gprior") == 0) {
+    coefprior->shrinkage = shrinkage_gprior;
+    coefprior->log_marginal_likelihood = log_marginal_likelihood_gprior;
+    if  (strcmp(coefprior->family, "fixed-g-prior") == 0) 
+      coefprior->g = g_gprior;
+    else 
+      coefprior->g = g_EB_local;
 }
-
-
-
-/* Version of gexpectations that can be called directly from R */
-void gexpectations_glm_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2, double *alpha, int *method,
-                        double *RSquareFull, double *SSY, double *logmarg, double *shrinkage) {
-
-  int i; 
-     for (i=0; i < *nmodels; i++) {
-	 gexpectations(*p, pmodel[i],  *nobs,  R2[i], *alpha, *method, 
-		        *RSquareFull,  *SSY,  &logmarg[i],  &shrinkage[i]);
-
-	     }
+  if  (strcmp(coefprior->class, "IC") == 0) {
+    coefprior->shrinkage = no_shrinkage;
+    coefprior->log_marginal_likelihood = log_marginal_likelihood_IC;
+    coefprior->g = no_g;
 }
+  
+  Rprintf("prior %s\n", coefprior->family);
 
+  glmfamily = (struct glmfamilystruc *) R_alloc(1, sizeof(struct glmfamilystruc));
+  glmfamily->family = CHAR(STRING_ELT(getListElement(family, "family"),0));
+  glmfamily->link = CHAR(STRING_ELT(getListElement(family, "link"),0));
+  
+  Rprintf("link %s\n", glmfamily->link);
+  if  (strcmp(glmfamily->family, "binomial") == 0) {
+    glmfamily->dev_resids = binomial_dev_resids;
+    glmfamily->dispersion = binomial_dispersion;
+    if (strcmp(glmfamily->link, "logit") == 0) {
+       glmfamily->linkfun = logit_link;	
+       glmfamily->mu_eta = logit_mu_eta;
+       glmfamily->variance = logit_variance; 
+       glmfamily->linkinv =  logit_linkinv;
+	}
+   else  Rprintf("no other links implemented yet\n");
+  }
+  else  Rprintf("no other families implemented yet\n");
+   
+   
 
-void gexpectations_glm(int p, int pmodel, int nobs, double R2, double alpha, int method,  double RSquareFull, double SSY, double *logmarg, double *shrinkage) {  
-    
-    *shrinkage = 1.0;
+  for (m=0; m< nmodels; m++){
+    glmfamily->linkinv(eta, mu, n);
+    glmfamily->dev_resids(Y, mu, weights, residuals, n);
+    devold = deviance(residuals, n);
+    devnew = devold;
 
-    switch (method) { 
-     case 0: 
-      *logmarg = logBF_gprior(R2, nobs, pmodel,alpha); 
-      if (pmodel > 1) *shrinkage = alpha/(1.0 + alpha);
-      break;
-     case 1:  
-      *logmarg = logBF_hyperGprior(R2, nobs, pmodel,alpha); 
-      *shrinkage = shrinkage_hyperg(R2, nobs, pmodel, alpha);
-      break;
-     case 2: 
-      *logmarg = logBF_EB(R2, nobs, pmodel,alpha); 
-      *shrinkage = shrinkage_EB_local(R2, nobs, pmodel,alpha);
-      break;
-     case 3: 
-     *logmarg = BIC(R2, nobs, pmodel,SSY); 
-      break;
-     case 4: 
-       *logmarg = LogBF_ZS_null(R2, nobs, pmodel);
-       *shrinkage = E_ZS_approx_null(R2,nobs,pmodel-1);
-      break; 
-     case 5: 
-       *logmarg = LogBF_ZS_full(RSquareFull, R2, nobs, p, pmodel);
-      break; 
-      case 6: 
-        *logmarg =  logBF_hyperGprior_laplace(R2, nobs, pmodel,alpha); 
-	*shrinkage = shrinkage_laplace(R2, nobs, pmodel, alpha); 
-      break; 
-      case 7: 
-	*logmarg =  AIC(R2,  nobs, pmodel,SSY);
-      break; 
-      case 8: 
-	  *logmarg =  LogBF_Hg_null(R2,  nobs, pmodel, alpha, 1);
- 	  if (pmodel > 1) {
-	      *shrinkage = LogBF_Hg_null(R2,  nobs, pmodel+2, alpha, 2);
-	      *shrinkage = exp(*shrinkage - *logmarg); }
-      break; 
-  default: 
-      Rprintf("Error: Method must be one of g-prior, hyper-g, laplace (hyper-g), AIC, BIC, ZS-null, or ZS-full\n");
-      break;
+  while ( conv < 1) {
+    for (j=0; j<p; j++) {
+      pivot[j] = j+1;
+  }	
+
+    glmfamily->mu_eta(eta, mu_eta, n);
+    glmfamily->variance(mu, variance, n);
+
+    for (i=0, l=0; i<n; i++) {
+      w[i] = sqrt(weights[i]*mu_eta[i]*mu_eta[i]/variance[i]);
+      Ywork[i] = w[i]*(eta[i] - offset[i] + (Y[i] - mu[i])/mu_eta[i]);
+      residuals[i] = (Y[i] - mu[i])/mu_eta[i];
     }
-}
+    for (j=0, l=0; j<p; j++) {
+      for (i=0; i<n; i++, l++) {
+	Xwork[l] = REAL(RX)[l]*w[i];
+      }
+    }
 
+    rank = 1;
 
-
-
-
-
-double logBF_gprior_glm( double Rsquare, int n,  int p, double g)
-  {  double logmargy;
-  /* log Marginal under reference prior for phi, intercept and
-     g prior for regression coefficients 
-     log marginal for null model is 0 */
-  logmargy =  .5*(log(1.0 + g) * ((double) (n - p))  - log(1.0 + g * (1.0- Rsquare)) * ((double)(n - 1)));
-  if (p == 1) logmargy = 0.0;
-  return(logmargy);
-  }
-
-double BIC_glm(double Rsquare, int n,  int p, double SSY)
-  {  double logmargy, sigma2, dn, dp;
-  dn = (double) n;
-  dp = (double) p;
-  sigma2 = SSY*(1.0 - Rsquare);
-  logmargy =  -.5*(dn*log(sigma2) +  dp*log(dn));
-  return(logmargy);
-  }
-
-double AIC_glm(double Rsquare, int n,  int p, double SSY)
-  {  double logmargy, sigma2, dn, dp;
-  dn = (double) n;
-  dp = (double) p;
-  sigma2 = SSY*(1.0 - Rsquare);
-  logmargy =  -.5*(dn*log(sigma2) +  dp*2.0);
-  return(logmargy);
-  }
-
-double shrinkage_EB_local_glm(double R2, int n, int p, double alpha)
- {  
-   /* R2 = Y'PxY/Y'Y  
-      n = sample size
-      p = number of rank of X (including intercept)
-      alpha = prior hyperparameter
-   */
-
-   double  ghat, dn, dp, shrinkage;
-   
-    dn = (double) n - 1.0;
-    dp = (double) p - 1.0;
-    if (dp > 0.0) {
-      ghat =  (((dn-dp)/dp)*R2/(1.0 - R2)) - 1.0;
-      if (ghat < 0.0) ghat = 0.0;
-      shrinkage = ghat/(1.0 + ghat);}
-    else shrinkage = 1.0;
-  return(shrinkage);
-}
-
-double logBF_hyperGprior_glm(double R2, int n, int p, double alpha)
-  {  double logmargy,  a, b, c, z1, hf1;
-  /* log Marginal under reference prior for phi & intercept
-     hyperg prior for regression coefficients; alpha > 2 
-     log marginal for null model is 0 */
-
-  a = (double)  (n - 1) /2.0;
-  b = 1.0;
-  c = ((double) p - 1.0  + alpha )/2.0;
-  z1 = R2;
-
-    hf1 = hyp2f1(a, b, c, z1);
-    if (p == 1) logmargy = 0.0;
-    else logmargy = log(hf1) 
-	     - log( (double) p - 1.0 + alpha - 2.0) + log(2.0) 
-	     + log(alpha/2.0 - 1.0);
-    if (! R_FINITE(logmargy))
-	logmargy = logBF_hyperGprior_laplace(R2, n, p, alpha);
-    return(logmargy);
-  }
-
-double logBF_hyperGprior_laplace_glm(double R2, int n, int p, double alpha)
- {  
-   /* R2 = usual coefficient of determination
-      n = sample size
-      p = number of rank of X (including intercept)
-      alpha = prior hyperparameter
-      n and p are adjusted by subtrating off one 
-      because of the flat prior on the intercept
-   */
-
-   double lognc, ghat, dn, dp, logmarg,sigmahat;
-   
-    dn = (double) n - 1.0;
-    dp = (double) p - 1.0;
-/*  Laplace approximation in terms of exp(tau) = g  */
-    ghat = (-4.+ alpha + dp + (2. - dn)*R2 - 
-	    sqrt(-8.*(-2. + alpha + dp)*(-1.0 + R2) + (-4. + alpha + dp + (2.-dn)* R2)*(-4. + alpha + dp + (2.-dn)* R2)))/(2.*(-2. + alpha + dp)*(-1. + R2)); 
-
-    if (ghat <= 0.0)  { Rprintf("ERROR: In Laplace approximation to  logmarg,  ghat =  %f  R2 = %f p = %d  n = %d\n", ghat, R2, p,n);}
-  
-    sigmahat = 2.0/((dn - dp - alpha)/(( 1.0 + ghat)*(1.0 + ghat)) -
-	       dn*(1.0 - R2)*(1.0 - R2)/((1.0 + ghat*(1.0 - R2))*(1.0 + ghat*(1.0 - R2))));
-
-    /*  Substitute ghat (unconstrained) into sigma, simplify, then plug in ghat
-	Seems to perform better */
-
-    sigmahat = 2.0*(dn/((dn - dp - alpha)*(dp + alpha)))* (1.0 + ghat)*(1.0 + ghat); 
+    F77_NAME(dqrls)(&Xwork[0], &n, &p, &Ywork[0], &inc, &tol,  &coefwork[0],
+	 &residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
     
-   sigmahat =1.0/(-ghat*(dn - alpha - dp)/(2.*(1. + ghat)*(1.+ghat)) +
-     dn*(ghat*(1. - R2))/(2.*(1.+ghat*(1.-R2))*(1.+ghat*(1.-R2)))); 
+    for (j=0; j<p; j++) { 
+      coef[pivot[j] - 1] = coefwork[j];}
 
-    if (sigmahat <= 0 ) Rprintf("ERROR in LAPLACE APPROXIMATION to logmarg sigmhat = %f, ghat =  %f  R2 = %f p = %d  n = %d\n", sigmahat, ghat, R2, p,n); 
-    lognc = log(alpha/2.0 - 1.0);
-    logmarg = lognc + 
-              .5*( log(2.0*PI) 
-                     - (dp + alpha)*log(1.0 + ghat)
-	             -  dn*log(1.0-(ghat/(1.0 + ghat))*R2)
-	             + log(sigmahat)) + log(ghat);
-  if (p == 1) logmarg = 0.0;
-  return(logmarg);
-}
+    F77_NAME(dcopy)(&n, &offset[0], &inc, &eta[0], &inc);
+    F77_NAME(dgemv)(trans, &n, &p, &one, &X[0], &n, &coef[0], &inc, &one, &eta[0],&inc);
 
-double shrinkage_laplace_glm(double R2, int n, int p, double alpha)
- {  
-   /* R2 = usual R2
-      n = sample size
-      p = number of rank of X (including intercept)
-      alpha = prior hyperparameter
-   */
+    glmfamily->linkinv(eta, mu, n);
+    glmfamily->dev_resids(Y, mu, weights, residuals, n);
+    devnew = deviance(residuals, n);
+    glmfamily->mu_eta(eta, mu_eta, n);
+    glmfamily->variance(mu, variance, n);
 
-     double  ghat, dn, dp, lognum, logden, shrinkage,sigmahat, lognc;
-   
-   /* numerator Laplace approximation E[g/(1 + g) | Y, model] */
+    devnew = deviance(residuals, n);
+    //    Rprintf("old %f new %f conv %d\n", devold,devnew, conv);
 
-    dn = (double) (n - 1);
-    dp = (double) (p - 1);
-    lognc = log(alpha/2.0 - 1.0);
-    ghat = (-6.+ alpha + dp + (4. - dn)*R2 - 
-	    sqrt(-16.*(-2. + alpha + dp)*(-1.0 + R2) + (-6. + alpha + dp + (4.-dn)* R2)*(-6. + alpha + dp + (4.-dn)* R2)))/(2.*(-2. + alpha + dp)*(-1. + R2)); 
+    if (fabs(devnew - devold)/(0.1 + fabs(devnew)) < REAL(Repsilon)[0]) {
+     conv = 1;
+	  }
+    else { devold=devnew;}
+  }
 
-    if (ghat <=0.0) { Rprintf("ERROR: In Laplace approximation to  E[g/(1 + g)] ghat = %f %f %d %d\n", ghat, R2, p,n ); 
+  dev[m] = devnew;
 
-           } 
-   sigmahat =2.0/(ghat*(-dn + 2.+ alpha + dp)/((1. + ghat)*(1.+ghat)) +
-		  dn*(ghat*(1. - R2))/((1.+ghat*(1.-R2))*(1.+ghat*(1.-R2)))); 
+  chol2se(&Xwork[0], &se[0], &R[0], &cov[0], p, n);
+  Rprintf("compute marginal lik quantitis");
+  regSS[m] = quadform(coef, coefwork, R, p);
+  g[m] = coefprior->g(dev[m],  regSS[m],  n,  p,  rank, hyper);
+  REAL(Rshrinkage)[m]  = coefprior->shrinkage(dev[m],  regSS[m],  n,  p, rank, g[m],  hyper);
+  REAL(Rlog_marg_lik)[m]  = coefprior->log_marginal_likelihood(dev[m],  regSS[m],  n,  p, rank, g[m],  hyper);
 
-   if (sigmahat <= 0 ) Rprintf("ERROR in LAPLACE APPROXIMATION to E[g/(1 + g)] sigmahat = %f %f %f %d %d\n", sigmahat, ghat, R2, p,n); 
+  INTEGER(Rrank)[m] = rank;
+  }
 
-   lognum= .5*( log(2.0*PI) + 2.0*log(ghat)
-		- (dp + alpha + 2.0 - dn)*log(1.0 + ghat)
-		- dn*log(1.0 + ghat*(1. -R2))
-		+ log(sigmahat))  +  lognc + log(ghat);
-   logden = logBF_hyperGprior_laplace( R2,  n, p, alpha);
-/* lognc is included here so that it cancels wth lognc for denominator
-   shrinkage = exp(lognum - logden);
-/*   Rprintf("%f %f %f  %f %f %f \n", ghat, sigmahat, normalpart, lognum, logden, shrinkage);  */
-  if (p == 1) shrinkage = 1.0;
-  return(shrinkage);
-}
+  SET_VECTOR_ELT(ANS, 0, Rcoef);
+  SET_VECTOR_ELT(ANS, 1, Rse);
+  SET_VECTOR_ELT(ANS, 2, Rmu);
+  SET_VECTOR_ELT(ANS, 3, Rdeviance);
+  SET_VECTOR_ELT(ANS, 4, Rrank);
+  SET_VECTOR_ELT(ANS, 5, Rg);
+  SET_VECTOR_ELT(ANS, 6, Rshrinkage);
+  SET_VECTOR_ELT(ANS, 7, RregSS);
+  SET_VECTOR_ELT(ANS, 8, Rlog_marg_lik);
 
-double log_laplace_2F1_glm(double a, double b, double c, double z)
- {  
-   
-   double  ghat,logmarg,sigmahat, D, A, B, C,root1, root2;
+  // SET_VECTOR_ELT(ANS, 5, Rresdf);
+  
+  UNPROTECT(25);
+  
+  return(ANS);
+  }
 
-/*  Laplace approximation in terms of exp(tau) = g  */
-//
-//  Integrate[g^(b/2-1) (1 + g)^(a - c)/2 (1 + (1 - z) g)^(-a/2) dg 
-//  Integrate[e^tau b/2 (1 + e^g)^(a - c)/2 *( 1 + (1 -z)e^g)^(-a/2) dtau  
-//
-   A = (b - c)*(1. - z);
-   B = 2.*b - c + (a-b)*z;
-   C = b;
-   D = B*B - 4.*A*C;
-
-   if (D < 0 )    Rprintf("ERROR: In Laplace approximation to 2F1");
-
-   root1 = (-B - sqrt(D))/(2.*A);
-   root2 = (-B + sqrt(D))/(2.*A);
-   
-   Rprintf("+root = %lf root = %lf\n", root2, root1);
-
-   ghat = (2.*b)/(c + b*(z - 2.0) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z)/(2.*(b - c)*(z - 1)));
- 
-   if (ghat <= 0.0)  {
-     Rprintf("ERROR: In Laplace approximation to  logmarg,  ghat =  %f  z = %lf\n", ghat, z);
-     ghat =  -(c +b*(-2. + z) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z)/(2.*(b - c)*(z - 1.)));
-   }
-     sigmahat =1.0/(.5*(-a + c)*((ghat/(1 + ghat))*(1 - ghat/(1 + ghat))) +
-		    a*((ghat*(1.-z))/(1.+ghat*(1.-z))*
-		       (1. - (ghat*(1.-z))/(1.+ghat*(1.-z)))));
-
-    if (sigmahat <= 0 ) Rprintf("ERROR in LAPLACE APPROXIMATION to in 2F1 sigmhat = %f, ghat =  %f  z = %f \n", sigmahat, ghat, z); 
-    logmarg = .5*( log(2.0*PI) 
-		   - (a - c)*log(1.0 + ghat)
-		   -  a*log(1.0 + ghat*(1. - z)) 
-		   + log(sigmahat)) 
-               + (.5*b - 1.)*log(ghat);
-  return(logmarg);
- }	
-
-
-double logBF_EB_glm(double R2, int n, int p, double alpha)
- {
-   double  ghat, dn, dp, logmarg;
-    dn = (double) n -1.0;
-    dp = (double) p -1.0;
-    ghat =  (((dn-dp)/dp)*R2/(1.0 - R2)) - 1.0;
-    if (ghat < 0.0) ghat = 0.0;
-    logmarg = .5*( - dn*log(1.0-(ghat/(1.0 + ghat))*R2)
-		   - dp*log(1.0 + ghat));
-    if (p == 1) logmarg = 0.0;
-    return(logmarg);
-}
 
