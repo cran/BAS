@@ -17,12 +17,11 @@ sampled models.
 \details{
 \tabular{ll}{
 Package: \tab BAS\cr
-Version: \tab 1.0\cr
-Date: \tab 2009-2-27\cr
+Version: \tab 0.4\cr
+Date: \tab 2009-12-23\cr
 Depends: \tab R (>= 2.6)\cr
 License: \tab GPL-2\cr
 URL: \tab http://www.stat.duke.edu/~clyde\cr
-Built: \tab R 2.8.1 unix\cr
 }
 
 Index:
@@ -30,14 +29,14 @@ Index:
 }
 
 }
-\author{Merlise Clyde and Michael Littman, 
+\author{Merlise Clyde, 
   \cr
   Maintainer: Merlise Clyde <clyde@stat.duke.edu>
 }
 \references{
   Clyde, M. Ghosh, J. and Littman, M. (2009) Bayesian Adaptive Sampling
-  for Variable Selection. Department of Statistical Science Discussion
-  Paper. Duke University.
+  for Variable Selection and Model Averaging. Department of Statistical
+  Science Discussion  Paper 2009-16. Duke University.
   
   Clyde, M. and George, E. I. (2004) Model uncertainty. Statist. Sci.,
   19, 81-94. \cr \url{http://www.isds.duke.edu/~clyde/papers/statsci.pdf}

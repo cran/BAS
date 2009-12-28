@@ -7,7 +7,8 @@
 #include <R.h> 
 #include <Rmath.h>
 #include <Rdefines.h>
-
+#include <R_ext/Rdynload.h>
+#include <R_ext/BLAS.h>
 
 
 /* Defines. */
@@ -33,6 +34,7 @@ struct Node {
   NODEPTR zero;
   NODEPTR one;  
 };
+
 
 
 /* Subroutines. */
@@ -64,28 +66,39 @@ void insert_children(int subset, double *list, double *subsetsum,
 		     int *type, char *bits, int n);
 void set_bits(char *bits, int subset, int *pattern, int *position, int n);
 int sortvars(struct Var *vars, double *prob, int p);
-double ddot_(int *n, double *x, int *incx, double *y, int *incy);
-void dpofa_(double *a, int *lda, int *n, int *info);
-void dposl_(double *a, int *lda, int *n, double  *b);
-void dpoco_(double *a, int *lda, int *n, double *rcond, double *z, int  *info);
-void dpodi_(double *a, int *lda, int *n, double *det,int  *job);
-void dcopy_(int *n, double *x, int *incx, double *y, int *incy);
-void dqrls_(double *x, int *n, int *p, double *y, int *inc, double *tol,
+ 
+void F77_NAME(ch2inv)(double *cov, int *p, int *nr, double *covwork, int *info);
+void F77_NAME(dpofa)(double *a, int *lda, int *n, int *info);
+void F77_NAME(dposl)(double *a, int *lda, int *n, double  *b);
+void F77_NAME(dpoco)(double *a, int *lda, int *n, double *rcond, double *z, int  *info);
+void F77_NAME(dpodi)(double *a, int *lda, int *n, double *det,int  *job);
+void F77_NAME(drsk)(char *UPLO, char *TRANS, int *N, int *K, double *ALPHA,
+           double *A, int *LDA, double *BETA, double *C, int *LDC);
+
+void  F77_NAME(dqrls)(double *x, int *n, int *p, double *y, int *inc, double *tol,
 	    double *start, double *residuals, double *effects, int *rank, 
 	    int *pivot, double *qraux, double *work);
-void dsymv_(char *uplo, int *n, double *alpha, double *A, int *lda, double *X, int *incx, double *beta, double *Y, int *incy);
+
+//void F77_NAME(dgtsv)( int *n, int *nrhs, double *dl, double *d, double *du, double *b, double *ldb, int *info);
+
+/*  Following defined in R_ext/BLAS.h 
+
+double ddot_(int *n, double *x, int *incx, double *y, int *incy);
+void dcopy_(int *n, double *x, int *incx, double *y, int *incy);
+void dsymv_(const char *uplo, int *n, double *alpha, double *A, int *lda, double *X, int *incx, double *beta, double *Y, int *incy);
 void dsyrk_(const char *uplo, const char *trans,
 		const int *n, const int *k,
 		const double *alpha, const double *a, const int *lda,
 		const double *beta, double *c, const int *ldc);
-void dgemv_(char *trans, int *m, int *n, double *alpha, double *A, 
+void dgemv_(const char *trans, int *m, int *n, double *alpha, double *A, 
             int *lda, double  *x, int *incx, double *beta, double *y,
             int *incy);
-void drsk_(char *UPLO, char *TRANS, int *N, int *K, double *ALPHA,
-           double *A, int *LDA, double *BETA, double *C, int *LDC);
+
+*/
+
 void cholregold(double *residuals, double *X, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
 void cholreg(double *XtY, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
-
+double quadform (double *b, double *bwork, double *R,  int p);
 double **matalloc(int das,int dbs);
 int **imatalloc(int das,int dbs);
 unsigned char **cmatalloc(int das,int dbs);
@@ -116,3 +129,5 @@ double BIC(double Rsquare, int n,  int p, double SSY);
 double AIC(double Rsquare, int n,  int p, double SSY);
 NODEPTR make_node(double pr);
 SEXP getListElement(SEXP list, char *str);
+
+

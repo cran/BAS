@@ -46,7 +46,7 @@ bin2int = function(model) {
   if (length(model) > 1) { 
     i = sum(2^(model[-1] - 1)) + 1}
   else{ i = 1}
-  if (!is.integer(i)) warning("Exceeded the largest integer for this machine")
+#  if (!is.integer(i)) warning("Exceeded the largest integer for this machine")
   return(unlist(i))
 }
 

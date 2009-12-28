@@ -76,11 +76,11 @@ void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double 
   info = 1;
   det = 1.0;
 
-  dpofa_(&XtX[0],&p,&p, &info);
-  dposl_(&XtX[0],&p,&p,&coefficients[0]);
-  dpodi_(&XtX[0],&p,&p, &det, &job);
+  F77_NAME(dpofa)(&XtX[0],&p,&p, &info);
+  F77_NAME(dposl)(&XtX[0],&p,&p,&coefficients[0]);
+  F77_NAME(dpodi)(&XtX[0],&p,&p, &det, &job);
 
-  ete = ddot_(&p, &coefficients[0], &inc, &XtY[0], &inc);
+  ete = F77_NAME(ddot)(&p, &coefficients[0], &inc, &XtY[0], &inc);
   *mse = (*mse - ete)/((double) (n - p)); 
 
   for (j=0, l=0; j < p; j++)  {
@@ -98,7 +98,7 @@ double logBF_gprior( double Rsquare, int n,  int p, double g)
   /* log Marginal under reference prior for phi, intercept and
      g prior for regression coefficients 
      log marginal for null model is 0 */
-  logmargy =  .5*(log(1.0 + g) * ((double) (n - p))  - log(1.0 + g * (1.0- Rsquare)) * ((double)(n - 1)));
+    logmargy =  .5*(log(1.0 + g) * ((double) (n - p))  - log(1.0 + g * (1.0- Rsquare)) * ((double)(n - 1)));
   if (p == 1) logmargy = 0.0;
   return(logmargy);
   }

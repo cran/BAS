@@ -1,4 +1,4 @@
-bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
+bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
                   modelprior=uniform(),
                   initprobs="Uniform", random=TRUE, method="BAS", update=NULL, 
                   bestmodel=NULL, bestmarg=NULL, prob.local=0.0)  {
@@ -11,12 +11,12 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
   
   if (!is.numeric(initprobs)) {
     initprobs = switch(initprobs,
-      "Uniform"= c(1, rep(.5, p-1)),
+      "Uniform"= c(1.0, rep(.5, p-1)),
       "eplogp" = eplogprob(lm.obj)
       )
   }
    if (length(initprobs) == (p-1))
-     initprobs = c(1, initprobs)
+     initprobs = c(1.0, initprobs)
    if (length(initprobs) != p)
     stop(simpleError(paste("length of initprobs is not", p)))
 
@@ -27,6 +27,11 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
                   " variables."))
     initprobs[is.na(pval)] = 0.0
   }
+
+  if (initprobs[1] < 1.0) initprobs[1] = 1.0
+# intercept is always included otherwise we get a segmentation
+# fault (relax later)
+
   prob = as.numeric(initprobs)
 
   if (is.null(n.models)) n.models = 2^(p-1)
@@ -38,12 +43,12 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
   }
 
   if (n.models > 2^30) stop("Dimension of model space is too big to enumerate\n  Rerun with a smaller value for n.models")
-  if (n.models > 2^23)
+  if (n.models > 2^20)
     print("Number of models is REALLY BIG -this may take a while")
 
 
   if (modelprior$family == "Bernoulli") {
-    if (length(modelprior$hyper.parameters) == 1) 
+   if (length(modelprior$hyper.parameters) == 1) 
       modelprior$hyper.parameters = c(1, rep(modelprior$hyper.parameters, p-1))
     if  (length(modelprior$hyper.parameters) == (p-1)) 
      modelprior$hyper.parameters = c(1, modelprior$hyper.parameters)
@@ -92,7 +97,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
   modeltree = list(NULL, NULL, NULL, NULL, FALSE)
   if (random) { 
   if (method == "BAS")
-    ans = .Call("sampleworep",
+     ANS = .Call("sampleworep",
       Yvec, X,
       prob, R2,beta, se, mse, modelspace, modelprobs,
       priorprobs,logmargy, sampleprobs,
@@ -104,6 +109,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS", alpha=NULL,
       Rbestmarg=as.numeric(bestmarg),
       plocal=as.numeric(prob.local),
       PACKAGE="BAS")
+      prob = ANS[[1]]
 }
   else {
     ans = .Call("deterministic",

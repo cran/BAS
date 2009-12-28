@@ -37,9 +37,12 @@ fitted.bma = function(object,  type="HPM", top=NULL, ...) {
 }
   if (type == "MPM") {
    nvar = ncol(X) - 1
-   modelnum <- sapply(object$which, bin2int)
    bestmodel<- (0:nvar)[object$probne0 > .5]
-   best <- match(bin2int(bestmodel), modelnum)
+   best = NA
+   if (nvar < 32) {
+      modelnum <- sapply(object$which, bin2int)
+      best <- match(bin2int(bestmodel), modelnum)
+    }
    if (is.na(best)) {
      model <- rep(0, nvar+1)
      model[bestmodel+1] <- 1
