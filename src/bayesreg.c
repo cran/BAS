@@ -13,6 +13,7 @@ void gexpectations_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2
 }
 
 
+
 void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int method,  double RSquareFull, double SSY, double *logmarg, double *shrinkage) {  
     
     *shrinkage = 1.0;
@@ -60,7 +61,17 @@ void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int met
 }
 
 
-
+double maxeffect(double *beta, double *se, int p) {
+  int j;
+  double t, maxeffect;
+  t = fabs(beta[1]/se[1]);
+  maxeffect = t;
+  for (j = 2; j < p; j++) {
+    t = fabs(beta[j]/se[j]);	
+    maxeffect = fmax2(maxeffect, t);   
+  }
+  return(maxeffect);
+}
 
 void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double *mse,  int p, int n)
 {
@@ -149,14 +160,16 @@ double shrinkage_hyperg(double R2, int n, int p, double alpha)
  bnum = 2.0;
  bden = 1.0;
  c = (double) p  - 1.0 + alpha;
- z = R2;
- Eg = hyp2f1(a, bnum, (c + 2.0)/2.0, z);
- Egplus1 =  hyp2f1(a, bden, c/2.0, z);
- s = 2.0*(Eg/Egplus1)/c;
  if ( p == 1) s = 1.0;
- if (! R_FINITE(s)) s = shrinkage_laplace(R2, n, p, alpha);
+ else{ 	
+   z = R2;
+   Eg = hyp2f1(a, bnum, (c + 2.0)/2.0, z);
+   Egplus1 =  hyp2f1(a, bden, c/2.0, z);
+   s = 2.0*(Eg/Egplus1)/c;
+   if (! R_FINITE(s)) s = shrinkage_laplace(R2, n, p, alpha);
+ }
  return(s); 
-  }
+}
 
 
 double logBF_hyperGprior(double R2, int n, int p, double alpha)
@@ -195,21 +208,19 @@ double logBF_hyperGprior_laplace(double R2, int n, int p, double alpha)
     dn = (double) n - 1.0;
     dp = (double) p - 1.0;
 /*  Laplace approximation in terms of exp(tau) = g  */
+/*  Agrees with Mathematica but not paper  */
     ghat = (-4.+ alpha + dp + (2. - dn)*R2 - 
 	    sqrt(-8.*(-2. + alpha + dp)*(-1.0 + R2) + (-4. + alpha + dp + (2.-dn)* R2)*(-4. + alpha + dp + (2.-dn)* R2)))/(2.*(-2. + alpha + dp)*(-1. + R2)); 
 
     if (ghat <= 0.0)  { Rprintf("ERROR: In Laplace approximation to  logmarg,  ghat =  %f  R2 = %f p = %d  n = %d\n", ghat, R2, p,n);}
   
-    sigmahat = 2.0/((dn - dp - alpha)/(( 1.0 + ghat)*(1.0 + ghat)) -
-	       dn*(1.0 - R2)*(1.0 - R2)/((1.0 + ghat*(1.0 - R2))*(1.0 + ghat*(1.0 - R2))));
-
+   
     /*  Substitute ghat (unconstrained) into sigma, simplify, then plug in ghat
 	Seems to perform better */
 
-    sigmahat = 2.0*(dn/((dn - dp - alpha)*(dp + alpha)))* (1.0 + ghat)*(1.0 + ghat); 
-    
-   sigmahat =1.0/(-ghat*(dn - alpha - dp)/(2.*(1. + ghat)*(1.+ghat)) +
-     dn*(ghat*(1. - R2))/(2.*(1.+ghat*(1.-R2))*(1.+ghat*(1.-R2)))); 
+        
+    sigmahat =1.0/(-ghat*(dn - alpha - dp)/(2.*(1. + ghat)*(1.+ghat)) +
+                    dn*(ghat*(1. - R2))/(2.*(1.+ghat*(1.-R2))*(1.+ghat*(1.-R2)))); 
 
     if (sigmahat <= 0 ) Rprintf("ERROR in LAPLACE APPROXIMATION to logmarg sigmhat = %f, ghat =  %f  R2 = %f p = %d  n = %d\n", sigmahat, ghat, R2, p,n); 
     lognc = log(alpha/2.0 - 1.0);
@@ -253,9 +264,9 @@ double shrinkage_laplace(double R2, int n, int p, double alpha)
 		- dn*log(1.0 + ghat*(1. -R2))
 		+ log(sigmahat))  +  lognc + log(ghat);
    logden = logBF_hyperGprior_laplace( R2,  n, p, alpha);
-/* lognc is included here so that it cancels wth lognc for denominator
+   // lognc is included here so that it cancels wth lognc for denominator
    shrinkage = exp(lognum - logden);
-/*   Rprintf("%f %f %f  %f %f %f \n", ghat, sigmahat, normalpart, lognum, logden, shrinkage);  */
+   //  Rprintf("%f %f %f  %f %f %f \n", ghat, sigmahat, normalpart, lognum, logden, shrinkage);  
   if (p == 1) shrinkage = 1.0;
   return(shrinkage);
 }
@@ -263,13 +274,29 @@ double shrinkage_laplace(double R2, int n, int p, double alpha)
 double log_laplace_2F1(double a, double b, double c, double z)
  {  
    
-   double  ghat,logmarg,sigmahat, D, A, B, C,root1, root2;
+   double ghat1, ghat2, ghat,logint,sigmahat, D, A, B, C,root1, root2;
 
+   // 2F1(a,b,c, Z)      =        Gamma(c)
+   //                        --------------------- * integral
+   //			     Gamma(b) Gamma(c - b)
+
+   // integral = \int_0^\infty  g^{b -1} (1 + g)^{c - b - 1}(1 + (1 - z)g)^{-a}
+
+   logint = lgammafn(c) - lgammafn(b) - lgammafn(c - b);
+   
+   if ( z == 1.0) {
+     if (c > b + a) 
+     logint =  lgammafn(c) + lgammafn(c - a - b) - lgammafn(c - b)
+       - lgammafn(c - a);
+     else logint = log(0.0);
+   }
+   else{	
 /*  Laplace approximation in terms of exp(tau) = g  */
 //
-//  Integrate[g^(b/2-1) (1 + g)^(a - c)/2 (1 + (1 - z) g)^(-a/2) dg 
-//  Integrate[e^tau b/2 (1 + e^g)^(a - c)/2 *( 1 + (1 -z)e^g)^(-a/2) dtau  
-//
+//  Integrate[g^(b-1) (1 + g)^(a - c) (1 + (1 - z) g)^(-a) dg 
+//  Integrate[e^tau b (1 + e^g)^(a - c) *( 1 + (1 -z)e^g)^(-a) dtau  
+//  Jacobian e^tau 
+   
    A = (b - c)*(1. - z);
    B = 2.*b - c + (a-b)*z;
    C = b;
@@ -280,27 +307,32 @@ double log_laplace_2F1(double a, double b, double c, double z)
    root1 = (-B - sqrt(D))/(2.*A);
    root2 = (-B + sqrt(D))/(2.*A);
    
-   Rprintf("+root = %lf root = %lf\n", root2, root1);
-
-   ghat = (2.*b)/(c + b*(z - 2.0) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z)/(2.*(b - c)*(z - 1)));
+   ghat1 = (2.*b)/(c + b*(z - 2.0) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z));
  
-   if (ghat <= 0.0)  {
-     Rprintf("ERROR: In Laplace approximation to  logmarg,  ghat =  %f  z = %lf\n", ghat, z);
-     ghat =  -(c +b*(-2. + z) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z)/(2.*(b - c)*(z - 1.)));
-   }
-     sigmahat =1.0/(.5*(-a + c)*((ghat/(1 + ghat))*(1 - ghat/(1 + ghat))) +
+   ghat2 =  -(c +b*(-2. + z) - a*z + sqrt(c*c + 4*a*b*z -  2.0*(a + b)*c *z + (a -b )*(a-b)*z*z))/(2.*(b - c)*(z - 1.));
+   
+   // Rprintf("+root = %lf -root = %lf ghat1  = %lf hgat2 = %lf\n", root2, root1, ghat1, ghat2);
+   ghat = ghat1;
+   if ( ghat1 < 0) Rprintf("ERROR: In Laplace approximation to 2F1");
+
+   sigmahat =1.0/((-a + c)*((ghat/(1 + ghat))*(1 - ghat/(1 + ghat))) +
 		    a*((ghat*(1.-z))/(1.+ghat*(1.-z))*
 		       (1. - (ghat*(1.-z))/(1.+ghat*(1.-z)))));
 
     if (sigmahat <= 0 ) Rprintf("ERROR in LAPLACE APPROXIMATION to in 2F1 sigmhat = %f, ghat =  %f  z = %f \n", sigmahat, ghat, z); 
-    logmarg = .5*( log(2.0*PI) 
-		   - (a - c)*log(1.0 + ghat)
-		   -  a*log(1.0 + ghat*(1. - z)) 
-		   + log(sigmahat)) 
-               + (.5*b - 1.)*log(ghat);
-  return(logmarg);
+    logint = logint
+                   + .5*( log(2.0*PI) +  log(sigmahat)) +
+		      b*log(ghat) + (a - c)*log(1.0 + ghat)
+                   -  a*log(1.0 + ghat*(1. - z)); 
+   }
+  return(logint);
  }	
 
+
+void logHyperGauss2F1(double *a, double  *b, double *c, double *z, double *integral){
+  // version that can be called from R using .Call 
+  *integral = log_laplace_2F1(*a, *b, *c, *z);
+}
 
 double logBF_EB(double R2, int n, int p, double alpha)
  {

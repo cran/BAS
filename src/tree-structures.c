@@ -6,9 +6,51 @@ NODEPTR make_node(double pr) {
   newnode->prob = pr;
   newnode->update = 0;
   newnode->logmarg = 0.0;
+  newnode->where = -1;
   newnode->one = NULL;
   newnode->zero = NULL;
   return(newnode);
+}
+
+void deallocate_tree(struct Node *tree);
+
+void deallocate_tree(struct Node *tree) {
+  if (!tree) return;
+  deallocate_tree(tree->one);
+  deallocate_tree(tree->zero);
+  Free(tree);
+}
+
+
+
+void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models) {
+  int i, bit; 
+  NODEPTR branch;
+
+  branch = tree;
+  
+  // add bit to add counts //
+  for (i = 0; i< n; i++) {
+      bit =  model[vars[i].index];
+      
+      if (bit == 1) {
+	if (i < n-1 && branch->one == NULL) 
+	  branch->one = make_node(-1.0);
+	if (i == n-1 && branch->one == NULL) {
+	  branch->one = make_node(0.0);
+	}
+	branch = branch->one;
+      }
+      else {
+	if (i < n-1 && branch->zero == NULL)
+	  branch->zero = make_node(-1.0);
+	if (i == n-1 && branch->zero == NULL){
+	  branch->zero = make_node(0.0);
+	}
+	branch = branch->zero;
+      } 
+  }
+  branch->where = num_models;
 }
 
 typedef int (*compfn)( const void* , const void*);
@@ -100,5 +142,18 @@ int update_probs(double *probs, struct Var *vars, int m, int k, int p) {
       vars[i].prob = newprob;
     }}
 return(update);
+}
+
+
+void update_MCMC_probs(double *probs, struct Var *vars, int n, int p) {
+  int i;
+  double  newprob;
+
+    for (i = 0;   i < n; i++) {
+      newprob = probs[vars[i].index];
+      if (newprob > .975) newprob = .975;
+      if (newprob < .025) newprob = .025;
+      vars[i].prob = newprob;
+    }
 }
 

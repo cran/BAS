@@ -1,3 +1,25 @@
+CHANGES for BAS 0.8
+
+- Added hypergeometric2F1 function that is callable by R
+- centered X's in bas.lm so that the intercept has the correct
+  shrinkage
+- changed predict.bma to center newdata using the mean(X)
+- Added new Adaptive MCMC option (method = "AMCMC")  (this is not
+  stable at this point)
+
+CHANGES for BAS 0.7
+
+ -Allowed pruning of model tree to eliminate rejected models
+ 
+CHANGES for BAS 0.6
+
+- Added MCMC option to create starting values for BAS (method = "MCMC+BAS")
+
+CHANGES for BAS 0.5
+
+-Cleaned up all .Call routines so that all objects are duplicated or
+ allocated within code
+
 CHANGES for BAS 0.45
 
 - fixed ch2inv that prevented building on Windows in bayes glm_fit

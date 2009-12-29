@@ -58,7 +58,7 @@ double LogBF_ZS_full(double r2full, double r2curr, int n, int ptotal, int d){
 */
 
 
-  double status,root, ZSlogmarg;
+  double status,root, ZSlogmarg=0.0;
   double eps,a,b,c,aux;
   int k, p;
 
