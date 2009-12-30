@@ -97,6 +97,13 @@ double binomial_dispersion(double *resid,  double *weights, int n, int rank) {
   return(1.0);
 }
 
+void binomial_initialize(double *Y, double *mu,  double *weights, int n) {
+  int i;
+  for (i = 0; i < n; i++) {
+    if (weights[1] == 0) Y[i] = 0.0;
+    mu[i] = (weights[i] * Y[i] + 0.5)/(weights[i] + 1.0) ;
+  }
+}
 
 /* Poisson */
 
