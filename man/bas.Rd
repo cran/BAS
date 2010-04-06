@@ -7,11 +7,14 @@
 \usage{bas.lm(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
  modelprior=uniform(),
  initprobs="Uniform", random=TRUE, method="BAS", update=NULL,
- bestmodel = NULL, bestmarg = NULL, prob.local = 0) }
+ bestmodel = NULL, bestmarg = NULL, prob.local = 0,
+ Burnin.iterations = NULL, MCMC.iterations = NULL,
+ lambda = NULL, delta = 0.025)
+}
 \arguments{
   \item{formula}{linear model formula for the full model with all
     predictors, Y ~ X.  All code assumes that an intercept will be
-    included in each model.}
+    included in each model and that the X's will be centered.}
   \item{data}{data frame}
   \item{n.models}{number of models to sample. If NULL, BAS will
     enumerate unless p > 25}
@@ -34,25 +37,41 @@
     Bayes factor to find initial marginal inclusion probabilitites and
     sample without replacement using these
     inclusion probabilaties. For variables that should always be
-    included set the corresponding initprobs to 1.} 
+    included set the corresponding initprobs to 1. To run a
+    Markov Chain to provide initial estimates of marginal
+    inclusion probabilities, use method="MCMC+BAS" below.
+  } 
   \item{random}{Logical variable; if TRUE use random sampling (see
     method) or deterministic sampling}
-  \item{method}{A character variable indicating whether to use BAS
-    Bayesian Adaptive Sampling (without replacement) (BAS) or Adaptive
-    MCMC (AMCMC) (not yet implemented)} 
+  \item{method}{A character variable indicating which sampling method to
+    use: method="BAS" uses Bayesian Adaptive Sampling (without
+    replacement) using the sampling probabilities given in initprobs;
+    method="MCMC+BAS" runs an initial MCMC to calculate marginal
+    inclusion probabilities and then samples without replacement as in
+    BAS; method = "AMCMC" runs an Adaptive MCMC (experimental).  For both
+    BAS and AMCMC, the sampling probabilities can be updated as more
+  models are sampled. (see  update below)}
   \item{update}{number of iterations between potential updates of the
     sampling probabilities. If NULL do not update, otherwise the
     algorithm will update using the marginal inclusion probabilities as
     they change while sampling takes place.  For large model spaces,
-    updating is recommended. }
+    updating is recommended. If the model space will be enumerated,
+    leave at the default.}
   \item{bestmodel}{optional binary vector representing a model to
-    initialize the sampling. If  NULL sampling starts with the Full
+    initialize the sampling. If NULL sampling starts with the null
     model}
   \item{bestmarg}{optional value for the log marginal associated with
     the bestmodel}
   \item{prob.local}{An experimental option to allow sampling of models
     "near" the median probability model.  Not recommended for use at
     this time}
+  \item{Burnin.iterations}{Number of iterations to discard when using any
+    of the MCMC options}
+   \item{MCMC.iterations}{Number of iterations to run  MCMC when MCMC
+     options are used}
+   \item{lambda}{Parameter in the AMCMC algorithm.}
+   \item{delta}{truncation parameter to prevent sampling probabilities
+     to degenerate to 0 or 1.}
 }  
 \details{BAS provides two search algorithms to find high probability models for
 use in  Bayesian Model Averaging or Bayesian model selection. For p less than
@@ -89,7 +108,9 @@ An object of class \code{BMA} is a list containing at least the following compon
     that are included in the model} 
   \item{probne0}{the posterior probability that each variable is non-zero}
   \item{ols}{list of lists with one list per model giving the OLS
-estimate of each (nonzero) coefficient for each model}
+estimate of each (nonzero) coefficient for each model.  The intercept
+is the mean of Y as each column of X has been centered by subtracting
+its mean.}
   \item{ols.se}{list of lists with one list per model giving the OLS standard error of each coefficient for each model}
   \item{prior}{the name of the prior  that created the BMA object}
   \item{alpha}{value of hyperparameter in prior used to create the BMA
@@ -97,6 +118,7 @@ estimate of each (nonzero) coefficient for each model}
   \item{modelprior}{the prior distribution on models that created the BMA object}
   \item{Y}{response}
   \item{X}{matrix of predictors}
+  \item{mean.x}{vector of means for each column of X (used in \code{\link{predict.bma}})}
   
  The function  \code{\link{summary.bma}}, is used to print a summary of
  the results. The function \code{\link{plot.bma}} is used to plot
@@ -129,7 +151,8 @@ estimate of each (nonzero) coefficient for each model}
   
   Liang, F., Paulo, R., Molina, G., Clyde, M. and  Berger,
   J.O. (2005) Mixtures of  g-priors for Bayesian Variable
-  Selection.  \cr \url{http://www.stat.duke.edu/05-12.pdf}
+  Selection. Journal of the American Statistical Association
+  \cr \url{http://www.stat.duke.edu/05-12.pdf}
   
   Zellner, A. (1986) On assessing prior distributions and Bayesian
   regression analysis with g-prior distributions. In Bayesian Inference

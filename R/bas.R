@@ -1,18 +1,27 @@
 bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
                   modelprior=uniform(),
                   initprobs="Uniform", random=TRUE, method="BAS", update=NULL, 
-                  bestmodel=NULL, bestmarg=NULL, prob.local=0.0)  {
+                  bestmodel=NULL, bestmarg=NULL, prob.local=0.0,
+                  Burnin.iterations=NULL,
+                  MCMC.iterations=NULL, lambda=NULL, delta=0.025)  {
+  num.updates=10
   call = match.call()
   lm.obj = lm(formula, data, y=TRUE, x=TRUE)
   Y = lm.obj$y
   X = lm.obj$x
+  namesx = dimnames(X)[[2]]
+  namesx[1] = "Intercept"
+  mean.x = apply(X[,-1], 2, mean)
+  ones = X[,1]
+  X = cbind(ones, sweep(X[, -1], 2, mean.x))
   p = dim(X)[2]
 
   
   if (!is.numeric(initprobs)) {
     initprobs = switch(initprobs,
+     "eplogp" = eplogprob(lm.obj),
+      "uniform"= c(1.0, rep(.5, p-1)),
       "Uniform"= c(1.0, rep(.5, p-1)),
-      "eplogp" = eplogprob(lm.obj)
       )
   }
    if (length(initprobs) == (p-1))
@@ -22,13 +31,11 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
 
   pval = summary(lm.obj)$coefficients[,4]
   if (any(is.na(pval))) {
-    print(paste("full model is rank deficient; automatically dropping",
-                  sum(is.na(pval)),
-                  " variables."))
-    initprobs[is.na(pval)] = 0.0
+    print(paste("warning full model is rank deficient"))
+#    initprobs[is.na(pval)] = 0.0
   }
 
-  if (initprobs[1] < 1.0) initprobs[1] = 1.0
+  if (initprobs[1] < 1.0 || initprobs[1] > 1.0) initprobs[1] = 1.0
 # intercept is always included otherwise we get a segmentation
 # fault (relax later)
 
@@ -39,12 +46,12 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   if (deg > 1 & n.models == 2^(p - 1)) {
     n.models = 2^(p - deg)
     print(paste("There are", as.character(deg),
-                "degerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
+                "degenerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
   }
 
   if (n.models > 2^30) stop("Dimension of model space is too big to enumerate\n  Rerun with a smaller value for n.models")
   if (n.models > 2^20)
-    print("Number of models is REALLY BIG -this may take a while")
+    print("Number of models is BIG -this may take a while")
 
 
   if (modelprior$family == "Bernoulli") {
@@ -67,7 +74,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
     "hyper-g-laplace"=6,
     "AIC"=7,
     "EB-global"=2,
-    "hyper-g-n"=8
+    "hyper-g-n"=8,
     )
   if (is.null(alpha) &&
       (method.num == 0 || method.num == 1 || method.num  == 6)) {
@@ -79,61 +86,106 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
     bestmodel = as.integer(initprobs)
     bestmarg = -Inf}
   if (is.null(bestmarg)) bestmarg = 0
-  if (is.null(update)) update = n.models+1
+  if (is.null(update)) {
+    if (n.models == 2^(p-1))  update = n.models+1
+    else (update = n.models/num.updates)
+  }
 
   modelindex = as.list(1:n.models)
   Yvec = as.numeric(Y)
-  R2 = as.numeric(rep(0.0, n.models))
-  beta = as.list(1:n.models)
-  se = as.list(1:n.models)
-  mse = as.numeric(rep(0.0, n.models))
-  modelspace = as.list(1:n.models)
-  modelprobs = as.numeric(rep(0.0, n.models))
-  priorprobs = as.numeric(rep(1.0, n.models))
-  logmargy = as.numeric(rep(0.0, n.models))
-  shrinkage = as.numeric(rep(0.0, n.models))
   modeldim = as.integer(rep(0, n.models))
-  sampleprobs = as.double(rep(0.0, n.models))
-  modeltree = list(NULL, NULL, NULL, NULL, FALSE)
+  n.models = as.integer(n.models)
+
+#  sampleprobs = as.double(rep(0.0, n.models))
   if (random) { 
-  if (method == "BAS")
-     ANS = .Call("sampleworep",
+  if (method == "BAS") {
+     result = .Call("sampleworep",
       Yvec, X,
-      prob, R2,beta, se, mse, modelspace, modelprobs,
-      priorprobs,logmargy, sampleprobs,
-      modeldim, shrinkage, incint=as.integer(int), 
+      prob, modeldim,
+      incint=as.integer(int), 
       alpha= as.numeric(alpha),
       method=as.integer(method.num), modelprior=modelprior,
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
       plocal=as.numeric(prob.local),
+      PACKAGE="BAS") }
+  if (method == "MCMC+BAS") {
+     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
+     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
+     if (is.null(lambda)) lambda=1.0
+     result = .Call("mcmcbas",
+      Yvec, X,
+      prob, modeldim,
+      incint=as.integer(int), 
+      alpha= as.numeric(alpha),
+      method=as.integer(method.num), modelprior=modelprior,
+      update=as.integer(update),
+      Rbestmodel=as.integer(bestmodel),
+      Rbestmarg=as.numeric(bestmarg),
+      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
       PACKAGE="BAS")
-      prob = ANS[[1]]
+  }
+  if (method == "AMCMC") {
+     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
+     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
+     if (is.null(lambda)) lambda=1.0
+     result = .Call("amcmc",
+      Yvec, X,
+      prob, modeldim,
+      incint=as.integer(int), 
+      alpha= as.numeric(alpha),
+      method=as.integer(method.num), modelprior=modelprior,
+      update=as.integer(update),
+      Rbestmodel=as.integer(bestmodel),
+      Rbestmarg=as.numeric(bestmarg),
+      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
+      PACKAGE="BAS")
+  }
+    if (method == "MAXeffect") {
+     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
+     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
+     if (is.null(lambda)) lambda=1.0
+     result = .Call("posisearch",
+      Yvec, X,
+      prob, modeldim,
+      incint=as.integer(int), 
+      alpha= as.numeric(alpha),
+      method=as.integer(method.num), modelprior=modelprior,
+      update=as.integer(update),
+      Rbestmodel=as.integer(bestmodel),
+      Rbestmarg=as.numeric(bestmarg),
+      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
+      PACKAGE="BAS")
+  }
+
 }
   else {
-    ans = .Call("deterministic",
+    result = .Call("deterministic",
       Yvec, X,
-      prob,
-      R2,beta, se, mse, modelspace,  modelprobs,
-      priorprobs,logmargy, sampleprobs,
-      modeldim, shrinkage, incint=as.integer(int),
+      prob, modeldim,
+      incint=as.integer(int),
       alpha= as.numeric(alpha),
       method=as.integer(method.num),modelprior=modelprior,
       PACKAGE="BAS")
   }
 
-  namesx = dimnames(X)[[2]]
-  namesx[1] = "Intercept"
-  n.models = as.integer(n.models)
-  result =  list(namesx=namesx, which=modelspace, postprobs=modelprobs, priorprobs=priorprobs,
-    logmarg=logmargy, R2=R2, mse=mse, ols=beta, ols.se=se,
-    shrinkage=shrinkage, probne0=prob, size=modeldim, n=length(Yvec),
-    prior=prior, modelprior=modelprior,alpha=alpha, n.models=n.models, n.vars=p,
-    sampleprobs=sampleprobs, Y=Yvec, X=X, call=call)
+  result$namesx=namesx
+  result$n=length(Yvec)
+  result4prior=prior
+  result$modelprior=modelprior
+  result$alpha=alpha
+  result$n.models=n.models
+  result$n.vars=p
+  result$Y=Yvec
+  result$X=X
+  result$mean.x = mean.x
+  result$call=call
 
   class(result) = "bma"
-
   if (prior == "EB-global") result = EB.global.bma(result)
     
   return(result) 

@@ -17,6 +17,7 @@ fitted.bma              Fitted values for a BMA objects
 g.prior                 Families of G-Prior Distribution for
                         Coefficients in BMA Models
 Hald                    Hald Data
+hypergeometric2F1       Gaussian hypergeometric2F1 function
 IC.prior                Families of Prior Distribution for Coefficients
                         in BMA Models
 image.bma               Images of models used in Bayesian model

@@ -39,9 +39,11 @@ double E_ZS_approx_null(double R2, int n, int k){
   a=a/aux;
   b=b/aux;
   c=c/aux;
+  numer = 1.0;
+  denom = 1.0;
 
   posroot(a,b,c,&root1,&status);
-
+  
   if(status!=1.){
     if(status==0.) error("\n No positive roots for the numerator\n");
     else error("\n More than one positive root for the numerator\n");

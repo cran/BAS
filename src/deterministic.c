@@ -1,9 +1,29 @@
 #include "sampling.h"
 
 
-SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP mse, SEXP modelspace, SEXP modelprobs, SEXP priorprobs, SEXP logmarg, SEXP sampleprobs, SEXP modeldim, SEXP shrinkage, SEXP incint, SEXP Ralpha, SEXP method, SEXP modelprior)
+SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha, SEXP method, SEXP modelprior) 
 {
-  SEXP Rse_m, Rcoef_m, RYwork,  RXwork,Rmodel_m;
+  SEXP   RXwork = PROTECT(duplicate(X)), RYwork = PROTECT(duplicate(Y));
+  int nProtected = 2;
+ 
+  int  nModels=LENGTH(Rmodeldim);
+
+  SEXP ANS = PROTECT(allocVector(VECSXP, 12)); ++nProtected;
+  SEXP ANS_names = PROTECT(allocVector(STRSXP, 12)); ++nProtected;
+  SEXP Rprobs = PROTECT(duplicate(Rprobinit)); ++nProtected;
+  SEXP R2 = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP shrinkage = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP modelspace = PROTECT(allocVector(VECSXP, nModels)); ++nProtected;
+  SEXP modeldim =  PROTECT(duplicate(Rmodeldim)); ++nProtected;
+  SEXP beta = PROTECT(allocVector(VECSXP, nModels)); ++nProtected;
+  SEXP se = PROTECT(allocVector(VECSXP, nModels)); ++nProtected;
+  SEXP mse = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP modelprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP priorprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP logmarg = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+  SEXP sampleprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
+
+  SEXP Rse_m, Rcoef_m, Rmodel_m;
   double *Xwork, *Ywork, *coefficients,*probs,
     SSY, yty, ybar, mse_m, *se_m, pigamma,
     R2_m, RSquareFull, alpha, logmarg_m, shrinkage_m;
@@ -16,17 +36,16 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   struct Var *vars;	/* Info about the model variables. */
 
 
+
+
   /* get dimsensions of all variables */
 
   nobs = LENGTH(Y);
   xdims = INTEGER(getAttrib(X,R_DimSymbol));
   p = xdims[1];
   k = LENGTH(modelprobs);
-  
 
-  PROTECT(RYwork = coerceVector(Y, REALSXP));
   Ywork = REAL(RYwork);
-  PROTECT(RXwork =  coerceVector(X, REALSXP));
   Xwork = REAL(RXwork);
 
   XtX  = (double *) R_alloc(p * p, sizeof(double));
@@ -58,7 +77,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   alpha = REAL(Ralpha)[0];
 
   vars = (struct Var *) R_alloc(p, sizeof(struct Var));
-  probs =  REAL(Rprob);
+  probs =  REAL(Rprobs);
   n = sortvars(vars, probs, p); 
   
   /* Make space for the models and working variables. */ 
@@ -69,13 +88,15 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
  
   k = topk(models, probs, k, vars, n, p);
 
+  /* Fit Full model */
+  if (nobs <= p) {RSquareFull = 1.0;}
+  else {
+
 
   Rcoef_m = NEW_NUMERIC(p); PROTECT(Rcoef_m);
   Rse_m = NEW_NUMERIC(p); PROTECT(Rse_m);
   coefficients = REAL(Rcoef_m);  se_m = REAL(Rse_m);
 
-  /* Fit Full model */
-     
   memcpy(coefficients, XtY,  p*sizeof(double));
   memcpy(XtXwork, XtX, p2*sizeof(double));
   memcpy(XtYwork, XtY,  p*sizeof(double));
@@ -86,7 +107,8 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   /*  olsreg(Ywork, Xwork,  coefficients, se_m, &mse_m, &p, &nobs, pivot,qraux,work,residuals,effects,v, betaols);  */
   RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
   UNPROTECT(2);
-  
+  }
+
   /* now fit all top k models */
 
   for (m=0; m < k; m++) {
@@ -152,9 +174,46 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprob, SEXP R2, SEXP beta, SEXP se, SEXP
   compute_margprobs_old(models, modelprobs, probs, k, p); 
 
     /*    freechmat(models,k); */
+  SET_VECTOR_ELT(ANS, 0, Rprobs);
+  SET_STRING_ELT(ANS_names, 0, mkChar("probne0"));
+
+  SET_VECTOR_ELT(ANS, 1, modelspace);
+  SET_STRING_ELT(ANS_names, 1, mkChar("which"));
+
+  SET_VECTOR_ELT(ANS, 2, logmarg);
+  SET_STRING_ELT(ANS_names, 2, mkChar("logmarg"));
+
+  SET_VECTOR_ELT(ANS, 3, modelprobs);
+  SET_STRING_ELT(ANS_names, 3, mkChar("postprobs"));
+
+  SET_VECTOR_ELT(ANS, 4, priorprobs);
+  SET_STRING_ELT(ANS_names, 4, mkChar("priorprobs"));
+
+  SET_VECTOR_ELT(ANS, 5,sampleprobs);
+  SET_STRING_ELT(ANS_names, 5, mkChar("sampleprobs"));
+
+  SET_VECTOR_ELT(ANS, 6, mse);
+  SET_STRING_ELT(ANS_names, 6, mkChar("mse"));
+
+  SET_VECTOR_ELT(ANS, 7, beta);
+  SET_STRING_ELT(ANS_names, 7, mkChar("ols"));
+
+  SET_VECTOR_ELT(ANS, 8, se);
+  SET_STRING_ELT(ANS_names, 8, mkChar("ols.se"));
+
+  SET_VECTOR_ELT(ANS, 9, shrinkage);
+  SET_STRING_ELT(ANS_names, 9, mkChar("shrinkage"));
+
+  SET_VECTOR_ELT(ANS, 10, modeldim);
+  SET_STRING_ELT(ANS_names, 10, mkChar("size"));
  
-    UNPROTECT(2);  
-  return(R_NilValue);  
+  SET_VECTOR_ELT(ANS, 11, R2);
+  SET_STRING_ELT(ANS_names, 11, mkChar("R2"));
+
+  setAttrib(ANS, R_NamesSymbol, ANS_names);
+  UNPROTECT(nProtected);
+
+  return(ANS);  
 
 }
 

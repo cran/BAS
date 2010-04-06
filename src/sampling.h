@@ -9,6 +9,7 @@
 #include <Rdefines.h>
 #include <R_ext/Rdynload.h>
 #include <R_ext/BLAS.h>
+#include <R_ext/Lapack.h>
 #include <R_ext/Linpack.h>
 
 
@@ -32,6 +33,7 @@ struct Node {
   double prob;
   int update;
   double logmarg;
+  int where;
   NODEPTR zero;
   NODEPTR one;  
 };
@@ -54,7 +56,10 @@ double *makeprob(double *prob, double *y, double c, double w, double
 		 sigma2, int p, int inc_int);
 void update_tree(SEXP modelspace, struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, int *model);
 void update_tree_file(struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, FILE *file);
+double random_switch(int *model, struct Var *vars, int n, int pmodel, int *varin, int *varout);
+double random_walk(int *model, struct Var *vars, int n);
 int update_probs(double *probs, struct Var *var, int m, int k, int p);
+void update_MCMC_probs(double *probs, struct Var *vars, int n, int p);
 void print_subset(int subset, int rank, Bit **models, Bit *model,
 		  double *subsetsum, int *pattern, int *position, 
 		  int n, struct Var *vars, int p);

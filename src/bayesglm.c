@@ -60,7 +60,8 @@ double log_marginal_likelihood_gprior(double dev, double regSS, int n, int p, in
 SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpriorcoef, SEXP Repsilon)
 {
   int   *xdims = INTEGER(getAttrib(RX,R_DimSymbol)), n=xdims[0], p = xdims[1];
-  int inc = 1,  job = 01, info = 1, nmodels=1,  nProtected = 0;
+  int inc = 1,  nmodels=1,  nProtected = 0;
+    // int job = 01, info = 1;
   
 
   SEXP ANS = PROTECT(allocVector(VECSXP, 10)); ++nProtected;
@@ -99,19 +100,19 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     *residuals=REAL(Rresiduals), *dev=REAL(Rdeviance), *regSS = REAL(RregSS), *g = REAL(Rg),
     *variance=REAL(Rvariance), *hyper;
 
-  double  zero = 0.0, one = 1.0,  tol = DBL_EPSILON, devold, devnew, regss;
+  double  one = 1.0,  tol = DBL_EPSILON, devold, devnew;
 
   int   i, j, l, m, rank=1, *pivot=INTEGER(Rpivot), conv=0;
 
   glmstptr *glmfamily;
   coefdistptr *coefprior;
-  char uplo[] = "U", trans[]="N";
+  char  trans[]="N";
   
   coefprior = (struct coefpriorstruc *) R_alloc(1, sizeof(struct coefpriorstruc));
   coefprior->family = CHAR(STRING_ELT(getListElement(Rpriorcoef, "family"),0));
   coefprior->class  = CHAR(STRING_ELT(getListElement(Rpriorcoef, "class"),0));
-  if (getListElement(Rpriorcoef, "hyper") != R_NilValue) 	
-    hyper = REAL(getListElement(Rpriorcoef, "hyper"));	
+  //  if (getListElement(Rpriorcoef, "hyper") != R_NilValue) 	
+  hyper = REAL(getListElement(Rpriorcoef, "hyper"));	
 
   if  (strcmp(coefprior->class, "gprior") == 0) {
     coefprior->shrinkage = shrinkage_gprior;

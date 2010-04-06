@@ -63,8 +63,7 @@
 Cephes Math Library Release 2.8:  June, 2000
 Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
 */
-
-
+ 
 #include "mconf.h"
 #include <R.h>
 #include <Rmath.h>
@@ -204,7 +203,7 @@ if( fabs(ax-1.0) < EPS )			/* |x| == 1.0	*/
 		if( d <= 0.0 )
 			goto hypdiv;
 		/*		y = gamma(c)*gamma(d)/(gamma(p)*gamma(r)); */
-		y = exp(lgamma(c) + lgamma(d) -(lgamma(p) + lgamma(r)));
+		y = exp(lgammafn(c) + lgammafn(d) -(lgammafn(p) + lgammafn(r)));
 		goto hypdon;
 		}
 
@@ -312,9 +311,9 @@ if( fabs(d-id) > EPS ) /* test for integer c-a-b */
 /* If power series fails, then apply AMS55 #15.3.6 */
 	q = hys2f1( a, b, 1.0-d, s, &err );	
 	/*	q *= gamma(d) /(gamma(c-a) * gamma(c-b)); */
-	q *= exp(lgamma(d)  - (lgamma(c-a) + lgamma(c-b)));
+	q *= exp(lgammafn(d)  - (lgammafn(c-a) + lgammafn(c-b)));
 	r = pow(s,d) * hys2f1( c-a, c-b, d+1.0, s, &err1 );
-	r *= exp(lgamma(-d) - (lgamma(a) + lgamma(b)));
+	r *= exp(lgammafn(-d) - (lgammafn(a) + lgammafn(b)));
 	y = q + r;
 
 	q = fabs(q); /* estimate cancellation error */
@@ -323,7 +322,7 @@ if( fabs(d-id) > EPS ) /* test for integer c-a-b */
 		r = q;
 	err += err1 + (MACHEP*r)/y;
 
-	y *= gamma(c);
+	y *= gammafn(c);
 	goto done;
 	}
 else
@@ -348,9 +347,9 @@ else
 
 	/* sum for t = 0 */
 	y = psi(1.0) + psi(1.0+e) - psi(a+d1) - psi(b+d1) - ax;
-	y /= gamma(e+1.0);
+	y /= gammafn(e+1.0);
 
-	p = (a+d1) * (b+d1) * s / gamma(e+2.0);	/* Poch for t=1 */
+	p = (a+d1) * (b+d1) * s / gammafn(e+2.0);	/* Poch for t=1 */
 	t = 1.0;
 	do
 		{
@@ -367,7 +366,7 @@ else
 
 	if( id == 0.0 )
 		{
-		y *= exp(lgamma(c)-(lgamma(a) + lgamma(b)));
+		y *= exp(lgammafn(c)-(lgammafn(a) + lgammafn(b)));
 		goto psidon;
 		}
 
@@ -387,10 +386,10 @@ else
 		y1 += p;
 		}
 nosum:
-	p = gamma(c);
-	y1 *= exp(lgamma(e) + log(p) - (lgamma(a+d1) + lgamma(b+d1)));
+	p = gammafn(c);
+	y1 *= exp(lgammafn(e) + log(p) - (lgammafn(a+d1) + lgammafn(b+d1)));
 
-	y *= exp(log(p) - (lgamma(a+d2) + lgamma(b+d2)));
+	y *= exp(log(p) - (lgammafn(a+d2) + lgammafn(b+d2)));
 	if( (aid & 1) != 0 )
 		y = -y;
 
