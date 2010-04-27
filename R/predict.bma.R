@@ -34,7 +34,7 @@ fitted.bma = function(object,  type="HPM", top=NULL, ...) {
     yhat = yhat + (1 - object$shrinkage[[best]])*(object$ols[[best]])[1]
   }
   if (type == "BMA") {
-   yhat = predict.bma(object, X[,-1], top)$Ybma
+   yhat = predict.bma(object, X, top)$Ybma
 }
   if (type == "MPM") {
    nvar = ncol(X) - 1

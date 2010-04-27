@@ -1,4 +1,12 @@
-CHANGES for BAS 0.8
+CHANGES for BAS 0.85
+
+ - fixed problem with duplicate models if n.models was > 2^(p-1) by
+   restricting n.models
+
+ - save original X as part of object so that fitted.bma gives the
+   correct fitted values (broken in version 0.80)
+ 
+CHANGES for BAS 0.80
 
 - Added hypergeometric2F1 function that is callable by R
 - centered X's in bas.lm so that the intercept has the correct

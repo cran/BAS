@@ -9,6 +9,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   lm.obj = lm(formula, data, y=TRUE, x=TRUE)
   Y = lm.obj$y
   X = lm.obj$x
+  Xorg = X
   namesx = dimnames(X)[[2]]
   namesx[1] = "Intercept"
   mean.x = apply(X[,-1], 2, mean)
@@ -42,6 +43,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   prob = as.numeric(initprobs)
 
   if (is.null(n.models)) n.models = 2^(p-1)
+  if (n.models > 2^(p-1)) n.models = 2^(p-1)
   deg = sum(initprobs >= 1) + sum(initprobs <= 0)
   if (deg > 1 & n.models == 2^(p - 1)) {
     n.models = 2^(p - deg)
@@ -181,7 +183,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   result$n.models=n.models
   result$n.vars=p
   result$Y=Yvec
-  result$X=X
+  result$X=Xorg
   result$mean.x = mean.x
   result$call=call
 
