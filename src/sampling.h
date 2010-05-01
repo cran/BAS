@@ -32,6 +32,8 @@ typedef struct Node *NODEPTR;
 struct Node {
   double prob;
   int update;
+  int counts_1;
+  int counts_0;
   double logmarg;
   int where;
   NODEPTR zero;

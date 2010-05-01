@@ -1,3 +1,11 @@
+Changes for BAS 0.92
+
+- fixed glm-fit.R  so that hyperparameter for BIC is numeric
+
+Changes for BAS 0.91
+
+- added new AMCMC algorithm
+
 Changes for BAS 0.91
 
 - bug fix in bayes.glm
