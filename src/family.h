@@ -48,6 +48,7 @@ double Gaussian_dispersion(double *resid,  double *weights, int n, int rank) ;
 // General Functions
 double deviance(double *res, int n);
 void chol2se(double *qr, double *se, double *cov, double *covwork, int p, int n);
+void QR2cov(double *qr, double *cov, double *covwork, int p, int n);
 #endif
 
 // Marginal likelihood, shrinkage and posterior expctation functions 

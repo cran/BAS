@@ -64,14 +64,16 @@ void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int met
 double maxeffect(double *beta, double *se, int p) {
   int j;
   double t, maxeffect;
-  t = fabs(beta[1]/se[1]);
-  maxeffect = t;
-  for (j = 2; j < p; j++) {
-    t = fabs(beta[j]/se[j]);	
-    maxeffect = fmax2(maxeffect, t);   
+  
+  maxeffect = 0;
+  if (p > 1) {
+    for (j = 2; j < p; j++) {
+      t = fabs(beta[j]/se[j]);	
+      maxeffect = fmax2(maxeffect, t);   
+    }
   }
   return(maxeffect);
-}
+}	
 
 void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double *mse,  int p, int n)
 {

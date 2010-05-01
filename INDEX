@@ -2,6 +2,8 @@ bas.lm                  Bayesian Adaptive Sampling Without Replacement
                         for Variable Selection in Linear Models
 BAS-package             Bayesian Model Averaging using Bayesian
                         Adaptive Sampling
+bayesglm.fit            Fitting Generalized Linear Models Bayesian
+                        marginal likelihood evaluation
 Bernoulli               Independent Bernoulli Prior Distribution for
                         Models
 beta.binomial           Beta-Binomial Prior Distribution for Models

@@ -17,9 +17,9 @@ sampled models.
 \details{
 \tabular{ll}{
 Package: \tab BAS\cr
-Version: \tab 0.4\cr
-Date: \tab 2009-12-23\cr
-Depends: \tab R (>= 2.6)\cr
+Version: \tab 0.9\cr
+Date: \tab 2010-5-1\cr
+Depends: \tab R (>= 2.8)\cr
 License: \tab GPL-2\cr
 URL: \tab http://www.stat.duke.edu/~clyde\cr
 }
@@ -34,9 +34,11 @@ Index:
   Maintainer: Merlise Clyde <clyde@stat.duke.edu>
 }
 \references{
-  Clyde, M. Ghosh, J. and Littman, M. (2009) Bayesian Adaptive Sampling
-  for Variable Selection and Model Averaging. Department of Statistical
-  Science Discussion  Paper 2009-16. Duke University.
+  Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling
+  for Variable Selection and Model Averaging. Journal of Computational
+  and Graphical Statistics. (to appear) Department of Statistical
+  Science Discussion  Paper 2009-16. Duke University. \cr
+  \url{}
   
   Clyde, M. and George, E. I. (2004) Model uncertainty. Statist. Sci.,
   19, 81-94. \cr \url{http://www.isds.duke.edu/~clyde/papers/statsci.pdf}
@@ -48,8 +50,8 @@ Index:
   157-185.
 
    Liang, F., Paulo, R., Molina, G., Clyde, M. and  Berger,
-  J.O. (2005) Mixtures of  g-priors for Bayesian Variable
-  Selection.  \cr \url{http://www.stat.duke.edu/05-12.pdf}
+  J.O. (2008) Mixtures of  g-priors for Bayesian Variable
+  Selection. Journal of the American Statistical Association. 103:410-423.  \cr \url{http://dx.doi.org/10.1198/016214507000001337}
 }
 \keyword{package}
 \keyword{regression}

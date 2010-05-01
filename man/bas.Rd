@@ -6,8 +6,8 @@
 \description{Sample without replacement from a posterior distribution on models}
 \usage{bas.lm(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
  modelprior=uniform(),
- initprobs="Uniform", random=TRUE, method="BAS", update=NULL,
- bestmodel = NULL, bestmarg = NULL, prob.local = 0,
+ initprobs="Uniform", method="BAS", update=NULL,
+ bestmodel = NULL, bestmarg = NULL, prob.local = 0.0, prob.rw=0.5,
  Burnin.iterations = NULL, MCMC.iterations = NULL,
  lambda = NULL, delta = 0.025)
 }
@@ -41,8 +41,6 @@
     Markov Chain to provide initial estimates of marginal
     inclusion probabilities, use method="MCMC+BAS" below.
   } 
-  \item{random}{Logical variable; if TRUE use random sampling (see
-    method) or deterministic sampling}
   \item{method}{A character variable indicating which sampling method to
     use: method="BAS" uses Bayesian Adaptive Sampling (without
     replacement) using the sampling probabilities given in initprobs;
@@ -50,7 +48,8 @@
     inclusion probabilities and then samples without replacement as in
     BAS; method = "AMCMC" runs an Adaptive MCMC (experimental).  For both
     BAS and AMCMC, the sampling probabilities can be updated as more
-  models are sampled. (see  update below)}
+  models are sampled. (see  update below).  We recommend "MCMC+BAS" for
+  high dimensional problems.}
   \item{update}{number of iterations between potential updates of the
     sampling probabilities. If NULL do not update, otherwise the
     algorithm will update using the marginal inclusion probabilities as
@@ -62,34 +61,38 @@
     model}
   \item{bestmarg}{optional value for the log marginal associated with
     the bestmodel}
-  \item{prob.local}{An experimental option to allow sampling of models
-    "near" the median probability model.  Not recommended for use at
-    this time}
+  \item{prob.local}{A future  option to allow sampling of models
+    "near" the median probability model.  Not used at
+    this time.}
+  \item{prob.rw}{For any of the MCMC methods, probability of using the
+    random-walk proposal; otherwise use a random "flip" move to propose
+    a new model.}
   \item{Burnin.iterations}{Number of iterations to discard when using any
     of the MCMC options}
    \item{MCMC.iterations}{Number of iterations to run  MCMC when MCMC
      options are used}
    \item{lambda}{Parameter in the AMCMC algorithm.}
    \item{delta}{truncation parameter to prevent sampling probabilities
-     to degenerate to 0 or 1.}
-}  
-\details{BAS provides two search algorithms to find high probability models for
-use in  Bayesian Model Averaging or Bayesian model selection. For p less than
-20-25, BAS can enumerate all models depending on memory availability, for
-larger p, BAS samples without replacement using random or deteminestic sampling. The
-Bayesian Adaptive Sampling algorithm of 
-Clyde, Ghosh, Littman (2009) samples models without replacement using the
-initial sampling probabilities, and will optionally update the sampling
-probabilities every "update" models using the estimated marginal
-inclusion probabilties.  If the predictor variables are orthogonal
-the deterinistic sampler provides a list of the top models in order of
-their approximate posterior probabiity, and provides an effective search
-if the correlations of variables is small to modest.  The priors on
-coefficients include  Zellner's g-prior, the Hyper-g prior (Liang et al
+     to degenerate to 0 or 1.}  }  \details{BAS provides several search
+algorithms to find high probability models for use in Bayesian Model
+Averaging or Bayesian model selection. For p less than 20-25, BAS can
+enumerate all models depending on memory availability, for larger p, BAS
+samples without replacement using random or deterministic sampling. The
+Bayesian Adaptive Sampling algorithm of Clyde, Ghosh, Littman (2010)
+samples models without replacement using the initial sampling
+probabilities, and will optionally update the sampling probabilities
+every "update" models using the estimated marginal inclusion
+probabilties. BAS uses different methods to obtain the \code{initprobs},
+which may impact the results in high-dimensional problems.
+The
+deterinistic sampler provides a list of the top models in order of an
+approximation of independence using the provided \code{initprobs}.  This
+may be effective after running the other algorithms to identify high
+probability models and works well if 
+the correlations of variables are small to modest.  The priors on
+coefficients include Zellner's g-prior, the Hyper-g prior (Liang et al
 2008, the Zellner-Siow Cauchy prior, Empirical Bayes (local and gobal)
-g-priors.  AIC and BIC are also included.
-}
-\value{
+g-priors.  AIC and BIC are also included.  } \value{
   \code{bas} returns an object of class \code{BMA}
 
 An object of class \code{BMA} is a list containing at least the following components:
@@ -132,12 +135,13 @@ its mean.}
 }
 
 \references{
-  Clyde, M. Ghosh, J. and Littman, M. (2009) Bayesian Adaptive Sampling
-  for Variable Selection and Model Averaging. Department of Statistical
+  Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling
+  for Variable Selection and Model Averaging. Journal of Computational
+  Graphics and Statistics.  (to appear) Department of Statistical
   Science Discussion Paper 2009-16. Duke University.
   
   Clyde, M. and George, E. I. (2004) Model Uncertainty. Statist. Sci.,
-  19, 81-94. \cr \url{http://www.isds.duke.edu/~clyde/papers/statsci.pdf}
+  19, 81-94. \cr \url{http://dx/doi.org/10.1214/088342304000000035}
   
   Clyde, M. (1999)
   Bayesian Model Averaging and Model Search Strategies (with
@@ -150,9 +154,10 @@ its mean.}
   14, 382-401. \cr \url{http://www.stat.washington.edu/www/research/online/hoeting1999.pdf}
   
   Liang, F., Paulo, R., Molina, G., Clyde, M. and  Berger,
-  J.O. (2005) Mixtures of  g-priors for Bayesian Variable
-  Selection. Journal of the American Statistical Association
-  \cr \url{http://www.stat.duke.edu/05-12.pdf}
+  J.O. (2008) Mixtures of  g-priors for Bayesian Variable
+  Selection. Journal of the American Statistical Association.
+   103:410-423.  \cr \url{http://dx.doi.org/10.1198/016214507000001337}
+
   
   Zellner, A. (1986) On assessing prior distributions and Bayesian
   regression analysis with g-prior distributions. In Bayesian Inference
