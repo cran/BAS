@@ -72,7 +72,8 @@ void insert_children(int subset, double *list, double *subsetsum,
 		     int *type, char *bits, int n);
 void set_bits(char *bits, int subset, int *pattern, int *position, int n);
 int sortvars(struct Var *vars, double *prob, int p);
- 
+
+void Lapack_chol2inv(double *cov, int p,double *covwork);
 void F77_NAME(ch2inv)(double *cov, int *p, int *nr, double *covwork, int *info);
 void F77_NAME(dpofa)(double *a, int *lda, int *n, int *info);
 void F77_NAME(dposl)(double *a, int *lda, int *n, double  *b);
@@ -104,7 +105,7 @@ void dgemv_(const char *trans, int *m, int *n, double *alpha, double *A,
 
 void cholregold(double *residuals, double *X, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
 void cholreg(double *XtY, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
-double quadform (double *b, double *bwork, double *R,  int p);
+double quadform (double *bwork, double *R,  int p);
 double **matalloc(int das,int dbs);
 int **imatalloc(int das,int dbs);
 unsigned char **cmatalloc(int das,int dbs);

@@ -1,7 +1,8 @@
 bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
                   modelprior=uniform(),
-                  initprobs="Uniform", random=TRUE, method="BAS", update=NULL, 
+                  initprobs="Uniform", method="BAS", update=NULL, 
                   bestmodel=NULL, bestmarg=NULL, prob.local=0.0,
+                  prob.rw=0.5,  
                   Burnin.iterations=NULL,
                   MCMC.iterations=NULL, lambda=NULL, delta=0.025)  {
   num.updates=10
@@ -98,10 +99,14 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   modeldim = as.integer(rep(0, n.models))
   n.models = as.integer(n.models)
 
+  #MCMC-BAS
+    if (is.null(MCMC.iterations)) MCMC.iterations = as.integer(n.models/2)
+    if (is.null(Burnin.iterations)) Burnin.iterations = as.integer(n.models/2)
+    if (is.null(lambda)) lambda=1.0
+
 #  sampleprobs = as.double(rep(0.0, n.models))
-  if (random) { 
-  if (method == "BAS") {
-     result = .Call("sampleworep",
+  result = switch(method,
+    "BAS" = .Call("sampleworep",
       Yvec, X,
       prob, modeldim,
       incint=as.integer(int), 
@@ -111,12 +116,8 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
       plocal=as.numeric(prob.local),
-      PACKAGE="BAS") }
-  if (method == "MCMC+BAS") {
-     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
-     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
-     if (is.null(lambda)) lambda=1.0
-     result = .Call("mcmcbas",
+      PACKAGE="BAS"), 
+    "MCMC+BAS"= .Call("mcmcbas",
       Yvec, X,
       prob, modeldim,
       incint=as.integer(int), 
@@ -125,15 +126,10 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
-      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      plocal=as.numeric(1.0 - prob.rw), as.integer(Burnin.iterations), 
       as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-      PACKAGE="BAS")
-  }
-  if (method == "AMCMC") {
-     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
-     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
-     if (is.null(lambda)) lambda=1.0
-     result = .Call("amcmc",
+      PACKAGE="BAS"),
+   "AMCMC" = .Call("amcmc",
       Yvec, X,
       prob, modeldim,
       incint=as.integer(int), 
@@ -142,15 +138,10 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
-      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      plocal=as.numeric(1.0-prob.rw), as.integer(Burnin.iterations), 
       as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-      PACKAGE="BAS")
-  }
-    if (method == "MAXeffect") {
-     if (is.null(MCMC.iterations)) MCMC.iterations = n.models
-     if (is.null(Burnin.iterations)) Burnin.iterations = n.models
-     if (is.null(lambda)) lambda=1.0
-     result = .Call("posisearch",
+      PACKAGE="BAS"),
+    "MAXeffect" = .Call("posisearch",
       Yvec, X,
       prob, modeldim,
       incint=as.integer(int), 
@@ -159,25 +150,21 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       Rbestmarg=as.numeric(bestmarg),
-      plocal=as.numeric(prob.local), as.integer(Burnin.iterations), 
+      plocal=as.numeric(1.0-prob.rw), as.integer(Burnin.iterations), 
       as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-      PACKAGE="BAS")
-  }
-
-}
-  else {
-    result = .Call("deterministic",
+      PACKAGE="BAS"),
+    "deterministic" = .Call("deterministic",
       Yvec, X,
       prob, modeldim,
       incint=as.integer(int),
       alpha= as.numeric(alpha),
       method=as.integer(method.num),modelprior=modelprior,
       PACKAGE="BAS")
-  }
+  )
 
   result$namesx=namesx
   result$n=length(Yvec)
-  result4prior=prior
+  result$prior=prior
   result$modelprior=modelprior
   result$alpha=alpha
   result$n.models=n.models
@@ -189,6 +176,5 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
 
   class(result) = "bma"
   if (prior == "EB-global") result = EB.global.bma(result)
-    
   return(result) 
 }

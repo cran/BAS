@@ -137,12 +137,12 @@ double deviance(double *res, int n) {
 }
 
 
-double quadform (double *b, double *bwork, double *R,  int p) {
+double quadform (double *bwork, double *R,  int p) {
 
   double Q = 0.0, alpha=1.0, beta=0.0;
   int inc = 1;
   char uplo[] = "U", trans[]="T", diag[]="N";
-  F77_NAME(dcopy)(&p, &bwork[0], &inc,  &bwork[0], &inc); 
+  //  F77_NAME(dcopy)(&p, &b[0], &inc,  &bwork[0], &inc); 
   F77_NAME(dtrsv)(uplo, trans, diag, &p, &R[0], &p, &bwork[0], &inc);  	
   Q = F77_NAME(dnrm2)(&p, &bwork[0], &inc);
   Q *=Q;
@@ -160,7 +160,8 @@ void chol2se(double *qr, double *se, double *R, double *covwork, int p, int n) {
       if (i < (j+1))   R[j*p+i] = qr[j*n + i];
     }	
   }	
-  F77_NAME(ch2inv)(&R[0], &p, &p, &covwork[0], &info);
+  //  F77_NAME(ch2inv)(&R[0], &p, &p, &covwork[0], &info);
+  Lapack_chol2inv(R, p, covwork);
 
 for (j=0; j < p; j++) {
   se[j] = sqrt(covwork[j*p + j]);
@@ -169,5 +170,45 @@ for (j=0; j < p; j++) {
  return;
 }
 
+void QR2cov(double *qr,  double *R, double *covwork, int p,  int n) {
+
+  int i, j, l, info;
+
+  for (j=0, l=0; j < p; j++) {
+
+    for (i = 0; i <p; i++, l++) { 
+      R[l] = 0;
+      if (i < (j+1))   R[j*p+i] = qr[j*n + i];
+    }	
+  }	
+  //  F77_NAME(ch2inv)(&R[0], &p, &p, &covwork[0], &info);
+  Lapack_chol2inv(R, p, covwork);
+  return;
+}
+
+
+void  Lapack_chol2inv(double *A, int sz, double *ans)
+{
+  int inc = 1, i, j;
+  //	F77_NAME(dcopy)(&sz, &A[0], &inc,  &ans[0], &inc); 
+	for (j = 0; j < sz; j++) {
+	    for (i = 0; i <= j; i++)
+		ans[i + j * sz] = A[i + j * sz];
+	}
+
+	F77_CALL(dpotri)("Upper", &sz, &ans[0], &sz, &i);
+	if (i != 0) {
+	    if (i > 0)
+		error(_("element (%d, %d) is zero, so the inverse cannot be computed"),
+		      i, i);
+	    error(_("argument %d of Lapack routine %s had invalid value"),
+		  -i, "dpotri");
+	}
+
+	for (j = 0; j < sz; j++) {
+	    for (i = j+1; i < sz; i++)
+		ans[i + j * sz] = ans[j + i * sz];
+	}
+}
 
 

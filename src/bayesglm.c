@@ -57,10 +57,10 @@ double log_marginal_likelihood_gprior(double dev, double regSS, int n, int p, in
 
 /* Version of glm.fit that can be called directly from R or C*/
 
-SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpriorcoef, SEXP Repsilon)
+SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpriorcoef, SEXP Rcontrol)
 {
   int   *xdims = INTEGER(getAttrib(RX,R_DimSymbol)), n=xdims[0], p = xdims[1];
-  int inc = 1,  nmodels=1,  nProtected = 0;
+  int inc = 1,  nmodels=1,  nProtected = 0, it=0;
     // int job = 01, info = 1;
   
 
@@ -100,7 +100,7 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     *residuals=REAL(Rresiduals), *dev=REAL(Rdeviance), *regSS = REAL(RregSS), *g = REAL(Rg),
     *variance=REAL(Rvariance), *hyper;
 
-  double  one = 1.0,  tol = DBL_EPSILON, devold, devnew;
+  double  one = 1.0,  tol, devold, devnew;
 
   int   i, j, l, m, rank=1, *pivot=INTEGER(Rpivot), conv=0;
 
@@ -108,6 +108,8 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
   coefdistptr *coefprior;
   char  trans[]="N";
   
+  tol = fmin(1e-07, REAL(getListElement(Rcontrol,"epsilon"))[0]/1000);
+
   coefprior = (struct coefpriorstruc *) R_alloc(1, sizeof(struct coefpriorstruc));
   coefprior->family = CHAR(STRING_ELT(getListElement(Rpriorcoef, "family"),0));
   coefprior->class  = CHAR(STRING_ELT(getListElement(Rpriorcoef, "class"),0));
@@ -150,7 +152,6 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
   else  Rprintf("no other families implemented yet\n");
    
    
-
   for (m=0; m< nmodels; m++){
     glmfamily->initialize(Y, mu, weights, n);
     glmfamily->linkfun(mu, eta, n);
@@ -158,12 +159,11 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     glmfamily->dev_resids(Y, mu, weights, residuals, n);
     devold = deviance(residuals, n);
     devnew = devold;
+    conv = 0.0;
+    it = 0;
 
-  while ( conv < 1) {
-    for (j=0; j<p; j++) {
-      pivot[j] = j+1;
-  }	
-
+    while ( conv < 1 && it < REAL(getListElement(Rcontrol, "maxit"))[0]) {
+    
     glmfamily->mu_eta(eta, mu_eta, n);
     glmfamily->variance(mu, variance, n);
 
@@ -173,18 +173,31 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
       residuals[i] = (Y[i] - mu[i])/mu_eta[i];
     }
     for (j=0, l=0; j<p; j++) {
+      pivot[j] = j+1;
       for (i=0; i<n; i++, l++) {
 	Xwork[l] = REAL(RX)[l]*w[i];
       }
     }
 
     rank = 1;
+    for (j=0; j<p; j++) {
+      pivot[j] = j+1;
+    }
 
     F77_NAME(dqrls)(&Xwork[0], &n, &p, &Ywork[0], &inc, &tol,  &coefwork[0],
 	 &residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
-    
+
+    Rprintf("rank %ld \n", rank);
+
+    if (n < rank) {
+      Rprintf("X has rank %ld but there are only %ld observations");
+      conv = 1;
+    }
+
     for (j=0; j<p; j++) { 
-      coef[pivot[j] - 1] = coefwork[j];}
+      coef[pivot[j] - 1] = coefwork[j];
+    }
+
 
     F77_NAME(dcopy)(&n, &offset[0], &inc, &eta[0], &inc);
     F77_NAME(dgemv)(trans, &n, &p, &one, &X[0], &n, &coef[0], &inc, &one, &eta[0],&inc);
@@ -198,17 +211,23 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     devnew = deviance(residuals, n);
     //    Rprintf("old %f new %f conv %d\n", devold,devnew, conv);
 
-    if (fabs(devnew - devold)/(0.1 + fabs(devnew)) < REAL(Repsilon)[0]) {
+    if (fabs(devnew - devold)/(0.1 + fabs(devnew)) < REAL(getListElement(Rcontrol, "epsilon"))[0]) {
      conv = 1;
 	  }
     else { devold=devnew;}
+    it += 1;
   }
 
   dev[m] = devnew;
 
-  chol2se(&Xwork[0], &se[0], &R[0], &cov[0], p, n);
-  Rprintf("compute marginal lik quantitis");
-  regSS[m] = quadform(coef, coefwork, R, p);
+
+      if (rank == p)   chol2se(&Xwork[0], &se[0], &R[0], &cov[0], p, n);
+      else	{  
+	QR2cov(&Xwork[0], &R[0], &cov[0], rank, n);
+	for (j=0; j < rank; j++)  se[pivot[j]-1] = sqrt(cov[j*rank + j]);
+      }
+  
+  regSS[m] = quadform(coefwork, R, rank);
   g[m] = coefprior->g(dev[m],  regSS[m],  n,  p,  rank, hyper);
   REAL(Rshrinkage)[m]  = coefprior->shrinkage(dev[m],  regSS[m],  n,  p, rank, g[m],  hyper);
   REAL(Rlog_marg_lik)[m]  = coefprior->log_marginal_likelihood(dev[m],  regSS[m],  n,  p, rank, g[m],  hyper);
