@@ -1,3 +1,11 @@
+Changes for BAS 0.91
+
+- bug fix in bayes.glm
+
+CHANGES for BAS 0.90
+
+- added C routines for fitting glms
+
 CHANGES for BAS 0.85
 
  - fixed problem with duplicate models if n.models was > 2^(p-1) by

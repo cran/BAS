@@ -1,5 +1,5 @@
 Package: BAS
-Version: 0.90
+Version: 0.91
 Date: 2010-5-1
 Title: Bayesian Model Averaging using Bayesian Adaptive Sampling
 Author: Merlise Clyde <clyde@stat.duke.edu> with contributions from
@@ -20,6 +20,6 @@ Description: Package for Bayesian Model Averaging in linear models
         prior distributions on models.
 License: GPL (>= 2)
 URL: http://www.r-project.org, http://www.stat.duke.edu/~clyde/BAS
-Packaged: 2010-07-09 17:59:24 UTC; clyde
+Packaged: 2010-09-09 15:46:47 UTC; clyde
 Repository: CRAN
-Date/Publication: 2010-07-24 19:40:38
+Date/Publication: 2010-09-09 16:54:15
