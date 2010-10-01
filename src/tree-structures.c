@@ -4,6 +4,8 @@ NODEPTR make_node(double pr) {
   NODEPTR newnode;
   newnode = (struct Node *) R_alloc(1, sizeof(struct Node));
   newnode->prob = pr;
+  newnode->counts_1=0;
+  newnode->counts_0=0;
   newnode->update = 0;
   newnode->logmarg = 0.0;
   newnode->where = -1;
@@ -29,11 +31,12 @@ void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, 
 
   branch = tree;
   
-  // add bit to add counts //
+  // added bit to add counts //
   for (i = 0; i< n; i++) {
       bit =  model[vars[i].index];
       
       if (bit == 1) {
+        branch->counts_1 += 1;
 	if (i < n-1 && branch->one == NULL) 
 	  branch->one = make_node(-1.0);
 	if (i == n-1 && branch->one == NULL) {
@@ -42,6 +45,7 @@ void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, 
 	branch = branch->one;
       }
       else {
+        branch->counts_0 += 1;
 	if (i < n-1 && branch->zero == NULL)
 	  branch->zero = make_node(-1.0);
 	if (i == n-1 && branch->zero == NULL){

@@ -93,19 +93,6 @@ for (k=0;k<nr;k++){
 return x;
 }
 
-/* 
-unsigned char **cmatallocold(int nr, int nc)
-{
-int k;
-unsigned char **x;
-x= Calloc(nr, unsigned char *);
-for (k=0;k<nr;k++){
-  x[k]=  Calloc(nc, unsigned char);
-}
-return x;
-}
-
-*/
 
 void  freemat(double **mat, int  nr)
 {
