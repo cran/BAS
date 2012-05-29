@@ -39,9 +39,9 @@ predictor}
   \item{deviance}{minus twice the log likelihood evaluated at
     the MLEs}
   \item{g}{value of g in g-priors}
-  \item{shrinkage}{srhinkage factor for coefficients in linear
+  \item{shrinkage}{shrinkage factor for coefficients in linear
   predictor}
- \item{RegSS}{quadractic form beta'I(beta)beta used in shrinkage}
+ \item{RegSS}{quadratic form beta'I(beta)beta used in shrinkage}
   \item{logmarglik}{the log marginal or integrated log likelihood (up to a constant)}
 }
 \details{C version of glm-fit.  For different prior choices returns,
@@ -52,6 +52,15 @@ predictor}
 \seealso{\code{\link{bic.prior}}
 }
 \examples{
+require(MASS)
+library(MASS)
+Pima.tr
+Y = as.numeric(Pima.tr$type) - 1
+X = cbind(1, as.matrix(Pima.tr[,1:7]))
+out = bayesglm.fit(X, Y, family=binomial(),coefprior=bic.prior(n=length(Y)))
+out$coef
+# using built in function
+glm(type ~ ., family=binomial(), data=Pima.tr)
 }
 \author{Merlise Clyde translated the \code{\link{glm.fit}} from R base
         into C using the .Call interface}

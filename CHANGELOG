@@ -1,3 +1,8 @@
+Changes for BAS 0.93
+
+- removed internal print statements in bayesglm.c
+- Bug fixes in AMCMC algorithm
+
 Changes for BAS 0.92
 
 - fixed glm-fit.R  so that hyperparameter for BIC is numeric

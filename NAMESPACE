@@ -1,0 +1,5 @@
+# Export all names
+useDynLib(BAS)
+exportPattern(".")
+import("stats")
+

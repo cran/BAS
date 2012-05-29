@@ -61,7 +61,7 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
   int mcurrent,  update, n_sure;
   double  mod, rem, problocal, *pigamma, pigammaold, pigammanew, eps, *hyper_parameters;
   double *XtX, *XtY, *XtXwork, *XtYwork, *SSgam, *Cov, *priorCov, *marg_probs;
-  double one=1.0, zero=0.0, lambda,  delta; 
+  double one=1.0, zero=0.0, lambda,  delta, wt = 1.0; 
  
   int inc=1, p2, print = 0;
   int *model, *modelold, bit, *modelwork, old_loc, new_loc;	
@@ -303,7 +303,8 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
   
   m = 0;
 
-  while (nUnique < k && m < INTEGER(BURNIN_Iterations)[0]) {
+  //  Need to fix in case the number of sampled models exceeds the space! 
+  while (m < INTEGER(BURNIN_Iterations)[0]) {
 
     memcpy(model, modelold, sizeof(int)*p);
     pmodel =  n_sure;
@@ -414,8 +415,7 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
     INTEGER(counts)[old_loc] += 1;
     
     for (i = 0; i < n; i++) {
-      /* store in opposite order so nth variable is first */
-     real_model[n-1-i] = (double) modelold[vars[i].index];
+     real_model[i] = (double) modelold[vars[i].index];
      REAL(MCMCprobs)[vars[i].index] += (double) modelold[vars[i].index];
    }
 
@@ -424,19 +424,18 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
    m++;
   }
   
-  Rprintf("\n%d \n", nUnique);
+  Rprintf("\n%d Unique models sampled during burnin\n", nUnique);
 
 
 // Compute marginal probabilities  
   mcurrent = nUnique;
   compute_modelprobs(modelprobs, logmarg, priorprobs,mcurrent);
   compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
-  
   for (i = 0; i < n; i++) {
-    marg_probs[n-1-i] = 0.5* (REAL(MCMCprobs)[vars[i].index]/ (double) m + 
-			      probs[vars[i].index]);
+    marg_probs[i] = wt*(REAL(MCMCprobs)[vars[i].index]/ (double) m) + 
+      (1.0 - wt)* probs[vars[i].index];
   }	
-
+  //  print=1;
   update_Cov(Cov, priorCov, SSgam, marg_probs, n, m, print);
  
 // Global-Proposal
@@ -444,17 +443,18 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
  pigammaold = 0.0;
  for (i = 0; i < n; i++) {
    if (modelold[vars[i].index] == 1 ){	
-     real_model[n - 1 - i] = 1.0;
+     real_model[i] = 1.0;
      pigammaold += log(cond_prob(real_model,i, n, marg_probs,Cov, delta));
    }
    else {
-     real_model[n -1 -i] = 0.0;
+     real_model[i] = 0.0;
      pigammaold += log(1.0 - cond_prob(real_model,i, n, marg_probs,Cov, delta));
    }
  }
  
- while (nUnique < k && 
-	m < INTEGER(BURNIN_Iterations)[0] + INTEGER(MCMC_Iterations)[0]) {  
+//  need to fix to make sure that nUnique is less than nModels 
+
+ while (m < INTEGER(BURNIN_Iterations)[0] + INTEGER(MCMC_Iterations)[0]) {  
       // for (m = 0; m < k; m++) {
    memcpy(model, modelold, sizeof(int)*p);
    pmodel =  n_sure;
@@ -465,7 +465,6 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
    for (i = 0; i < n; i++) {
      prob_i = cond_prob(real_model,i, n, marg_probs,Cov,delta);
      bit =  withprob(prob_i);
-     real_model[n-i-1] = (double) bit;
      
      if (bit == 1) {
        pigammanew += log(prob_i);
@@ -478,6 +477,7 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
        else newmodel= 1;
      } 
      model[vars[i].index] = bit; 
+     real_model[i] = (double) bit;
      pmodel  += bit;
    }
    if (newmodel == 1) {
@@ -553,10 +553,8 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
  
    INTEGER(counts)[old_loc] += 1;
 
-      /* store in opposite order so nth variable is first */
- 
    for (i = 0; i < n; i++) {
-     real_model[n-1-i] = (double) modelold[vars[i].index];
+     real_model[i] = (double) modelold[vars[i].index];
      REAL(MCMCprobs)[vars[i].index] += (double) modelold[vars[i].index];
    }
    F77_NAME(dsyr)("U", &n,  &one, &real_model[0], &inc,  &SSgam[0], &n);
@@ -570,19 +568,19 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
      compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
 
      for (i = 0; i < n; i++) {
-       marg_probs[n-1-i] = 0.5* (REAL(MCMCprobs)[vars[i].index]/ (double) m + 
-			         probs[vars[i].index]);
+       marg_probs[i] = wt*(REAL(MCMCprobs)[vars[i].index]/ (double) m) + 
+	 (1.0 - wt)*probs[vars[i].index];
      }
      update_Cov(Cov, priorCov, SSgam, marg_probs, n, m, print);
      // Initialize post old proposal
      pigammaold = 0.0;
      for (i = 0; i < n; i++) {
        if (modelold[vars[i].index] == 1 ){	
-	 real_model[n - 1 - i] = 1.0;
+	 real_model[i] = 1.0;
 	 pigammaold += log(cond_prob(real_model,i, n, marg_probs,Cov, delta));
        }
        else {
-	 real_model[n -1 -i] = 0.0;
+	 real_model[i] = 0.0;
 	 pigammaold += log(1.0 - cond_prob(real_model,i, n, marg_probs,Cov, delta));
        }}
    }
@@ -591,10 +589,10 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
  mcurrent = nUnique;
  compute_modelprobs(modelprobs, logmarg, priorprobs,mcurrent);
  compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
-
+ wt = 0.1;
  for (i = 0; i < n; i++) {
-   marg_probs[n-1-i] = 0.5* (REAL(MCMCprobs)[vars[i].index]/ (double) m + 
-			     probs[vars[i].index]);
+   marg_probs[i] = wt* (REAL(MCMCprobs)[vars[i].index]/ (double) m) + 
+				    (1.0 - wt)*probs[vars[i].index];
    //  marg_probs[n-1-i] =  REAL(MCMCprobs)[vars[i].index]/ (double) m;
   REAL(MCMCprobs)[vars[i].index] /= (double) m;
   }
@@ -860,16 +858,15 @@ double cond_prob(double *model, int j, int n, double *mean, double *beta_matrix 
   double  prob;
   int i;
  
-  j = n-1 -j; // (opposite order)
   prob = mean[j]; 
   //  Rprintf("%f\n", prob);
-  for (i = n-1; i > j; i--) {
-    prob += -beta_matrix[i*n + j]*(model[i] - mean[i]);
+  for (i = 0; i < j; i++) {
+    prob += -beta_matrix[j*n + i]*(model[i] - mean[i])/beta_matrix[j*n+j];
     //    Rprintf("model %f beta %f mean %f ", model[i], beta_matrix[i*n + j], mean[i]);
   }
   //  Rprintf("\n%f ", prob);
-  if (prob <= 0.0) prob = .025;
-  if (prob >= 1.0) prob = 1.0 - .025;
+  if (prob <= 0.0) prob = .02;
+  if (prob >= 1.0) prob = 1.0 - .02;
   //    Rprintf("%f \n", prob);
   return(prob);
 }
@@ -947,11 +944,11 @@ void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_prob
       Rprintf("\n");
     }
   }
-  alpha  = (double) m;
-  // Compute SSgam + m prob prob^T 
+  alpha  = -(double) m;
+  // Compute SSgam - m prob prob^T 
   F77_NAME(dsyr)("U", &n,  &alpha, &marg_probs[0], &inc,  &Cov[0], &n);
-  alpha = 1.0/(double) (m - 1);
-  // divide SSgam + m prob prob^T by (n-1) -> Cov
+  alpha = 1.0/(double) m;
+  // divide SSgam - m prob prob^T by m -> Cov
   F77_NAME(dscal)(&matsize,  &alpha,  &Cov[0], &inc);
   // Add priorCov to Cov
   F77_NAME(daxpy)(&matsize, &one, &priorCov[0], &inc, &Cov[0], &inc);
@@ -969,7 +966,7 @@ void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_prob
   F77_NAME(dtrtri)("U","N", &n, &Cov[0], &n, &info );
 
   if (print == 1) {
-    Rprintf("Chol(Cov(SSgam)-1):\n");
+    Rprintf("inverse of Chol(Cov(SSgam)):\n");
     for (j=0; j < n; j++ ){
       for(i = 0; i < n; i++){
 	Rprintf("%f ", Cov[i*n + j]);}

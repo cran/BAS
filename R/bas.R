@@ -37,7 +37,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
 #    initprobs[is.na(pval)] = 0.0
   }
 
-  if (initprobs[1] < 1.0 || initprobs[1] > 1.0) initprobs[1] = 1.0
+  if (initprobs[1] < 1.0 | initprobs[1] > 1.0) initprobs[1] = 1.0
 # intercept is always included otherwise we get a segmentation
 # fault (relax later)
 
