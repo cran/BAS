@@ -64,8 +64,8 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     // int job = 01, info = 1;
   
 
-  SEXP ANS = PROTECT(allocVector(VECSXP, 10)); ++nProtected;
-  SEXP ANS_names = PROTECT(allocVector(STRSXP, 10)); ++nProtected;
+  SEXP ANS = PROTECT(allocVector(VECSXP, 9)); ++nProtected;
+  SEXP ANS_names = PROTECT(allocVector(STRSXP, 9)); ++nProtected;
   SEXP RXwork = PROTECT(duplicate(RX)); ++nProtected;
   SEXP RYwork = PROTECT(duplicate(RY)); ++nProtected;  
   SEXP RWwork = PROTECT(duplicate(RY)); ++nProtected; 
@@ -112,7 +112,9 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
 
   coefprior = (struct coefpriorstruc *) R_alloc(1, sizeof(struct coefpriorstruc));
   coefprior->family = CHAR(STRING_ELT(getListElement(Rpriorcoef, "family"),0));
+  //  Rprintf("family %s\n", coefprior->family);
   coefprior->class  = CHAR(STRING_ELT(getListElement(Rpriorcoef, "class"),0));
+  //  Rprintf("class %s\n", coefprior->class);
   //  if (getListElement(Rpriorcoef, "hyper") != R_NilValue) 	
   hyper = REAL(getListElement(Rpriorcoef, "hyper"));	
 
@@ -130,13 +132,14 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     coefprior->g = no_g;
 }
   
-  Rprintf("prior %s\n", coefprior->family);
+  //  Rprintf("prior %s\n", coefprior->family);
 
   glmfamily = (struct glmfamilystruc *) R_alloc(1, sizeof(struct glmfamilystruc));
   glmfamily->family = CHAR(STRING_ELT(getListElement(family, "family"),0));
+  //  Rprintf("family %s\n", glmfamily->family);
   glmfamily->link = CHAR(STRING_ELT(getListElement(family, "link"),0));
   
-  Rprintf("link %s\n", glmfamily->link);
+  // Rprintf("link %s\n", glmfamily->link);
   if  (strcmp(glmfamily->family, "binomial") == 0) {
     glmfamily->dev_resids = binomial_dev_resids;
     glmfamily->dispersion = binomial_dispersion;
@@ -187,7 +190,7 @@ SEXP glm_fit(SEXP RX, SEXP RY,SEXP family, SEXP Roffset, SEXP Rweights, SEXP Rpr
     F77_NAME(dqrls)(&Xwork[0], &n, &p, &Ywork[0], &inc, &tol,  &coefwork[0],
 	 &residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
 
-    Rprintf("rank %ld \n", rank);
+    //    Rprintf("rank %ld \n", rank);
 
     if (n < rank) {
       Rprintf("X has rank %ld but there are only %ld observations");

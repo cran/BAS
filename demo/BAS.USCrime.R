@@ -1,3 +1,4 @@
+require(MASS)
 library(MASS)
 data(UScrime)
 UScrime[,-2] = log(UScrime[,-2])
