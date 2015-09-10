@@ -60,16 +60,10 @@
 Cephes Math Library Release 2.3:  June, 1995
 Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 */
-
-#define gamma gammafn
-#define lgamma lgammafn
-#define psi digamma
-#define pow R_pow
-#define powi R_pow_di
-
+
 
 /* Define if the `long double' type works.  */
-/* #define HAVE_LONG_DOUBLE 1 */
+#define HAVE_LONG_DOUBLE 1
 
 /* Define as the return type of signal handlers (int or void).  */
 #define RETSIGTYPE void
@@ -85,7 +79,7 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 /* #undef FLOAT_WORDS_BIGENDIAN */
 
 /* The number of bytes in a int.  */
-/* #define SIZEOF_INT 8 */
+#define SIZEOF_INT 4
 
 /* Define if you have the <string.h> header file.  */
 #define HAVE_STRING_H 1
@@ -96,7 +90,8 @@ Copyright 1984, 1987, 1989, 1995 by Stephen L. Moshier
 /* Version number of package */
 #define VERSION "2.7"
 
-/* Constant definitions for math error conditions */
+/* Constant definitions for math error conditions
+ */
 
 #define DOMAIN		1	/* argument domain error */
 #define SING		2	/* argument singularity */
@@ -132,7 +127,7 @@ typedef struct
 
 /* Intel IEEE, low order words come first:
  */
-#define IBMPC 1 
+/* #define IBMPC 1 */
 
 /* Motorola IEEE, high order words come first
  * (Sun 680x0 workstation):
@@ -145,7 +140,7 @@ typedef struct
  * roundoff problems in pow.c:
  * (Sun SPARCstation)
  */
-/* #define UNK 1 */
+#define UNK 1
 
 /* If you define UNK, then be sure to set BIGENDIAN properly. */
 #ifdef FLOAT_WORDS_BIGENDIAN
@@ -202,4 +197,3 @@ int mtherr();
 
 /* Variable for error reporting.  See mtherr.c.  */
 extern int merror;
-

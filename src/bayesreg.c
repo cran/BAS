@@ -77,31 +77,33 @@ double maxeffect(double *beta, double *se, int p) {
 
 void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double *mse,  int p, int n)
 {
-  /* On entry *coefficients equals X'Y, which is over written with the OLS estimates */
-  /* On entry MSE = Y'Y */
- 
-  double  det, ete, one, zero;
-  int  job, l, i, j, info, inc;
-  zero = 0.0;
-  one = 1.0;
-  inc = 1;
-  job = 01;
-  info = 1;
-  det = 1.0;
+	/* On entry *coefficients equals X'Y, which is over written with the OLS estimates */
+	/* On entry MSE = Y'Y */
 
-  F77_NAME(dpofa)(&XtX[0],&p,&p, &info);
-  F77_NAME(dposl)(&XtX[0],&p,&p,&coefficients[0]);
-  F77_NAME(dpodi)(&XtX[0],&p,&p, &det, &job);
+	double  det, ete, one, zero;
+	int  job, l, i, j, info, inc;
+	zero = 0.0;
+	one = 1.0;
+	inc = 1;
+	job = 01;
+	info = 1;
+	det = 1.0;
 
-  ete = F77_NAME(ddot)(&p, &coefficients[0], &inc, &XtY[0], &inc);
-  *mse = (*mse - ete)/((double) (n - p)); 
+	F77_NAME(dpofa)(&XtX[0],&p,&p, &info);
+	F77_NAME(dposl)(&XtX[0],&p,&p,&coefficients[0]);
+	F77_NAME(dpodi)(&XtX[0],&p,&p, &det, &job);
 
-  for (j=0, l=0; j < p; j++)  {
-    for (i=0; i <  p; i++) {
-      if (i == j)  {
-	se[j] = sqrt(XtX[l] * *mse);
-      }
-      l += 1;    }}
+	ete = F77_NAME(ddot)(&p, &coefficients[0], &inc, &XtY[0], &inc);
+	*mse = (*mse - ete)/((double) (n - p)); 
+
+	for (j=0, l=0; j < p; j++)  {
+		for (i=0; i <  p; i++) {
+			if (i == j)  {
+				se[j] = sqrt(XtX[l] * *mse);
+			}
+			l += 1;    
+		}
+	}
 } 
 
 

@@ -2,45 +2,43 @@
 
 void compute_modelprobs(SEXP Rmodelprobs,  SEXP Rlogmarg, SEXP Rpriorprobs, int k)
 {
-  int m;
-  double nc, bestmarg, *modelprobs, *logmarg, *priorprobs;
+	int m;
+	double nc, bestmarg, *modelprobs, *logmarg, *priorprobs;
 
-  logmarg = REAL(Rlogmarg);
-  modelprobs = REAL(Rmodelprobs);
-  priorprobs = REAL(Rpriorprobs);
+	logmarg = REAL(Rlogmarg);
+	modelprobs = REAL(Rmodelprobs);
+	priorprobs = REAL(Rpriorprobs);
 
-  bestmarg = logmarg[0];
-  nc = 0.0;
+	bestmarg = logmarg[0];
+	nc = 0.0;
 
-  for (m = 0; m < k; m++) {
-    if (logmarg[m] > bestmarg) bestmarg = logmarg[m];
-  }
+	for (m = 0; m < k; m++) {
+		if (logmarg[m] > bestmarg) bestmarg = logmarg[m];
+	}
 
-  for (m = 0; m < k; m++) {
-    modelprobs[m] = logmarg[m] - bestmarg;
-    nc += exp(modelprobs[m])*priorprobs[m]; }	
+	for (m = 0; m < k; m++) {
+		modelprobs[m] = logmarg[m] - bestmarg;
+		nc += exp(modelprobs[m])*priorprobs[m]; 
+	}	
 
-  for (m = 0; m < k; m++) {
-    modelprobs[m] = exp(modelprobs[m] + log(priorprobs[m]) - log(nc));
- }	
+	for (m = 0; m < k; m++) {
+		modelprobs[m] = exp(modelprobs[m] + log(priorprobs[m]) - log(nc));
+	}	
 }
 
 
 void compute_margprobs(SEXP modelspace, SEXP modeldim, SEXP Rmodelprobs, double *margprobs, int k, int p)
 {
-  int m, j, *model;
-  double *modelprobs;
-
-  modelprobs = REAL(Rmodelprobs);
-
-  for (j=0; j< p; j++)  margprobs[j] = 0.0;
-
-   for(m=0; m< k; m++) {
-     model = INTEGER(VECTOR_ELT(modelspace,m));
-     for (j = 0; j < INTEGER(modeldim)[m]; j ++) {
-       margprobs[model[j]] += modelprobs[m];
-     } }
-
+	int m, j, *model;
+	double *modelprobs;
+	modelprobs = REAL(Rmodelprobs);
+	for (j=0; j< p; j++)  margprobs[j] = 0.0;
+	for(m=0; m< k; m++) {
+		model = INTEGER(VECTOR_ELT(modelspace,m));
+		for (j = 0; j < INTEGER(modeldim)[m]; j ++) {
+			margprobs[model[j]] += modelprobs[m];
+		} 
+	}
 }
 
 

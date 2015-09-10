@@ -1,10 +1,11 @@
-predict.bma = function(object, newdata, top=NULL, ...) {
+predict.bas = function(object, newdata, top=NULL, ...) {
   if (is.data.frame(newdata)) stop("newdata must be a matrix or vector")
   if (is.vector(newdata)) newdata=matrix(newdata, nrow=1)    
   n <- nrow(newdata)[1]
   if (ncol(newdata) == object$n.vars) newdata=newdata[,-1, drop=FALSE]  # drop intercept
   if (ncol(newdata) != (object$n.vars -1)) stop("Dimension of newdata does not match orginal model")
-  newdata = sweep(newdata, 2, object$mean.x)
+  if (!is.null(object$mean.x)) newdata = sweep(newdata, 2, object$mean.x)
+  # need to fix for GLMS
   postprobs <- object$postprobs
   best <- order(-postprobs)
   if (!is.null(top)) best <- best[1:top]
@@ -25,7 +26,7 @@ predict.bma = function(object, newdata, top=NULL, ...) {
 }
 
 
-fitted.bma = function(object,  type="HPM", top=NULL, ...) {
+fitted.bas = function(object,  type="HPM", top=NULL, ...) {
   nmodels = length(object$which)
   X = object$X
   if (type=="HPM") {
@@ -35,7 +36,7 @@ fitted.bma = function(object,  type="HPM", top=NULL, ...) {
     yhat = yhat + (1 - object$shrinkage[[best]])*(object$ols[[best]])[1]
   }
   if (type == "BMA") {
-   yhat = predict.bma(object, X, top)$Ybma
+   yhat = predict(object, X, top)$Ybma
 }
   if (type == "MPM") {
    nvar = ncol(X) - 1

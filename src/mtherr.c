@@ -1,5 +1,3 @@
-#include <R.h>
-
 /*							mtherr.c
  *
  *	Library common error handling routine
@@ -49,12 +47,15 @@
  * mconf.h
  *
  */
+
 /*
 Cephes Math Library Release 2.0:  April, 1987
 Copyright 1984, 1987 by Stephen L. Moshier
 Direct inquiries to 30 Frost Street, Cambridge, MA 02140
 */
 
+#include <stdio.h>
+#include <R.h> 
 #include "mconf.h"
 
 int merror = 0;
@@ -83,7 +84,7 @@ int code;
  * which is supposed to be the name of the
  * function in which the error occurred:
  */
-Rprintf( "\n%s ", name );
+warning( "\n%s ", name );
 
 /* Set global error message word */
 merror = code;
@@ -93,7 +94,7 @@ merror = code;
  */
 if( (code <= 0) || (code >= 7) )
 	code = 0;
-Rprintf( "%s error\n", ermsg[code] );
+warning( "%s error\n", ermsg[code] );
 
 /* Return to calling
  * program
