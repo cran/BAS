@@ -21,8 +21,6 @@
 #            )
 #    }
 
-    if (length(initprobs) == (p-1))
-        initprobs = c(1.0, initprobs)
     if (length(initprobs) != p)
         stop(simpleError(paste("length of initprobs is", length(initprobs), "is not same as dimensions of X", p)))
 
@@ -59,13 +57,13 @@
   	deg = sum(initprobs >= 1) + sum(initprobs <= 0)
   	if (deg > 1 & n.models == 2^(p - 1)) {
     		n.models = 2^(p - deg)
-    		print(paste("There are", as.character(deg),
+    		warning(paste("There are", as.character(deg),
                 "degenerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
   	}
 
   	if (n.models > 2^30) stop("Dimension of model space is too big to enumerate\n  Rerun with a smaller value for n.models")
   	if (n.models > 2^25)
-            print("Number of models is BIG -this may take a while")
+            warning("Number of models is BIG -this may take a while")
     return(n.models)
 }
 
@@ -95,12 +93,12 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
   mean.x = apply(X[,-1], 2, mean)
   ones = X[,1]
   X = cbind(ones, sweep(X[, -1], 2, mean.x))
-  p <-  dim(X)[2]
+  p <-  dim(X)[2]  # with intercept
   n <- dim(X)[1]
 
   if (n <= p) {
       if (modelprior$family == "Uniform" || modelprior$family == "Bernoulli")
-          warning("Uniform prior (Bernoulli)  distribution on the Model Space are not recommended for p > n; please consider using beta.bernoulli instead")
+          warning("Uniform prior (Bernoulli)  distribution on the Model Space are not recommended for p > n; please consider using beta.binomial instead")
   }
   if (!is.numeric(initprobs)) {
       if (n <= p && initprobs == "eplogp") {
@@ -113,8 +111,9 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
         "Uniform"= c(1.0, rep(.5, p-1)),
       )
   }
-#   if (length(initprobs) == (p-1))
-#     initprobs = c(1.0, initprobs)
+   if (length(initprobs) == (p-1))
+       initprobs = c(1.0, initprobs)
+  
 #   if (length(initprobs) != p)
 #    stop(simpleError(paste("length of initprobs is not", p)))
 
@@ -138,7 +137,7 @@ bas.lm = function(formula, data, n.models=NULL,  prior="ZS-null", alpha=NULL,
       
   prob <- .normalize.initprobs.lm(initprobs, p)
   n.models <- .normalize.n.models(n.models, p, prob, method)
-  print(n.models)
+#  print(n.models)
   modelprior <- .normalize.modelprior(modelprior,p)
 
 

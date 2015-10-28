@@ -37,11 +37,11 @@
                     "Uniform" = c(1.0, rep(.5, p-1)),
                     )
             }
-   	if (length(initprobs) == (p-1))
-     		initprobs = c(1.0, initprobs)
-   	if (length(initprobs) != p)
+   	if (length(initprobs) == (p-1)) {
+     		initprobs = c(1.0, initprobs)}
+   	if (length(initprobs) != p) {
     		stop(simpleError(paste("length of initprobs is not", p)))
-
+            }
 	if (initprobs[1] < 1.0 | initprobs[1] > 1.0) initprobs[1] = 1.0
 	# intercept is always included otherwise we get a segmentation
 	# fault (relax later)
@@ -57,16 +57,16 @@
 }
 
 bas.glm = function(formula, data,  
-    a, b, s=0,
     family = binomial(link = 'logit'),
-    n.models=NULL,  
+    n.models=NULL,
+    betaprior=CCH(alpha=.5, beta=nrow(data), s=0),
     modelprior=beta.binomial(1,1),
     initprobs="Uniform", 
     method="MCMC", 
     update=NULL, 
     bestmodel=NULL, bestmarg=NULL,
     prob.rw=0.5,  
-    Burnin.iterations=NULL,
+    MCMC.iterations=NULL,
     control = glm.control(), offset = rep(0, nobs), weights = rep(1, nobs), laplace=FALSE
                   )  {
     num.updates=10
@@ -110,43 +110,40 @@ bas.glm = function(formula, data,
   	Yvec = as.numeric(Y)
   	modeldim = as.integer(rep(0, n.models))
   	n.models = as.integer(n.models)
-    	if (is.null(Burnin.iterations)) Burnin.iterations = as.integer(n.models/2)
+    	if (is.null(MCMC.iterations)) MCMC.iterations = as.integer(n.models)
 	
 	#save(list = ls(), file = "temp.RData")
   	result = switch(method,
     		"MCMC"= .Call("glm_mcmc",
+                    Y = Yvec, X = X,
+                    Roffset = as.numeric(offset), Rweights = as.numeric(weights), 
+                    Rprobinit = prob, Rmodeldim = modeldim,
+                    modelprior= modelprior, betaprior=betaprior,
+                    Rbestmodel= bestmodel,
+                    plocal=as.numeric(1.0 - prob.rw),
+                    BURNIN_Iterations = as.integer(MCMC.iterations),
+                    family = family, Rcontrol = control, Rlaplace=as.integer(laplace),
+                    PACKAGE="BAS"),
+            "BAS" = .Call("glm_sampleworep",
       		Y = Yvec, X = X,
-			Roffset = as.numeric(offset), Rweights = as.numeric(weights), 
-			Rprobinit = prob, Rmodeldim = modeldim,
-      		modelprior= modelprior,
-      		Rbestmodel= bestmodel,
-      		plocal=as.numeric(1.0 - prob.rw),
-			BURNIN_Iterations = as.integer(Burnin.iterations),
-			Ra = as.numeric(a), Rb = as.numeric(b), Rs = as.numeric(s),
-			family = family, Rcontrol = control, Rlaplace=as.integer(laplace),
-      		PACKAGE="BAS"),
-		"BAS" = .Call("glm_sampleworep",
-      		Y = Yvec, X = X,
-			Roffset = as.numeric(offset), Rweights = as.numeric(weights),
-			Rprobinit = prob, Rmodeldim = modeldim,
-      		modelprior = modelprior,
-			Rbestmodel= bestmodel,
-			Rbestmarg=as.numeric(bestmarg),
-			plocal=as.numeric(1.0 - prob.rw),
-			Ra = as.numeric(a), Rb = as.numeric(b), Rs = as.numeric(s),
-			family = family, Rcontrol = control,
-      		Rupdate=as.integer(update), Rlaplace=as.integer(laplace),
+                    Roffset = as.numeric(offset), Rweights = as.numeric(weights),
+                    Rprobinit = prob, Rmodeldim = modeldim,
+                    modelprior = modelprior, betaprior=betaprior,
+                    Rbestmodel= bestmodel,
+                    Rbestmarg=as.numeric(bestmarg),
+                    plocal=as.numeric(1.0 - prob.rw),
+                    family = family, Rcontrol = control,
+                    Rupdate=as.integer(update), Rlaplace=as.integer(laplace),
       		PACKAGE="BAS"),
 		"MCMC+BAS" = .Call("glm_mcmcbas",
       		Y = Yvec, X = X,
 			Roffset = as.numeric(offset), Rweights = as.numeric(weights),
 			Rprobinit = prob, Rmodeldim = modeldim,
-      		modelprior = modelprior,
+      		modelprior = modelprior,  betaprior = betaprior,
 			Rbestmodel= bestmodel,
 			Rbestmarg=as.numeric(bestmarg),
 			plocal=as.numeric(1.0 - prob.rw),
-			BURNIN_Iterations = as.integer(Burnin.iterations),
-			Ra = as.numeric(a), Rb = as.numeric(b), Rs = as.numeric(s),
+			BURNIN_Iterations = as.integer(MCMC.iterations),
 			family = family, Rcontrol = control,
       		Rupdate=as.integer(update), Rlaplace=as.integer(laplace),
       		PACKAGE="BAS"),
@@ -154,8 +151,7 @@ bas.glm = function(formula, data,
       		Y = Yvec, X = X,
 			Roffset = as.numeric(offset), Rweights = as.numeric(weights),
 			Rprobinit = prob, Rmodeldim = modeldim,
-      		modelprior = modelprior,
-			Ra = as.numeric(a), Rb = as.numeric(b), Rs = as.numeric(s),
+      		modelprior = modelprior,  betaprior = betaprior,
 			family = family, Rcontrol = control, Rlaplace=as.integer(laplace),
       		PACKAGE="BAS")
   	)
@@ -173,6 +169,6 @@ bas.glm = function(formula, data,
   	result$X=X
   	result$call=call
 
-  	class(result) = "bma"
+  	class(result) = c("basglm","bas", "bma")
   	return(result) 
 }

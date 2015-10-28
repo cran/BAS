@@ -166,7 +166,7 @@ SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint
 
 	NODEPTR tree, branch;	
 	tree = make_node(vars[0].prob);
-	Rprintf("For m=0, Initialize Tree with initial Model\n");  
+	//	Rprintf("For m=0, Initialize Tree with initial Model\n");  
 	
 	int m = 0;
 	int *bestmodel = INTEGER(Rbestmodel);
@@ -241,7 +241,7 @@ SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint
 				compute_modelprobs(modelprobs, logmarg, priorprobs,mcurrent);
 				compute_margprobs(modelspace, modeldim, modelprobs, probs, mcurrent, p);        
 				if (update_probs(probs, vars, mcurrent, k, p) == 1) {
-					Rprintf("Updating Model Tree %d \n", m);
+				  //					Rprintf("Updating Model Tree %d \n", m);
 					update_tree(modelspace, tree, modeldim, vars, k,p,n,mcurrent, modelwork);     
 				}
 			}
@@ -273,10 +273,10 @@ SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint
 	SET_STRING_ELT(ANS_names, 6, mkChar("mse"));
 
 	SET_VECTOR_ELT(ANS, 7, beta);
-	SET_STRING_ELT(ANS_names, 7, mkChar("ols"));
+	SET_STRING_ELT(ANS_names, 7, mkChar("mle"));
 
 	SET_VECTOR_ELT(ANS, 8, se);
-	SET_STRING_ELT(ANS_names, 8, mkChar("ols.se"));
+	SET_STRING_ELT(ANS_names, 8, mkChar("mle.se"));
 
 	SET_VECTOR_ELT(ANS, 9, shrinkage);
 	SET_STRING_ELT(ANS_names, 9, mkChar("shrinkage"));
