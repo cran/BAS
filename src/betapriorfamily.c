@@ -31,20 +31,29 @@ struct betapriorfamilystruc * make_betaprior_structure(SEXP betaprior, SEXP glmf
   if (strcmp(betapriorfamily->priorfamily, "CCH") == 0) {
     betapriorfamily->logmarglik_fun = CCH_glm_logmarg;
     betapriorfamily->shrinkage_fun = CCH_glm_shrinkage;
-    /*   Rprintf("alpha = %lf\n", REAL(getListElement(betapriorfamily->hyperparams, "alpha"))[0]);
-    Rprintf("beta = %lf\n", REAL(getListElement(betapriorfamily->hyperparams, "beta"))[0]);
-    Rprintf("s = %lf\n",
-    REAL(getListElement(betapriorfamily->hyperparams, "s"))[0]); 
-    */
-
   }
-  else   if (strcmp(betapriorfamily->priorclass, "IC") == 0) {
+  else if (strcmp(betapriorfamily->priorfamily, "tCCH") == 0) {
+    betapriorfamily->logmarglik_fun = tCCH_glm_logmarg;
+    betapriorfamily->shrinkage_fun = CCH_glm_shrinkage;  // need to change
+  }
+    else if (strcmp(betapriorfamily->priorfamily, "intrinsic") == 0) {
+    betapriorfamily->logmarglik_fun = intrinsic_glm_logmarg;
+    betapriorfamily->shrinkage_fun = CCH_glm_shrinkage;  // need to change
+  }
+
+  else if (strcmp(betapriorfamily->priorfamily, "hyper.g.n") == 0) {
+    betapriorfamily->logmarglik_fun = tCCH_glm_logmarg;
+    betapriorfamily->shrinkage_fun = CCH_glm_shrinkage;  // need to change
+  }
+  else if (strcmp(betapriorfamily->priorfamily, "Jeffreys") == 0) {
+    betapriorfamily->logmarglik_fun = Jeffreys_glm_logmarg;
+    betapriorfamily->shrinkage_fun = CCH_glm_shrinkage;  // OK
+  }
+
+  else  if (strcmp(betapriorfamily->priorclass, "IC") == 0) {
     betapriorfamily->logmarglik_fun = IC_glm_logmarg;
     betapriorfamily->shrinkage_fun = IC_shrinkage;
-    //    Rprintf("penalty = %lf\n", REAL(getListElement(betapriorfamily->hyperparams, "penalty"))[0]);
   }
-
-
   else if (strcmp(betapriorfamily->priorfamily, "robust") == 0) {
     betapriorfamily->logmarglik_fun = robust_glm_logmarg;
     betapriorfamily->shrinkage_fun = robust_glm_shrinkage;
@@ -73,6 +82,7 @@ struct betapriorfamilystruc * make_betaprior_structure(SEXP betaprior, SEXP glmf
 }
 
 
+
 double CCH_glm_logmarg(SEXP hyperparams, int pmodel, double W,
 		       double loglik_mle, double logdet_Iintercept, int Laplace ) {
   double a, b, s, logmarglik, p;
@@ -93,6 +103,80 @@ double CCH_glm_logmarg(SEXP hyperparams, int pmodel, double W,
                   - lbeta(a / 2.0, b / 2.0)
                   - loghyperg1F1(a/2.0, (a + b)/2.0, - s/2.0, Laplace);
   }
+
+  return(logmarglik);
+}
+double Jeffreys_glm_logmarg(SEXP hyperparams, int pmodel, double W,
+		       double loglik_mle, double logdet_Iintercept, int Laplace ) {
+  double a, b, s, logmarglik, p;
+   
+  a = REAL(getListElement(hyperparams, "alpha"))[0];
+  b = REAL(getListElement(hyperparams, "beta"))[0];
+  s = REAL(getListElement(hyperparams, "s"))[0];
+  //  n = INTEGER(getListElement(hyperparams, "n"))[0];
+  //  p = INTEGER(getListElement(hyperparams, "p"))[0];
+  // Rprintf("a = %lf\n", a);
+  // Rprintf("b = %lf\n", b);
+  p = (double) pmodel;
+
+  logmarglik =   loglik_mle + M_LN_SQRT_2PI - 0.5* logdet_Iintercept;
+  if (p >= 1.0) {
+    logmarglik +=   lbeta((a + p) / 2.0, b / 2.0) 
+      + loghyperg1F1((a + p)/2.0, (a + b + p)/2.0, -(s+W)/2.0, Laplace);
+  }
+
+  return(logmarglik);
+}
+
+
+double tCCH_glm_logmarg(SEXP hyperparams, int pmodel, double W,
+		       double loglik_mle, double logdet_Iintercept, int Laplace ) {
+  double a, b, s, r, v, theta, logmarglik, p;
+   
+  a = REAL(getListElement(hyperparams, "alpha"))[0];
+  b = REAL(getListElement(hyperparams, "beta"))[0];
+  s = REAL(getListElement(hyperparams, "s"))[0];
+  r = REAL(getListElement(hyperparams, "r"))[0];
+  v = REAL(getListElement(hyperparams, "v"))[0];
+  theta =  REAL(getListElement(hyperparams, "theta"))[0];
+
+  p = (double) pmodel;
+
+  logmarglik =   loglik_mle + M_LN_SQRT_2PI - 0.5* logdet_Iintercept;
+  if (p >= 1.0) {
+    logmarglik +=   lbeta((a + p) / 2.0, b / 2.0) 
+      + log(HyperTwo(b/2.0, r, (a + b + p)/2.0, (s+W)/(2.0*v), 1.0 - theta))
+      -.5*p*log(v) -.5*W/v
+      - lbeta(a / 2.0, b / 2.0)
+      - log(HyperTwo(b/2.0, r, (a + b)/2.0, s/(2.0*v), 1.0 - theta));
+  }	
+
+  return(logmarglik);
+}
+
+double intrinsic_glm_logmarg(SEXP hyperparams, int pmodel, double W,
+		       double loglik_mle, double logdet_Iintercept, int Laplace ) {
+  double a, b, s, r, v, theta,n, logmarglik, p;
+   
+  a = REAL(getListElement(hyperparams, "alpha"))[0];
+  b = REAL(getListElement(hyperparams, "beta"))[0];
+  s = REAL(getListElement(hyperparams, "s"))[0];
+  r = REAL(getListElement(hyperparams, "r"))[0];
+  n = REAL(getListElement(hyperparams, "n"))[0];
+
+  p = (double) pmodel;
+
+  v = (n + p + 1.0)/(p + 1);
+  theta = (n + p + 1.0)/n;
+  
+  logmarglik =   loglik_mle + M_LN_SQRT_2PI - 0.5* logdet_Iintercept;
+  if (p >= 1.0) {
+    logmarglik +=   lbeta((a + p) / 2.0, b / 2.0) 
+      + log(HyperTwo(b/2.0, r, (a + b + p)/2.0, (s+W)/(2.0*v), 1.0 - theta))
+      -.5*p*log(v) -.5*W/v
+      - lbeta(a / 2.0, b / 2.0)
+      - log(HyperTwo(b/2.0, r, (a + b)/2.0, s/(2.0*v), 1.0 - theta));
+  }	
 
   return(logmarglik);
 }
