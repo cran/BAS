@@ -1,5 +1,45 @@
 #include "sampling.h"
 
+
+void PrecomputeData(double *Xwork, double *Ywork, double *wts, double **pXtXwork, double **pXtYwork, double **pXtX, double **pXtY, double *yty, double *SSY, int p, int nobs) {
+	char uplo[] = "U", trans[]="T";
+	double one=1.0, zero=0.0;
+	int inc=1, i, j,l;
+	
+	int p2 = p * p;
+	*pXtXwork  = (double *) R_alloc(p2, sizeof(double));
+	*pXtYwork = vecalloc(p);
+	*pXtX  = (double *) R_alloc(p2, sizeof(double));
+	*pXtY = vecalloc(p);
+
+	for (j=0, l=0; j < p; j++) {
+	  for	 (i=0; i < nobs; i++) {
+	    Xwork[l] = Xwork[l]*wts[i];
+	    l = l + 1; 
+	  } 
+	}
+	
+	for (i = 0; i< nobs; i++) {
+	   Ywork[i] = Ywork[i]*wts[i];
+	}
+ 
+	//precompute XtX
+	memset(*pXtX,0, p2 * sizeof(double));
+	F77_NAME(dsyrk)(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, *pXtX, &p); 
+
+	double ybar = 0.0; 
+	for (int i = 0; i< nobs; i++) {
+		ybar += Ywork[i];
+	}
+	ybar = F77_NAME(ddot) (&nobs, &Ywork[0], &inc, &wts[0], &inc)/
+	       F77_NAME(ddot) (&nobs, &wts[0], &inc, &wts[0], &inc);
+
+	*yty = F77_NAME(ddot)(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);	//	ybar = ybar/ (double) nobs;
+	*SSY = *yty - (double) nobs* ybar *ybar;
+	F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, *pXtY,&inc);
+}
+
+
 /* Version of gexpectations that can be called directly from R */
 void gexpectations_vect(int *nmodels, int *p, int *pmodel, int *nobs, double *R2, double *alpha, int *method,
                         double *RSquareFull, double *SSY, double *logmarg, double *shrinkage) {
@@ -84,19 +124,27 @@ void cholreg(double *XtY, double *XtX, double *coefficients, double *se, double 
 	/* On entry *coefficients equals X'Y, which is over written with the OLS estimates */
 	/* On entry MSE = Y'Y */
 
-  double  det, ete, one, zero;
+  double   ete, one, zero;
 	int  job, l, i, j, info, inc;
 	zero = 0.0;
 	one = 1.0;
 	inc = 1;
 	job = 01;
 	info = 1;
-	det = 1.0;
 
+
+	/* LINPACK	
 	F77_NAME(dpofa)(&XtX[0],&p,&p, &info);
 	F77_NAME(dposl)(&XtX[0],&p,&p,&coefficients[0]);
 	F77_NAME(dpodi)(&XtX[0],&p,&p, &det, &job);
+	*/
 
+	// LAPACK Equivalent
+	//	F77_NAME(dpstrf)("U", &p, &XtX[0],&p, &piv[0], &rank, &tol, &work, &info);	
+
+	F77_NAME(dpotrf)("U",&p, &XtX[0],&p, &info);
+	F77_NAME(dpotrs)("U", &p, &inc, &XtX[0],&p,&coefficients[0],&p, &info);
+	F77_NAME(dpotri)("U", &p, &XtX[0],&p, &job);
 	ete = F77_NAME(ddot)(&p, &coefficients[0], &inc, &XtY[0], &inc);
 
 	if ( n <= p) {
@@ -375,4 +423,27 @@ double logBF_EB(double R2, int n, int p, double alpha)
 		   - dp*log(1.0 + ghat));
     if (p == 1 || p >= n) logmarg = 0.0;
     return(logmarg);
+}
+
+double CalculateRSquareFull(double *XtY, double *XtX, double *XtXwork, double *XtYwork, 
+							SEXP Rcoef_m, SEXP Rse_m, int p, int nobs, double yty, double SSY) {
+	double RSquareFull;
+	if (nobs <= p) {
+		RSquareFull = 1.0;
+	} else {
+		PROTECT(Rcoef_m = NEW_NUMERIC(p));
+		PROTECT(Rse_m = NEW_NUMERIC(p));
+		double *coefficients = REAL(Rcoef_m);  
+		double *se_m = REAL(Rse_m);
+		memcpy(coefficients, XtY,  p*sizeof(double));
+		memcpy(XtXwork, XtX, p * p *sizeof(double));
+		memcpy(XtYwork, XtY,  p*sizeof(double));
+
+		double mse_m = yty; 
+		cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);  
+
+		RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
+		UNPROTECT(2);
+	}
+	return RSquareFull;
 }

@@ -1,7 +1,7 @@
 #include "sampling.h"
 
 
-SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha, SEXP method, SEXP modelprior) 
+SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha, SEXP method, SEXP modelprior) 
 {
   SEXP   RXwork = PROTECT(duplicate(X)), RYwork = PROTECT(duplicate(Y));
   int nProtected = 2;
@@ -24,14 +24,11 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, 
   SEXP sampleprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
 
   SEXP Rse_m, Rcoef_m, Rmodel_m;
-  double *Xwork, *Ywork, *coefficients,*probs,
-    SSY, yty, ybar, mse_m, *se_m, pigamma,
+  double *Xwork, *Ywork, *wts, *coefficients,*probs,
+    SSY, yty, mse_m, *se_m, pigamma,
     R2_m, RSquareFull, alpha, logmarg_m, shrinkage_m;
   double *XtX, *XtY, *XtXwork, *XtYwork;
-  double one, zero;
-  int inc, p2;
   int nobs, p, k, i, j, m, n, l, pmodel, *xdims, *model_m, *model;
-  char uplo[] = "U", trans[]="T";
   Bit **models;		
   struct Var *vars;	/* Info about the model variables. */
 
@@ -47,14 +44,19 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, 
 
   Ywork = REAL(RYwork);
   Xwork = REAL(RXwork);
-
-  XtX  = (double *) R_alloc(p * p, sizeof(double));
+  wts = REAL(Rweights);
+  
+  /*  XtX  = (double *) R_alloc(p * p, sizeof(double));
   XtXwork  = (double *) R_alloc(p * p, sizeof(double));
   XtY = vecalloc(p); 
-  XtYwork = vecalloc(p);
+  XtYwork = vecalloc(p); */
+
+
+	PrecomputeData(Xwork, Ywork, wts, &XtXwork, &XtYwork, &XtX, &XtY, &yty, &SSY, p, nobs);
+
   
   /* create X matrix */
-  for (j=0, l=0; j < p; j++) {
+	/*  for (j=0, l=0; j < p; j++) {
     for (i = 0; i < p; i++) {
       XtX[j*p + i] = 0.0;}
   }
@@ -73,8 +75,9 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, 
   SSY = yty - (double) nobs* ybar *ybar;
 
   F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
- 
-  alpha = REAL(Ralpha)[0];
+	*/
+
+	alpha = REAL(Ralpha)[0];
 
   vars = (struct Var *) R_alloc(p, sizeof(struct Var));
   probs =  REAL(Rprobs);
@@ -93,20 +96,20 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, 
   else {
 
 
-  Rcoef_m = NEW_NUMERIC(p); PROTECT(Rcoef_m);
-  Rse_m = NEW_NUMERIC(p); PROTECT(Rse_m);
-  coefficients = REAL(Rcoef_m);  se_m = REAL(Rse_m);
+    Rcoef_m = NEW_NUMERIC(p); PROTECT(Rcoef_m);
+    Rse_m = NEW_NUMERIC(p); PROTECT(Rse_m);
+    coefficients = REAL(Rcoef_m);  se_m = REAL(Rse_m);
 
-  memcpy(coefficients, XtY,  p*sizeof(double));
-  memcpy(XtXwork, XtX, p2*sizeof(double));
-  memcpy(XtYwork, XtY,  p*sizeof(double));
+    memcpy(coefficients, XtY,  p*sizeof(double));
+    memcpy(XtXwork, XtX, p*p*sizeof(double));
+    memcpy(XtYwork, XtY,  p*sizeof(double));
  
-  mse_m = yty; 
-  cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);  
+    mse_m = yty; 
+    cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);  
 
   /*  olsreg(Ywork, Xwork,  coefficients, se_m, &mse_m, &p, &nobs, pivot,qraux,work,residuals,effects,v, betaols);  */
-  RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
-  UNPROTECT(2);
+    RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
+    UNPROTECT(2);
   }
 
   /* now fit all top k models */

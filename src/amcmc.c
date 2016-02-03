@@ -26,7 +26,7 @@ void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_prob
 
 void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models);
  
-SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal, SEXP BURNIN_Iterations, SEXP MCMC_Iterations, SEXP LAMBDA, SEXP DELTA)
+SEXP amcmc(SEXP Y, SEXP X,  SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal, SEXP BURNIN_Iterations, SEXP MCMC_Iterations, SEXP LAMBDA, SEXP DELTA)
 {
   SEXP   Rse_m, Rcoef_m, Rmodel_m; 
 
@@ -54,18 +54,17 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
   SEXP sampleprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
   SEXP NumUnique = PROTECT(allocVector(INTSXP, 1)); ++nProtected;
 
-  double *Xwork, *Ywork, *coefficients,*probs, shrinkage_m, *MCMC_probs,
-    SSY, yty, ybar, mse_m, *se_m, MH=0.0, prior_m=1.0, *real_model, prob_i,
+  double *Xwork, *Ywork, *wts, *coefficients,*probs, shrinkage_m, *MCMC_probs,
+    SSY, yty, mse_m, *se_m, MH=0.0, prior_m=1.0, *real_model, prob_i,
     R2_m, RSquareFull, alpha, prone, denom, logmargy, postold, postnew;
   int nobs, p, k, i, j, m, n, l, pmodel, pmodel_old, *xdims, *model_m, *bestmodel, *varin, *varout;
   int mcurrent,  update, n_sure;
   double  mod, rem, problocal, *pigamma, pigammaold, pigammanew, eps, *hyper_parameters;
   double *XtX, *XtY, *XtXwork, *XtYwork, *SSgam, *Cov, *priorCov, *marg_probs;
-  double one=1.0, zero=0.0, lambda,  delta, wt = 1.0; 
+  double one=1.0, lambda,  delta, wt = 1.0; 
  
-  int inc=1, p2, print = 0;
+  int inc=1, print = 0;
   int *model, *modelold, bit, *modelwork, old_loc, new_loc;	
-  char uplo[] = "U", trans[]="T";
   struct Var *vars;	/* Info about the model variables. */
   NODEPTR tree, branch;
 
@@ -90,45 +89,10 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
 
   Ywork = REAL(RYwork);
   Xwork = REAL(RXwork);
-
+  wts = REAL(Rweights);
  
- /* Allocate other variables.  */ 
-  XtX  = (double *) R_alloc(p * p, sizeof(double));
-  XtXwork  = (double *) R_alloc(p * p, sizeof(double));
-  XtY = vecalloc(p);  
-  XtYwork = vecalloc(p);
+  PrecomputeData(Xwork, Ywork, wts, &XtXwork, &XtYwork, &XtX, &XtY, &yty, &SSY, p, nobs);
 
-
-  /* create X matrix */
-  for (j=0, l=0; j < p; j++) {
-    for (i = 0; i < p; i++) {
-      XtX[j*p + i] = 0.0;
-    }
-    /*    for (i=0; i < nobs; i++) {
-       Xmat[i][j] =  REAL(X)[l];
-       Xwork[l] = Xmat[i][j];
-       l = l + 1; 
-       } */
-  }
-  //  PROTECT(Rprobs = NEW_NUMERIC(p));
-  //initprobs = REAL(Rprobinit);
-
-
- p2 = p*p;
- ybar = 0.0; SSY = 0.0; yty = 0.0; 
-
- 
- F77_NAME(dsyrk)(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, &XtX[0], &p); 
- yty = F77_NAME(ddot)(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
- for (i = 0; i< nobs; i++) {
-     ybar += Ywork[i];
-  }
-
-  ybar = ybar/ (double) nobs;
-  SSY = yty - (double) nobs* ybar *ybar;
-
-  F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, &XtY[0],&inc);
-  
   alpha = REAL(Ralpha)[0];
 
   vars = (struct Var *) R_alloc(p, sizeof(struct Var));
@@ -180,20 +144,20 @@ SEXP amcmc(SEXP Y, SEXP X, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ral
 
   if (nobs <= p) {RSquareFull = 1.0;}
   else {
-  PROTECT(Rcoef_m = NEW_NUMERIC(p));
-  PROTECT(Rse_m = NEW_NUMERIC(p));
-  coefficients = REAL(Rcoef_m);  
-  se_m = REAL(Rse_m);
-  memcpy(coefficients, XtY,  p*sizeof(double));
-  memcpy(XtXwork, XtX, p2*sizeof(double));
-  memcpy(XtYwork, XtY,  p*sizeof(double));
+    PROTECT(Rcoef_m = NEW_NUMERIC(p));
+    PROTECT(Rse_m = NEW_NUMERIC(p));
+    coefficients = REAL(Rcoef_m);  
+    se_m = REAL(Rse_m);
+    memcpy(coefficients, XtY,  p*sizeof(double));
+    memcpy(XtXwork, XtX, p*p*sizeof(double));
+    memcpy(XtYwork, XtY,  p*sizeof(double));
 
-  mse_m = yty; 
-  cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);  
+    mse_m = yty; 
+    cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);  
 
   /*olsreg(Ywork, Xwork,  coefficients, se_m, &mse_m, &p, &nobs, pivot,qraux,work,residuals,effects,v, betaols); */
-  RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
-  UNPROTECT(2);
+    RSquareFull =  1.0 - (mse_m * (double) ( nobs - p))/SSY;
+    UNPROTECT(2);
   }
 
 
