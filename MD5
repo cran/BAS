@@ -1,9 +1,9 @@
-32625d518d0f5c1d2682b35c0bbfdaa8 *CHANGELOG
-f40bd21b8f9cfcda67eeb758a0e57fe7 *DESCRIPTION
-de42fc4595a3360a0f21fcda567508be *NAMESPACE
+035cd0b39509b641d7e4cc7bcb1995ba *CHANGELOG
+8de4b5608eba44ad4e1c56b70a48138c *DESCRIPTION
+60b034a1081baf739f7fb19e08e515b7 *NAMESPACE
 da0dcc38ea6d2b680e4b773b0631ceb4 *R/EB.bma.R
 68f76d15ba0549dfc477de9b45a44a96 *R/as.matrix.R
-47cc06e7f991e6e398fbb54d8c8da3bd *R/bas.R
+3ed38e4bda7a8b886898de0ac930ac91 *R/bas.R
 730294e9b7b2eab5c121ce7f03dc774a *R/bas.gglm.R
 c196461a862cc5156b633cbf3b5ef290 *R/betapriors.R
 1dc628726b2be81e3666e6b6e9429f49 *R/cch.R
@@ -14,10 +14,10 @@ d306b9ecd4ddbdfa7680864ed020467a *R/gglm.lpy.logit.R
 3b3c1470c07b3216970e27df117012d8 *R/glm-fit.R
 65fd09b92a8f06274be7725e504a49e9 *R/hypergeometric1F1.R
 0041824de30a689a6c9f5f257b2e5938 *R/hypergeometric2F1.R
-25b8c837c12372f864e57707a0629442 *R/image.bma.R
-d2a55a3fe1873062cd36748c08cbf20d *R/modelpriors.R
-4ab29f24c6a0206439ab252947b97438 *R/plot.bma.R
-628b7d608ed4af1dde6f69c44cf2cf83 *R/predict.bma.R
+0062d9bb12979c258b081a812df8aafe *R/image.bma.R
+3ff734549c6e1652447f12d881407dd8 *R/modelpriors.R
+62ac928e2b632288c54181510f0bc8bc *R/plot.bma.R
+b960e6f06fda88ca32b794490ea9cac1 *R/predict.bma.R
 b80a24119991cb8c1b83c96906debf6b *R/summary.bma.R
 9f21a666f7225b7111f9df2ab4885d26 *R/update.bma.R
 12ec17733c04dc3134435ed232b03f39 *data/Hald.txt.gz
@@ -26,7 +26,6 @@ ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
 e3149a4b53f0541b9acc08259bd4823d *demo/BAS.USCrime.R
 685cf55a0f87e95967e777daa6278774 *demo/BAS.hald.R
 62e7e555073dea10ac80f584c08e5457 *inst/CITATION
-4ed5538d847b5aaeced171e3e7badd66 *inst/doc/BAS-manual.pdf
 57aff869f3160a310a1eb80608bc09f6 *man/BAS-package.Rd
 f1f34d4d08bfe1c2e52d4f4d40fa1fbd *man/Bernoulli.Rd
 56a055586e17e14bfe2208a6f759a78f *man/EB.Rd
@@ -34,7 +33,7 @@ b49a179500786fa144a5abd35731c83a *man/EB.global.Rd
 4758f956beb80177ff9f0ce7921cfb5c *man/TG-priors.Rd
 cf70607d8b64737b34c7ef435512400e *man/Uniform.Rd
 c80e97500b7729506ae1be920febddc1 *man/as.matrix.Rd
-888db18d63ea0b9619d29d01eb66654c *man/bas.Rd
+9989562033750ba62ce35c3a761bfe81 *man/bas.Rd
 875ad19a97c8ffd5d3233b47cac877ad *man/bas.glm.Rd
 41658cce25396b1f02bce16e87b9600a *man/bayesglm.Rd
 02b12a8e704c2388a66207e4dc180c96 *man/beta.binomial.Rd
@@ -54,10 +53,10 @@ bd57e1c058d623b30692184c84fe28f6 *man/hyper-g.Rd
 0601371222ee18220caa3a0902fee237 *man/hyper2d.Rd
 c16fc9719e265e1f7c49e9cdbdbce16e *man/hypergeometric.Rd
 bd8fcc7f5e79062b7c93e9465e50e928 *man/hypergeometric1F1.Rd
-790a0e41f396e3bbc394de5d494d8609 *man/image.bma.Rd
+6f2bd0258cad51212fc7f89fe205a458 *man/image.bma.Rd
 b2e54086ed5dace0da36bd6a0a8f210c *man/intrinsic.Rd
 c6e1179e797dfdaee5f64ce00da58c1e *man/jeffreys.Rd
-54a78694caa11a99fdbcfae3a58c3513 *man/plot.bma.Rd
+bda3e0ebf1873333c34fcbde603473ea *man/plot.bma.Rd
 9145d89f84d65437f22d94b540ee32e6 *man/plot.coefficients.Rd
 02226448dbf6b45d8085b731ddcd7346 *man/predict.basglm.Rd
 a5199d3ae48436b7af292ca20165e7d3 *man/predict.bma.Rd
@@ -65,6 +64,8 @@ a5199d3ae48436b7af292ca20165e7d3 *man/predict.bma.Rd
 3f12ac5e6785446c32f9940d86e74701 *man/robust.Rd
 8fca946b30606afcccf3939e1e18eb05 *man/summary.bma.Rd
 dece743bbb8380f702c930d6ebe2fa01 *man/tcchpriors.Rd
+fbefc34a53d33f76b1db808f9feb485f *man/trunc.beta.binomial.Rd
+973b4296add53d115a05c8d4118b1db9 *man/trunc.poisson.Rd
 e66760d1087f3191f9f0aa2873ae07d0 *man/update.bma.Rd
 eaeba4f37813cc546dfa95850b4f3ecc *src/CHg_postzbeta.c
 92dae0962f7da422f9807f7b50451146 *src/E.ZS.c
@@ -101,7 +102,7 @@ e0400f83c11c018e01442d5633cd28aa *src/igam.c
 a476e4aa7c09d41a87400b50a63595ea *src/incompleteGamma.c
 24465edf074577670832fad0985b61d2 *src/isnan.c
 554d441eabb99b3d26ed66f216e32734 *src/mcmc.c
-964908c0b1ed834284f1bb72c20c32df *src/mcmc_new.c
+5a48021e11fda67069c9c056c05cf076 *src/mcmc_new.c
 c95e7cd61e7ed08b09a95cd1a6b434d7 *src/mcmcbas.c
 05440bf5b8066bf201cd5514bef0e714 *src/mconf.h
 9947216ab913d70ad73db9c66fb7d059 *src/mem.c
@@ -109,7 +110,7 @@ aaf84029e7b2a637cded6c53fd4f1cba *src/mtherr.c
 dcc25ab7d16687685719f039220b97da *src/polevl.c
 cf7b1dfc54b13b655747a3ebc26ba243 *src/posisearch.c
 c2c48879c789dd0aff1295fce63d5525 *src/powi.c
-135589eab6643c4aa228627adff6bf8e *src/probabilities.c
+d4760eb31a5c66a0347f219a7e67afde *src/probabilities.c
 52b522e8eb9c56c21c36be6eec84e379 *src/psi.c
 f6ae3d581d980e62ccd54522ff7feeb5 *src/r_multi_norm.c
 a3c10110931aa6f5c8b9c3a4be32c29d *src/r_trunc_gamma.c
@@ -117,5 +118,5 @@ a3c10110931aa6f5c8b9c3a4be32c29d *src/r_trunc_gamma.c
 b71db70d6157b48ecae35044eae8b281 *src/round.c
 fd5bdf88c1f53b18aea3531c2904d23c *src/sampleworep.c
 7b9bfacdfc3e9e5ce1a711c24846b8c8 *src/sampleworep_new.c
-b258987cfbf7a92384e2ee7258d6db82 *src/sampling.h
+8daacbee55cae7f8692b5e0cf36dff5d *src/sampling.h
 281050a20f00626ba301563152ea58a2 *src/tree-structures.c
