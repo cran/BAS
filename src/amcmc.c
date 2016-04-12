@@ -26,7 +26,7 @@ void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_prob
 
 void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models);
  
-SEXP amcmc(SEXP Y, SEXP X,  SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP Rbestmarg, SEXP plocal, SEXP BURNIN_Iterations, SEXP MCMC_Iterations, SEXP LAMBDA, SEXP DELTA)
+SEXP amcmc(SEXP Y, SEXP X,  SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel, SEXP plocal, SEXP BURNIN_Iterations, SEXP MCMC_Iterations, SEXP LAMBDA, SEXP DELTA)
 {
   SEXP   Rse_m, Rcoef_m, Rmodel_m; 
 
@@ -250,7 +250,7 @@ SEXP amcmc(SEXP Y, SEXP X,  SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP 
     REAL(shrinkage)[m] = shrinkage_m;
     prior_m = compute_prior_probs(model,pmodel,p, modelprior);
     REAL(priorprobs)[m] = prior_m;
-    REAL(Rbestmarg)[0] = REAL(logmarg)[m];
+
     UNPROTECT(3);
 
 
@@ -709,12 +709,6 @@ SEXP amcmc(SEXP Y, SEXP X,  SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP 
    REAL(logmarg)[m] = logmargy;
    REAL(shrinkage)[m] = shrinkage_m;
    REAL(priorprobs)[m] = compute_prior_probs(model,pmodel,p, modelprior);
-   //   REAL(priorprobs)[m] = beta_binomial(pmodel,p, hyper_parameters);
-   //  if (REAL(logmarg)[m] > REAL(Rbestmarg)[0]) {
-   //   for (i=0; i < p; i++) {
-   //	 bestmodel[i] = model[i];}
-   //       REAL(Rbestmarg)[0] = REAL(logmarg)[m];
-   //} 
        
    UNPROTECT(3);  
    }	
