@@ -1,5 +1,6 @@
-fddc7171d9e1577106dfa90db122840d *CHANGELOG
-5296d1232d2778fbf093e872c04da440 *DESCRIPTION
+7def89cc9a163cc323188ecf7df70784 *CHANGELOG
+1ecf01ece24aa36027d8f5e0de9137d4 *DESCRIPTION
+a338da2cf6438b56ece6dd0c2d3772f8 *INDEX
 60b034a1081baf739f7fb19e08e515b7 *NAMESPACE
 da0dcc38ea6d2b680e4b773b0631ceb4 *R/EB.bma.R
 68f76d15ba0549dfc477de9b45a44a96 *R/as.matrix.R
@@ -64,15 +65,15 @@ bda3e0ebf1873333c34fcbde603473ea *man/plot.bma.Rd
 3f12ac5e6785446c32f9940d86e74701 *man/robust.Rd
 b06dc819a4adc4a3ed8bc7f9ad69359e *man/summary.bma.Rd
 dece743bbb8380f702c930d6ebe2fa01 *man/tcchpriors.Rd
-fbefc34a53d33f76b1db808f9feb485f *man/trunc.beta.binomial.Rd
+f4250fda61389ff8ebf38386bdd100dc *man/trunc.beta.binomial.Rd
 973b4296add53d115a05c8d4118b1db9 *man/trunc.poisson.Rd
 e66760d1087f3191f9f0aa2873ae07d0 *man/update.bma.Rd
 eaeba4f37813cc546dfa95850b4f3ecc *src/CHg_postzbeta.c
-92dae0962f7da422f9807f7b50451146 *src/E.ZS.c
+b386931e18e19574fc86f5084467f291 *src/E.ZS.c
 a7695d98f5fe41a2e092ba2c47b8f849 *src/Makevars
 993ee66ddab8d48146b96c0ba20937f8 *src/Makevars.win
 fa9cb2f5c4cdd6cc318d4811af3937d0 *src/ZS.approx.full.np.c
-3001d629606bfd21695d000200979baa *src/ZS.approx.null.np.c
+e18428dde024b9ed85126bcde016df23 *src/ZS.approx.null.np.c
 4a51ea79623e05d9276aa7a3e2c1c253 *src/amcmc.c
 5f37b280e182b36631b645c3111250ae *src/bas-glm.h
 e78b42b055f8c78ba2ba994132d205b7 *src/bayesglm.c
@@ -102,7 +103,7 @@ e0400f83c11c018e01442d5633cd28aa *src/igam.c
 a476e4aa7c09d41a87400b50a63595ea *src/incompleteGamma.c
 24465edf074577670832fad0985b61d2 *src/isnan.c
 0e225c360db937583091d1e2ead7cb67 *src/mcmc.c
-d60e54dfaf1d7e93b2e9a22fcbc9e543 *src/mcmc_new.c
+dfa9d83f05e06212988ff8f724741fa2 *src/mcmc_new.c
 c81f800e993c2e15cf2174c58a070367 *src/mcmcbas.c
 05440bf5b8066bf201cd5514bef0e714 *src/mconf.h
 9947216ab913d70ad73db9c66fb7d059 *src/mem.c

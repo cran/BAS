@@ -1,6 +1,6 @@
 Package: BAS
-Version: 1.2.0
-Date: 2016-04-07
+Version: 1.2.1
+Date: 2016-04-11
 Title: Bayesian Model Averaging using Bayesian Adaptive Sampling
 Authors@R: c(person("Merlise", "Clyde", email="clyde@stat.duke.edu",
 	   		       role=c("aut","cre", "cph")),
@@ -33,11 +33,11 @@ License: GPL (>= 3)
 URL: http://www.r-project.org, http://github.com/merliseclyde/BAS
 Repository: CRAN
 NeedsCompilation: yes
-Packaged: 2016-04-11 17:05:08 UTC; mclyde
+Packaged: 2016-04-14 20:06:55 UTC; mclyde
 Author: Merlise Clyde [aut, cre, cph],
   Michael Littman [ctb],
   Quanli Wang [ctb],
   Joyee Ghosh [ctb],
   Yingbo Li [ctb]
 Maintainer: Merlise Clyde <clyde@stat.duke.edu>
-Date/Publication: 2016-04-12 01:26:31
+Date/Publication: 2016-04-16 04:27:26
