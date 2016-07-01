@@ -3,16 +3,17 @@ plot.bas = function (x, which = c(1:4),
               "Model Complexity", "Inclusion Probabilities"),
   panel = if (add.smooth) panel.smooth else points, 
   sub.caption = NULL, main = "",
-  ask = prod(par("mfcol")) < length(which) && dev.interactive(), ...,
+    ask = prod(par("mfcol")) < length(which) && dev.interactive(), 
+    col.in=2, col.ex=1, col.pch=1, cex.lab=1, ...,
   id.n = 3,
   labels.id = names(residuals(x)), 
-  cex.id = 0.75,  add.smooth = getOption("add.smooth"), col.smooth=2, 
+  cex.id = 0.75,  add.smooth = getOption("add.smooth"),
   label.pos = c(4, 2))
 {
     if (!inherits(x, "bas")) 
       stop("use only with \"bas\" objects")
     if (!is.numeric(which) || any(which < 1) || any(which > 4)) 
-      stop("'which' must be in 1:3")
+      stop("'which' must be in 1:4")
     show <- rep(FALSE, 4)
     show[which] <- TRUE
 
@@ -64,7 +65,7 @@ plot.bas = function (x, which = c(1:4),
         ylim <- extendrange(r = ylim, f = 0.08)
       plot(yhat, r, xlab = "Predictions under BMA",
            ylab = "Residuals", main = main, 
-           ylim = ylim, type = "n", ...)
+           ylim = ylim, type = "n", col=col.pch,...)
       panel(yhat, r, ...)
       if (one.fig) 
         title(sub = sub.caption, ...)
@@ -83,13 +84,13 @@ plot.bas = function (x, which = c(1:4),
       ylim[2] <- ylim[2] + diff(ylim) * 0.075
       plot(m.index, cum.prob,
            xlab="Model Search Order", ylab="Cumulative Probability",
-           type="n")
+           type="n", col=col.pch, ...)
       panel(m.index,cum.prob)
       if (one.fig) 
         title(sub = sub.caption, ...)
       mtext(caption[2], 3, 0.25)
-      if (id.n > 0) 
-        text.id(m.index[show.m], cum.prob[show.m], show.m)
+      #if (id.n > 0) 
+      #  text.id(m.index[show.m], cum.prob[show.m], show.m)
     }
     if (show[3]) {
       logmarg = x$logmarg
@@ -98,7 +99,7 @@ plot.bas = function (x, which = c(1:4),
       plot(dim, logmarg,
            xlab = "Model Dimension", ylab = "log(Marginal)",
            main = main, 
-           ylim = ylim, ...)
+           ylim = ylim, col=col.pch, ...)
       if (one.fig) 
         title(sub = sub.caption, ...)
       mtext(caption[3], 3, 0.25)
@@ -109,17 +110,21 @@ plot.bas = function (x, which = c(1:4),
       probne0 = x$probne0
       variables = 1:x$n.vars
       ylim <- c(0,1)
+      colors=rep(0, x$n.vars)
+      colors[probne0 > .5] = col.in
+      colors[probne0 <= .5] = col.ex
+      
       plot(variables, probne0,
            xlab = "", ylab = "Marginal Inclusion Probability",
            xaxt="n",
-           main = main, type="h", col=(1+(probne0>= .5)),
+           main = main, type="h", col=colors,
            ylim = ylim, ...)
       if (one.fig) 
         title(sub = sub.caption, ...)
-      mtext(x$namesx, side=1, line=0.25, at=variables, las=2, cex=.75 )
+      mtext(x$namesx, side=1, line=0.25, at=variables, las=2, cex=cex.lab, ...)
       mtext(caption[4], 3, 0.25)
-      if (id.n > 0) 
-        text.id(dim[show.m], logmarg[show.m], show.m)
+      #if (id.n > 0) 
+       # text.id(dim[show.m], logmarg[show.m], show.m)
     }
     
     if (!one.fig && par("oma")[3] >= 1) {

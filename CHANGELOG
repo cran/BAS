@@ -1,7 +1,16 @@
-Changes for BAS 1.2.1
-	- bug fix for MCMC version with truncated prior distributions
+Changes for BAS 1.2.2 June 29, 2016
+  - added option to find "Best Predictive Model" or "BPM" for fitted.bas
+  - added local Empirical Bayes prior and fixed g-prior for bas.glm
+	- bug fix in plot.bas that appears with Sweave
+	- bug fix in coef.bma when there is just one predictor
+	- added diagnostic plot for MCMC
+	- added truncated power prior as in Yang, Wainwright & Jordan (2016)
+Changes for BAS 1.2.1  April 16, 2016
+	- bug fix for method="MCMC" with truncated prior distributions
 	where MH ratio was incorrect allowing models with 0 probability to
-	be sampled. 
+	be sampled.
+	- fixed error in Zellner-Siow prior (ZS-null) when n=p+1 or
+	saturated model  where log marginal likelihood should be 0 
 Changes for BAS 1.2.0  April 11, 2016
 	- removed unsafe code where Rbestmarg (input) was being
 	overwritten in .Call which would end up in corruption of the
