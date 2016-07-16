@@ -1,7 +1,7 @@
 #coefficients = function(object, ...) {UseMethod("coefficients")}
 #coefficients.default = base::coefficients
 
-coef.bma = function(object, ...) {
+coef.bas = function(object, ...) {
   conditionalmeans = list2matrix.bma(object, "mle")
   conditionalmeans[,-1] = sweep(conditionalmeans[,-1, drop=F], 1, object$shrinkage,
                                 FUN="*") 
@@ -14,15 +14,22 @@ coef.bma = function(object, ...) {
   postsd = sqrt(object$postprob %*% conditionalsd^2   +
                 object$postprob %*% ((sweep(conditionalmeans, 2, postmean, FUN="-"))^2))
   postsd = as.vector(postsd) 
+  if (is.null(object$df)) {
+    df = rep(object$n, length(object$postprob))
+    if (object$prior == "BIC" | object$prior == "AIC") {df = df - object$size}
+    else {df = df - 1}
+  }
+  else df = object$df
+  
   out = list(postmean=postmean, postsd=postsd, probne0 = object$probne0,
              conditionalmeans=conditionalmeans,conditionalsd=conditionalsd,
              namesx=object$namesx, postprobs=object$postprobs,
-             n.vars=object$n.vars, n.models=object$n.models, df=object$n)
-  class(out) = 'coef.bma'
+             n.vars=object$n.vars, n.models=object$n.models, df=df)
+  class(out) = 'coef.bas'
   return(out)
 }
 
-print.coef.bma = function(x, n.models=5,digits = max(3, getOption("digits") - 3), ...) {
+print.coef.bas = function(x, n.models=5,digits = max(3, getOption("digits") - 3), ...) {
   out = cbind(x$postmean, x$postsd, x$probne0)
   dimnames(out) = list(x$namesx, c("post mean", "post SD", "post p(B != 0)"))
 
@@ -34,7 +41,7 @@ print.coef.bma = function(x, n.models=5,digits = max(3, getOption("digits") - 3)
   
 # use to be pred.summary.top ???
 
-plot.coef.bma  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
+plot.coef.bas  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
   plotvar = function(prob0, mixprobs, df, means, sds, name,
                      e = 1e-04, nsteps = 500, ...) {
     if (prob0 == 1) {
@@ -70,7 +77,8 @@ plot.coef.bma  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
         op <- par(ask = TRUE)
         on.exit(par(op))
     }
-  df = x$df
+ df = x$df
+ 
  for (i in subset) {
     sel = x$conditionalmeans[,i] != 0
     prob0 = 1 - x$probne0[i]   
@@ -78,22 +86,16 @@ plot.coef.bma  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
     means =   x$conditionalmeans[sel, i, drop=TRUE]
     sds   =   x$conditionalsd[sel, i, drop=TRUE]
     name  = x$namesx[i]
-    plotvar(prob0, mixprobs, df, means, sds, name, e = e, ...)
+    df.sel = df[sel]
+    plotvar(prob0, mixprobs, df.sel, means, sds, name, e = e, ...)
   }
   invisible()
 }
 
-cv.summary.bma = function(object, pred, ytrue) {
-  topmodel = pred$best[1]
-  best.model = rep(0, length(object$namesx))
-  best.model[object$which[[topmodel]] + 1] = 1                    
-  top.sum = rbind(c(best.model,
-                 object$postprob[topmodel],
-                 object$R2[topmodel],
-                 object$size[topmodel],
-                 sqrt(sum((pred$Ypred[1,]- ytrue)^2)/length(ytrue)),
-                 sqrt(sum((pred$Ybma- ytrue)^2)/length(ytrue))))
-  colnames(top.sum) = c(object$namesx, "postprob",  "R2", "dim", "APEbest", "APEMA")
-  return(top.sum)
+cv.summary.bas = function(pred, ytrue) {
+  
+  APE = sqrt(sum((pred - ytrue)^2)/length(ytrue))
+  
+  return(APE)
 }
 
