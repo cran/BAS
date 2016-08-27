@@ -43,6 +43,9 @@ plot(coef.ZS, ask=FALSE)
 
 confint(coef.ZS)
 
+## ----plot-confint--------------------------------------------------------
+plot(confint(coef.ZS, parm=2:16))
+
 ## ----choice of estimator-------------------------------------------------
 muhat.BMA = fitted(crime.ZS, estimator="BMA")
 BMA  = predict(crime.ZS, estimator="BMA")
@@ -85,8 +88,8 @@ ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to e
 BPM = predict(crime.ZS, estimator="BPM", se.fit=TRUE)
 crime.conf.fit = confint(BPM, parm="mean")
 crime.conf.pred = confint(BPM, parm="pred")
-cbind(BPM$fit, crime.conf.fit, crime.conf.pred)
-
+cbind(crime.conf.fit, crime.conf.pred)
+plot(crime.conf.fit)
 
 ## ----MCMC----------------------------------------------------------------
 crime.ZS =  bas.lm(y ~ ., 

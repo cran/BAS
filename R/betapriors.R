@@ -26,25 +26,25 @@ tCCH = function(alpha=1, beta=2, s=0, r=3/2, v=1, theta=1) {
     #}
     }
 
-intrinsic = function(n) {
+intrinsic = function(n=NULL) {
 #    if (beta == 2 & alpha == 2 & s == 0)   {
 #        structure(list(family="Truncated-Gamma", class="TCCH", hyper.parameters=NULL),
 #                       class="prior")}
 #    else {      
         structure(list(family="intrinsic", class="TCCH",
-                       hyper.parameters=list(alpha=1, beta=1, s=0, r=1, n=n)),
+                       hyper.parameters=list(alpha=1.0, beta=1.0, s=0.0, r=1.0, n=n)),
                   class="prior")
     #}
     }
 
-hyper.g.n = function(alpha=3, n) {
+hyper.g.n = function(alpha=3, n=NULL) {
 #    if (beta == 2 & alpha == 2 & s == 0)   {
 #        structure(list(family="Truncated-Gamma", class="TCCH", hyper.parameters=NULL),
 #                       class="prior")}
 #    else {      
-        structure(list(family="tCCH", class="TCCH",
+        structure(list(family="hyper-g/n", class="TCCH",
                        hyper.parameters=list(alpha=alpha-2, beta=2, s=0,
-                           r=alpha/2, v=1, theta=1/n)),
+                           r=alpha/2, v=1, theta=1/n), n=n),
                   class="prior")
     #}
 }
@@ -56,7 +56,7 @@ Jeffreys = function() {
     }
 
 
-hyper.g = function(alpha=3) {
+hyper.g = function(alpha=3.0) {
     if (alpha <= 2 )   {
         return("alpha must be greater than 2 in hyper.g prior")
     }
@@ -69,24 +69,30 @@ hyper.g = function(alpha=3) {
 
 TG = function(alpha=2) {
     structure(list(family="TG", class="TCCH",
-                       hyper.parameters=list(alpha=alpha, beta=2, s=0.0)),
+                       hyper.parameters=list(alpha=alpha, beta=2.0, s=0.0)),
                   class="prior")
 }
 
 
 beta.prime=function(n=NULL) {
-    structure(list(family="betaprime", class="TCCH", hyper.parameters=list(n=n, alpha=.5)),
+    structure(list(family="betaprime", class="TCCH", 
+                   hyper.parameters=list(n=n, alpha=.5)),
               class="prior")
 }
 
 robust = function(n=NULL) {
-    structure(list(family="robust", class="TCCH",  hyper.parameters = list(n=n)),
+    structure(list(family="robust", class="TCCH",  
+                   hyper.parameters = list(n=n)),
                    class="prior")
 }
 
 bic.prior = function(n=NULL) {
-    structure(list(family="BIC", class="IC", hyper.parameters = list(penalty=log(n)),
-                   hyper=log(n)),
+   if (is.null(n)) penalty = NULL
+   else penalty = log(n)
+   
+  structure(list(family="BIC", class="IC", 
+                   hyper.parameters = list(penalty=penalty, n=as.numeric(n)),
+                   hyper=penalty),
                    class="prior")
 }
 
@@ -108,4 +114,11 @@ g.prior = function(g) {
                    hyper=as.numeric(g),
                    hyper.parameters= list(g=g)),
               class="prior")
+}
+
+testBF.prior = function(g) {
+  structure(list(family="testBF.prior", g = as.numeric(g), class="g-prior",
+                 hyper=as.numeric(g),
+                 hyper.parameters= list(g=as.numeric(g), loglik_null=NULL)),
+            class="prior")
 }
