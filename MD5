@@ -1,11 +1,11 @@
 c0d41d1ced25a62bb18a9587c9cdf887 *CHANGELOG
-259a22e98bca4a3381aabc3a248cc2ac *DESCRIPTION
+0f1162f5096797eeaf046b860dd5f9d7 *DESCRIPTION
 74a30fa71243c4a3801e5cac7bf53125 *NAMESPACE
-b2be98d155808ac52e8c85a48bd02fe9 *NEWS.md
+32368723f38ff17d10980bc05b387ece *NEWS.md
 da0dcc38ea6d2b680e4b773b0631ceb4 *R/EB.bma.R
 96d3fa75d41bad1050d7bed8cf63b3cd *R/as.matrix.R
-1b39666a63a909d9b0e4459dac7b4775 *R/bas.R
-c7786850dc8004ed4c04da996a140464 *R/bas.gglm.R
+4a934239dd4a5338363195220a420f36 *R/bas.R
+93cf6de2f63474ef26097db9297e73e1 *R/bas.gglm.R
 79876dc52eab4db9d3741c7b9cc28a50 *R/betapriors.R
 1dc628726b2be81e3666e6b6e9429f49 *R/cch.R
 f94aae9f3d1f4b325e6df4d7213529f5 *R/ch1f1.R
@@ -29,12 +29,12 @@ c90c80918fe439451e936291ccc7d3e7 *build/vignette.rds
 60450b774609e3a32f84c0e1992d2ab1 *data/bodyfat.rda
 ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
 27332187fc1d865f99636137a7f16d49 *demo/00Index
-e3149a4b53f0541b9acc08259bd4823d *demo/BAS.USCrime.R
+48cca442f711815f238745bff508289c *demo/BAS.USCrime.R
 4e87327d61bbb48314dce2928ab4b21e *demo/BAS.hald.R
 af5c6aad41d32e5616ccce5770206d43 *inst/CITATION
 a115db0533b13301ba35a64fda7f379a *inst/doc/BAS-vignette.R
-459aa6409581a50100cbca748acf0f55 *inst/doc/BAS-vignette.Rmd
-cf6fe3e0f0d5c96a846e63a01d53f23f *inst/doc/BAS-vignette.html
+6db857a2eb39cc6f06d91129a4bc9696 *inst/doc/BAS-vignette.Rmd
+2ba832b37da3a888409a4bda8df9fffa *inst/doc/BAS-vignette.html
 57aff869f3160a310a1eb80608bc09f6 *man/BAS-package.Rd
 f1f34d4d08bfe1c2e52d4f4d40fa1fbd *man/Bernoulli.Rd
 56a055586e17e14bfe2208a6f759a78f *man/EB.Rd
@@ -42,8 +42,8 @@ edfdaa3e64d83c90373c2d058760bf43 *man/EB.global.Rd
 4758f956beb80177ff9f0ce7921cfb5c *man/TG-priors.Rd
 cf70607d8b64737b34c7ef435512400e *man/Uniform.Rd
 d53a81a994cc903d005271bb8d26cc9f *man/as.matrix.Rd
-6e6c1a2c3b1b8980a912e086a3e8ce7f *man/bas.Rd
-aac907005282e6095886a994ff96ede4 *man/bas.glm.Rd
+4df4ef45333e530a23516e814949980b *man/bas.Rd
+57b8c9960794b525cd47d14a2aa54525 *man/bas.glm.Rd
 41658cce25396b1f02bce16e87b9600a *man/bayesglm.Rd
 02b12a8e704c2388a66207e4dc180c96 *man/beta.binomial.Rd
 d063a44474382f1c43337fda3cda2f02 *man/beta.prime.Rd
@@ -54,7 +54,7 @@ a28a6564597b43ba855cc74bc8f1b9f9 *man/bodyfat.Rd
 1336bdaa83c3f286840174e79172a8a8 *man/coefpriors.Rd
 a1b021b178d00f34b2a410b3b0af01b7 *man/confint.Rd
 185379b56efdf76378f89a1334176b36 *man/confint.pred.Rd
-cc31119aac6eb28d0c12fa80ccc714d2 *man/cv.summary.bma.Rd
+4a5765b1d257f5aa4a161be3f325f2c4 *man/cv.summary.bma.Rd
 b9f49b4c5fe3ffc49d15dfc777ca6cf4 *man/diagnostic.Rd
 fbeeffa654f2eb606a3ef343d27f8e36 *man/eplogprob-marg.Rd
 937ae2a713abe9ac5b3e1e8fa45b78cc *man/eplogprob.Rd
@@ -136,4 +136,4 @@ b71db70d6157b48ecae35044eae8b281 *src/round.c
 7b9bfacdfc3e9e5ce1a711c24846b8c8 *src/sampleworep_new.c
 08216f5815b053323c73ef72f4e1fcab *src/sampling.h
 281050a20f00626ba301563152ea58a2 *src/tree-structures.c
-459aa6409581a50100cbca748acf0f55 *vignettes/BAS-vignette.Rmd
+6db857a2eb39cc6f06d91129a4bc9696 *vignettes/BAS-vignette.Rmd
