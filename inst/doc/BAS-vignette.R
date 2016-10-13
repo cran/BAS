@@ -91,6 +91,10 @@ crime.conf.pred = confint(BPM, parm="pred")
 cbind(crime.conf.fit, crime.conf.pred)
 plot(crime.conf.fit)
 
+## ----pred----------------------------------------------------------------
+
+new.pred = predict(crime.ZS, newdata=UScrime, estimator="MPM")
+
 ## ----MCMC----------------------------------------------------------------
 crime.ZS =  bas.lm(y ~ ., 
                    data=UScrime,

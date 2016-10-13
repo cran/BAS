@@ -81,8 +81,16 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
     num.updates=10
     call = match.call()
    
-   # data = model.frame(formula, data, na.action=na.action)
-    
+    if (is.character(family)) 
+      family <- get(family, mode = "function", envir = parent.frame())
+    if (is.function(family)) 
+      family <- family()
+    if (is.null(family$family)) {
+      print(family)
+      stop("'family' not recognized")
+    }
+    if (missing(data)) 
+      data <- environment(formula)
    
     #browser() 
     mf <- match.call(expand.dots = FALSE)
@@ -99,7 +107,7 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
                     "rows due to missing data"))
     }
     
-    Y = model.response(mf, type="numeric")
+    Y = model.response(mf, type="any")
     mt <- attr(mf, "terms")
     X = model.matrix(mt, mf, contrasts)
     #X = model.matrix(formula, mf)
@@ -118,10 +126,10 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
    offset = model.offset(mf)  
    if (is.null(offset))  offset = rep(0, nobs)
   
-   browser()
-  glm.obj = glm(Y ~ X[,-1],family = family, weights=weights, offset=offset, y=T, x=T)
+ #  browser()
+ glm.obj = glm(Y ~ X[,-1],family = family, weights=weights, offset=offset, y=T, x=T)
   
-  Y = glm.obj$y
+ Y = glm.obj$y
   
   prob <- .normalize.initprobs(initprobs, glm.obj)
 	n.models <- .normalize.n.models(n.models, p, prob, method)
@@ -204,6 +212,9 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
     if (method == "MCMC") { result$n.models = result$n.Unique}
     else { result$n.models=n.models}
 
+  	df = rep(nobs - 1, result$n.models)
+  	if (betaprior$class == "IC") df = df - result$size + 1
+  	result$df = df
     result$R2 = .R2.glm.bas(result$deviance, result$size, call)
     result$n.vars=p
     result$Y=Yvec
@@ -251,7 +262,7 @@ object$mle = object$mle[-drop]
 object$mle.se = object$mle.se[-drop]
 object$shrinkage = object$shrinkage[-drop]
 object$n.models = n.models - 1    
-
+object$df = object$df[-drop]
 return(object)
 }
 

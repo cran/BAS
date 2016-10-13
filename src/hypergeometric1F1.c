@@ -2,7 +2,7 @@
 #include <Rmath.h>
 #include <Rinternals.h>
 
-extern double hyperg(double, double, double);
+extern double hyperg(double, double, double), lgammafn(double);
 double loghyperg1F1_laplace(double, double, double);
 
 
@@ -54,7 +54,7 @@ double loghyperg1F1_laplace(double a, double b, double x)
   if ( x <= 0.0) {
      if (x < 0.0) {
          x = -x;
-       logy =  -lgamma(b) - lgamma(a) + lgamma(a+b);
+       logy =  -lgammafn(b) - lgammafn(a) + lgammafn(a+b);
 
 	//	mode = (2.0 - 2.0* a + b - x - sqrt(pow(b, 2.0) - 2.0*b*x + x*(4.0*(a-1.0)+x)))/
 	//  (2*(a - 1.0 - b));
@@ -113,6 +113,7 @@ void hypergeometric1F1(double *a, double *b, double *x, double *y, int *npara, i
   }   
 }
 
+// Deprecate - compute shrinkage in betapriorfamily.c now
 double shrinkage_chg(double a, double b, double Q, int laplace) {
 
   double shrinkage=1.0;
@@ -131,7 +132,7 @@ double shrinkage_chg(double a, double b, double Q, int laplace) {
 		     lbeta(a/2.0, b/2.0) -
 		     loghyperg1F1(a/2.0, b/2.0,  Q/2.0, laplace));	
   }
-    //Rprintf("Laplace shrinkage_chg:  %lf\n", shrinkage);
+  Rprintf("shrinkage_chg:  %lf\n", shrinkage);
   if (shrinkage > 1.0)  shrinkage = 1.0;
   else if (shrinkage < 0.0) shrinkage = 0.0;
   

@@ -1,3 +1,12 @@
+# BAS 1.4.2   October 12, 2016
+
+## Updates
+
+* added df to the object returned by bas.glm to simplify `coefficients` function.
+
+## Bug Fixes
+* corrected expected value of shrinkage for intrinsic, hyper-g/n and TCCH priors for glms
+
 # BAS 1.4.1   September 17, 2016
 
 ## Bug Fixes
