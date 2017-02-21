@@ -4,7 +4,7 @@
 #include "bas-glm.h"
 
 
-	
+// [[register]]	
 SEXP glm_mcmc(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights, 
 	      SEXP Rprobinit, SEXP Rmodeldim, 
 	      SEXP modelprior,  SEXP betaprior, SEXP Rbestmodel,  SEXP plocal, 
@@ -344,7 +344,7 @@ SEXP glm_mcmc(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights,
 	SET_STRING_ELT(ANS_names, 12, mkChar("freq"));
 
 	SET_VECTOR_ELT(ANS, 13, MCMCprobs);
-	SET_STRING_ELT(ANS_names, 13, mkChar("probs.MCMC"));
+	SET_STRING_ELT(ANS_names, 13, mkChar("probne0.MCMC"));
 
 	SET_VECTOR_ELT(ANS, 14, NumUnique);
 	SET_STRING_ELT(ANS_names, 14, mkChar("n.Unique"));

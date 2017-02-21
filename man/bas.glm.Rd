@@ -10,7 +10,7 @@
  initprobs = "Uniform", method = "MCMC", update = NULL,
  bestmodel = NULL, prob.rw = 0.5, 
  MCMC.iterations = NULL, control = glm.control(), 
- laplace=FALSE)
+ laplace=FALSE, renormalize=FALSE)
 }
 \arguments{
   \item{formula}{generalized linear model formula for the full model with all
@@ -95,6 +95,7 @@ predictor; by default 0.}
     approximate for integration with respect to g to obtain the marginal
     likelihood.  If FALSE the Cephes library is used which may be
     inaccurate for large n or large values of the Wald Chisquared statistic.}
+    \item{renormalize}{logical variable for whether posterior probabilities should be based on renormalizing marginal likelihoods times prior probabilities or use Monte Carlo frequencies. Applies only to MCMC sampling}
 }
 \details{BAS provides several search
 algorithms to find high probability models for use in Bayesian Model
@@ -115,9 +116,9 @@ the correlations of variables are small to modest.  The priors on
 coefficients are mixtures of g-priors that provide approximations to the
 power prior.} 
 \value{
-  \code{bas.glm} returns an object of class \code{BMA}
+  \code{bas.glm} returns an object of class \code{basglm}
 
-An object of class \code{BMA} is a list containing at least the following components:
+An object of class \code{basglm} is a list containing at least the following components:
 
 \item{postprobs}{the posterior probabilities of the models selected}
 \item{priorprobs}{the prior probabilities of the models selected}
@@ -138,6 +139,9 @@ An object of class \code{BMA} is a list containing at least the following compon
     marginal likelihood approximation}
   \item{Y}{response}
   \item{X}{matrix of predictors}
+  \item{family}{family object from the original call}
+  \item{betaprior}{family object for prior on coefficients, including hyperparamters}
+  \item{modelprior}{family object for prior on the models}
 }
 \references{Li, Y. and Clyde, M. (2015) Mixtures of g-priors in
   Generalized Linear Models. \url{http://arxiv.org/abs/1503.06913}
@@ -167,6 +171,10 @@ pima.robust = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
               betaprior=robust(), family=binomial(),
               modelprior=beta.binomial(1,1))
 
+pima.BIC = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
+              method="BAS",
+              betaprior=bic.prior(), family=binomial(),
+              modelprior=uniform())
 }
 \keyword{GLM}
 \keyword{regression}

@@ -1,5 +1,7 @@
-## ----setup---------------------------------------------------------------
+## ----setup, include=FALSE------------------------------------------------
+require(knitr)
 require(GGally)
+require(MASS)
 
 ## ----data----------------------------------------------------------------
 library(MASS)
@@ -25,88 +27,109 @@ plot(crime.ZS, which = 4, ask=FALSE, caption="", sub.caption="")
 ## ----print---------------------------------------------------------------
 crime.ZS
 
-## ----summary-------------------------------------------------------------
+## ----summary------------------------------------------------------------------
+options(width = 80)
 summary(crime.ZS)
 
-## ----image, fig.width=5, fig.height=5------------------------------------
+## ----image, fig.width=5, fig.height=5-----------------------------------------
 image(crime.ZS, rotate=F)
 
-## ----plot----------------------------------------------------------------
+## ----plot---------------------------------------------------------------------
 coef.ZS = coef(crime.ZS)
 plot(coef.ZS, subset=c(5:6),  ask=F)
 
-## ----coefall-------------------------------------------------------------
+## ----coefall------------------------------------------------------------------
 
 plot(coef.ZS, ask=FALSE)
 
-## ----confint-coef--------------------------------------------------------
+## ----confint-coef-------------------------------------------------------------
 
 confint(coef.ZS)
 
-## ----plot-confint--------------------------------------------------------
+## ----plot-confint, fig.width=7------------------------------------------------
 plot(confint(coef.ZS, parm=2:16))
 
-## ----choice of estimator-------------------------------------------------
+## ----choice of estimator------------------------------------------------------
 muhat.BMA = fitted(crime.ZS, estimator="BMA")
 BMA  = predict(crime.ZS, estimator="BMA")
 
 # predict has additional slots for fitted values under BMA, predictions under each model
 names(BMA)
 
-## ---- fig.width=5, fig.height=5------------------------------------------
+## ---- fig.width=5, fig.height=5-----------------------------------------------
 par(mar=c(9, 9, 3, 3))
 plot(muhat.BMA, BMA$fit, 
      pch=16, 
      xlab=expression(hat(mu[i])), ylab=expression(hat(Y[i])))
 abline(0,1)
 
-## ----HPM-----------------------------------------------------------------
+## ----HPM----------------------------------------------------------------------
 HPM = predict(crime.ZS, estimator="HPM")
 
 # show the indices of variables in the best model where 0 is the intercept
 HPM$bestmodel
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 (crime.ZS$namesx[HPM$bestmodel +1])[-1]
 
-## ----MPM-----------------------------------------------------------------
+## ----MPM----------------------------------------------------------------------
 MPM = predict(crime.ZS, estimator="MPM")
 (crime.ZS$namesx[attr(MPM$fit, 'model') +1])[-1]
 
-## ----BPM-----------------------------------------------------------------
+## ----BPM----------------------------------------------------------------------
 BPM = predict(crime.ZS, estimator="BPM")
 (crime.ZS$namesx[attr(BPM$fit, 'model') +1])[-1]
 
-## ------------------------------------------------------------------------
+## ---- fig.width=6, fig.height=6-----------------------------------------------
 library(GGally)
 ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values
                    MPM = as.vector(MPM$fit),  # this used fitted
                    BPM = as.vector(BPM$fit),  # this used fitted
                    BMA = as.vector(BMA$fit))) # this used predict
 
-## ----se------------------------------------------------------------------
+## ----se, fig.width=7----------------------------------------------------------
 BPM = predict(crime.ZS, estimator="BPM", se.fit=TRUE)
 crime.conf.fit = confint(BPM, parm="mean")
 crime.conf.pred = confint(BPM, parm="pred")
 cbind(crime.conf.fit, crime.conf.pred)
 plot(crime.conf.fit)
 
-## ----pred----------------------------------------------------------------
+## ----pred---------------------------------------------------------------------
 
 new.pred = predict(crime.ZS, newdata=UScrime, estimator="MPM")
 
-## ----MCMC----------------------------------------------------------------
+## -----------------------------------------------------------------------------
+system.time(
+  for (i in 1:10) {
+    crime.ZS <- bas.lm(y ~ ., 
+                   data=UScrime,
+                   prior="ZS-null", method="BAS",
+                   modelprior=uniform(), initprobs="eplogp") 
+  }
+)
+
+system.time(
+  for (i in 1:10)  {
+    crime.ZS <-  bas.lm(y ~ ., 
+                   data=UScrime,
+                   prior="ZS-null", method="deterministic",
+                   modelprior=uniform(), initprobs="eplogp") 
+  }
+)
+
+
+## ----MCMC---------------------------------------------------------------------
 crime.ZS =  bas.lm(y ~ ., 
                    data=UScrime,
                    prior="ZS-null",
                    modelprior=uniform(),
                    method = "MCMC") 
 
-## ----diagnostics---------------------------------------------------------
+## ----diagnostics--------------------------------------------------------------
 diagnostics(crime.ZS, type="pip",  pch=16)
 diagnostics(crime.ZS, type="model",  pch=16)
 
-## ----biggerMCMC----------------------------------------------------------
+## ----biggerMCMC---------------------------------------------------------------
 crime.ZS =  bas.lm(y ~ ., 
                    data=UScrime,
                    prior="ZS-null",
@@ -114,4 +137,18 @@ crime.ZS =  bas.lm(y ~ .,
                    method = "MCMC", MCMC.iterations = 10^6)  
 
 diagnostics(crime.ZS, type="model", pch=16)
+
+## ----add-out------------------------------------------------------------------
+data("stackloss")
+stackloss$out.ind = diag(nrow(stackloss))
+
+stack.bas = bas.lm(stack.loss ~ ., data=stackloss,
+                method="MCMC", initprobs="marg-eplogp",
+                prior="ZS-null", 
+                modelprior=tr.poisson(4,10),
+                MCMC.iterations=200000
+               )
+
+## -----------------------------------------------------------------------------
+kable(as.data.frame(summary(stack.bas)))
 

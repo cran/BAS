@@ -67,7 +67,7 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
     bestmodel=NULL, prob.local=0.0,
     prob.rw=0.5,  
     MCMC.iterations=NULL,
-    lambda=NULL, delta=0.025, thin=1)  {
+    lambda=NULL, delta=0.025, thin=1, renormalize=FALSE)  {
 
   
   num.updates=10
@@ -148,7 +148,7 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
   #  prob = as.numeric(initprobs)
   #MCMC-BAS
   if (is.null(n.models)) n.models = min(2^p, 2^19)
-  if (is.null(MCMC.iterations)) MCMC.iterations = as.integer(n.models*2)
+  if (is.null(MCMC.iterations)) MCMC.iterations = as.integer(n.models*10)
   Burnin.iterations = as.integer(MCMC.iterations)
   
   if (is.null(lambda)) lambda=1.0
@@ -218,7 +218,7 @@ if (method == "AMCMC") {
 }
 #  sampleprobs = as.double(rep(0.0, n.models))
   result = switch(method,
-    "BAS" = .Call("sampleworep",
+    "BAS" = .Call(C_sampleworep,
       Yvec, X, sqrt(weights),
       prob, modeldim,
       incint=as.integer(int), 
@@ -228,7 +228,7 @@ if (method == "AMCMC") {
       Rbestmodel=as.integer(bestmodel),
       plocal=as.numeric(prob.local),
       PACKAGE="BAS"), 
-    "MCMC+BAS"= .Call("mcmcbas",
+    "MCMC+BAS"= .Call(C_mcmcbas,
       Yvec, X, sqrt(weights),
       prob, modeldim,
       incint=as.integer(int), 
@@ -237,9 +237,8 @@ if (method == "AMCMC") {
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       plocal=as.numeric(1.0 - prob.rw), as.integer(Burnin.iterations), 
-      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-      PACKAGE="BAS"),
-    "MCMC"= .Call("mcmc_new",
+      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta)),
+    "MCMC"= .Call(C_mcmc_new,
       Yvec, X, sqrt(weights),
       prob, modeldim,
       incint=as.integer(int), 
@@ -249,21 +248,8 @@ if (method == "AMCMC") {
       Rbestmodel=as.integer(bestmodel),
       plocal=as.numeric(1.0 - prob.rw), as.integer(Burnin.iterations), 
         as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-        as.integer(thin),
-	 PACKAGE="BAS"),
-    "MCMC_old"= .Call("mcmc",
-        Yvec, X, sqrt(weights),
-        prob, modeldim,
-        incint=as.integer(int), 
-        alpha= as.numeric(alpha),
-        method=as.integer(method.num), modelprior=modelprior,
-        update=as.integer(update),
-        Rbestmodel=as.integer(bestmodel),
-        plocal=as.numeric(1.0 - prob.rw), as.integer(Burnin.iterations), 
-        as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-        as.integer(thin),
-        PACKAGE="BAS"),
-    "AMCMC" = .Call("amcmc",
+        as.integer(thin)),
+    "AMCMC" = .Call(C_amcmc,
       Yvec, X, sqrt(weights),
       prob, modeldim,
       incint=as.integer(int), 
@@ -272,8 +258,7 @@ if (method == "AMCMC") {
       update=as.integer(update),
       Rbestmodel=as.integer(bestmodel),
       plocal=as.numeric(1.0-prob.rw), as.integer(Burnin.iterations), 
-      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
-      PACKAGE="BAS"),
+      as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta)),
  #    "MAXeffect" = .Call("posisearch",
  #     Yvec, X,
  #     prob, modeldim,
@@ -286,13 +271,12 @@ if (method == "AMCMC") {
  #     plocal=as.numeric(1.0-prob.rw), as.integer(Burnin.iterations), 
  #     as.integer(MCMC.iterations), as.numeric(lambda),as.numeric(delta),
  #     PACKAGE="BAS"),
-    "deterministic" = .Call("deterministic",
+    "deterministic" = .Call(C_deterministic,
       Yvec, X, sqrt(weights),
       prob, modeldim,
       incint=as.integer(int),
       alpha= as.numeric(alpha),
-      method=as.integer(method.num),modelprior=modelprior,
-      PACKAGE="BAS")
+      method=as.integer(method.num),modelprior=modelprior)
   )
   
   result$namesx=namesx
@@ -300,8 +284,17 @@ if (method == "AMCMC") {
   result$prior=prior
   result$modelprior=modelprior
   result$alpha=alpha
+  result$probne0.RN = result$probne0
+  result$postprobs.RN = result$postprobs
+  
   if (method == "MCMC" || method == "MCMC_new" ) {
-	result$n.models = result$n.Unique
+	  result$n.models = result$n.Unique
+	  result$postprobs.MCMC = result$freq/sum(result$freq)
+	
+	  if (!renormalize)  {
+	    result$probne0 = result$probne0.MCMC
+  	  result$postprobs = result$postprobs.MCMC
+	  }
   } else {
   	result$n.models=n.models
   }

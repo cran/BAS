@@ -96,7 +96,9 @@ double GetNextModelCandidate(int pmodel_old, int n, int n_sure, int *model, stru
 	}
 	return MH;
 }
-SEXP mcmc_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, 
+
+// [[register]]
+extern SEXP mcmc_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP incint, SEXP Ralpha,SEXP method, 
 			  SEXP modelprior, SEXP Rupdate, SEXP Rbestmodel,  SEXP plocal, 
 	      SEXP BURNIN_Iterations, SEXP MCMC_Iterations, SEXP LAMBDA, SEXP DELTA, SEXP Rthin)
 {
@@ -471,7 +473,7 @@ SEXP mcmc_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEX
 	SET_STRING_ELT(ANS_names, 12, mkChar("freq"));
 
 	SET_VECTOR_ELT(ANS, 13, MCMCprobs);
-	SET_STRING_ELT(ANS_names, 13, mkChar("probs.MCMC"));
+	SET_STRING_ELT(ANS_names, 13, mkChar("probne0.MCMC"));
 
 	SET_VECTOR_ELT(ANS, 14, NumUnique);
 	SET_STRING_ELT(ANS_names, 14, mkChar("n.Unique"));
