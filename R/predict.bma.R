@@ -39,14 +39,32 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
   if (!(estimator %in% c("BMA", "HPM", "MPM", "BPM"))) {
     stop("Estimator must be one of 'BMA', 'BPM', 'HPM', or 'MPM'.")
   }
+
+  tt = terms(object)
+  
   if (missing(newdata) || is.null(newdata))  {
     newdata= object$X
-    prediction= FALSE}
-  if (is.data.frame(newdata)) {
-      newdata = model.matrix(eval(object$call$formula), newdata) 
+    insample=TRUE
+    }
+  else{
+    if (is.data.frame(newdata)) {
+    #  newdata = model.matrix(eval(object$call$formula), newdata) 
+      Terms = delete.response(tt)
+      m = model.frame(Terms, newdata, na.action = na.pass,
+                      xlev = object$xlevels)
+      newdata <- model.matrix(Terms, m, 
+                              contrasts.arg = object$contrasts)
+    
+      insample=FALSE
+    }
+    else {
+      stop("use of newdata as a vector is depricated, 
+       please supply newdata as a dataframe")
+      # if (is.vector(newdata)) newdata=matrix(newdata, nrow=1)  
+    }
   }
-  if (is.vector(newdata)) newdata=matrix(newdata, nrow=1)  
-  
+
+#  browser()
   n <- nrow(newdata)
   if (ncol(newdata) == object$n.vars) newdata=newdata[,-1, drop=FALSE]  # drop intercept
   if (ncol(newdata) != (object$n.vars -1)) stop("Dimension of newdata does not match orginal model")
@@ -111,7 +129,9 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
       beta.m <- beta[[i]]
       model.m <- models[[i]]
       Ypred[i,] <-  (newdata[,model.m[-1],drop=FALSE] %*% beta.m[-1])*gg[i] + intercept[i]}
- }
+  }
+  
+ 
   df = df[best]
   Ybma <- t(Ypred) %*% postprobs
   fit = Ybma
@@ -132,11 +152,16 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
   
 }
   #browser()
-  se=list(se.fit=NULL, se.pred=NULL, se.bma.fit=NULL, se.bma.pred=NULL)
+  se=list(se.fit=NULL, se.pred=NULL, 
+          se.bma.fit=NULL, se.bma.pred=NULL)
 
   if (se.fit)  {
-       if (estimator != "BMA")  se = .se.fit(fit, newdata, object, prediction)   
-       else   se = .se.bma(Ybma, newdata, Ypred, best, object, prediction) 
+       if (estimator != "BMA") {
+         se = .se.fit(fit, newdata, object, prediction, insample)   }
+       else   {
+         se = .se.bma(Ybma, newdata, Ypred, best, object, 
+                      prediction, insample) }
+    
   }
    
   out = list(fit=fit, Ybma=Ybma, Ypred=Ypred, postprobs=postprobs,
@@ -177,7 +202,7 @@ fitted.bas = function(object,  type="response", estimator="BMA", top=NULL, ...) 
 return(as.vector(yhat))
 }
 
-.se.fit= function(yhat, X, object, pred) {
+.se.fit= function(yhat, X, object, pred, insample) {
 
   n = object$n
   model = attr(yhat, "model")
@@ -186,7 +211,7 @@ return(as.vector(yhat))
   df = object$df[best]
   
   shrinkage= object$shrinkage[best]
-  if (!pred)  xiXTXxiT = hat(object$X[, model+1])  -1/n
+  if (insample)  xiXTXxiT = hat(object$X[, model+1])  -1/n
   else {
 #    browser()
     X = cbind(1, X[, model[-1]] )
@@ -206,14 +231,15 @@ return(as.vector(yhat))
   return(list(se.fit=se.fit, se.pred=se.pred, residual.scale=sqrt(bayes_mse)))
 }
 
-.se.bma = function(fit, Xnew, Ypred, best, object, pred){
+.se.bma = function(fit, Xnew, Ypred, best, object, pred, insample){
 
 n = object$n
 
 df = object$df[best]
 
+
 shrinkage= object$shrinkage[best]
-if (!pred) {
+if (insample) {
   xiXTXxiT =  sapply(object$which[best], 
                      FUN=function(model, X) {
                        n = nrow(X)
@@ -236,11 +262,16 @@ else {
   
 }
 
-scale_fit = 1/n + sweep(xiXTXxiT, 2, shrinkage, FUN="*")
 ssy = var(object$Y)*(n-1)
 bayes_mse = ssy*(1 - shrinkage*object$R2[best])/df
+
+
+if (is.vector(xiXTXxiT))  xiXTXxiT = matrix(xiXTXxiT, nrow=1)
+  
+scale_fit = 1/n + sweep(xiXTXxiT, 2, shrinkage, FUN="*")
 var.fit = sweep(scale_fit, 2, bayes_mse, FUN="*")
 var.pred = sweep((1 + scale_fit), 2, bayes_mse, FUN="*")
+
 
 postprobs = object$postprobs[best]
 

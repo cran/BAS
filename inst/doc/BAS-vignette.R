@@ -34,8 +34,11 @@ summary(crime.ZS)
 ## ----image, fig.width=5, fig.height=5-----------------------------------------
 image(crime.ZS, rotate=F)
 
-## ----plot---------------------------------------------------------------------
+## ----coef---------------------------------------------------------------------
 coef.ZS = coef(crime.ZS)
+
+
+## ----plot---------------------------------------------------------------------
 plot(coef.ZS, subset=c(5:6),  ask=F)
 
 ## ----coefall------------------------------------------------------------------
@@ -48,6 +51,12 @@ confint(coef.ZS)
 
 ## ----plot-confint, fig.width=7------------------------------------------------
 plot(confint(coef.ZS, parm=2:16))
+
+## ---- warning=FALSE,  fig.width=7---------------------------------------------
+plot(confint(coef(crime.ZS, estimator="HPM")))
+
+## ---- warning=FALSE,  fig.width=7---------------------------------------------
+plot(confint(coef(crime.ZS, estimator="MPM")))
 
 ## ----choice of estimator------------------------------------------------------
 muhat.BMA = fitted(crime.ZS, estimator="BMA")

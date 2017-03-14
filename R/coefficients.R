@@ -1,50 +1,78 @@
 #coefficients = function(object, ...) {UseMethod("coefficients")}
 #coefficients.default = base::coefficients
 
-coef.bas = function(object, ...) {
-  conditionalmeans = list2matrix.bas(object, "mle")
-  conditionalmeans[,-1] = sweep(conditionalmeans[,-1, drop=F], 1, object$shrinkage,
-                                FUN="*") 
-  postmean = as.vector(object$postprobs %*% conditionalmeans)
-
-  conditionalsd  =  list2matrix.bas(object, "mle.se")
-  if (!(object$prior == "AIC" || object$prior == "BIC")) {
-    conditionalsd[ , -1] = sweep(conditionalsd[ ,-1, drop=F], 1, sqrt(object$shrinkage), FUN="*") }
+coef.bas = function(object, n.models, estimator="BMA", ...) {
+  if (estimator== "MPM") {
+    nvar = object$n.vars -1
+    bestmodel<- (0:nvar)[object$probne0 > .5]
+    best = 1
+    models <- rep(0, nvar+1)
+    models[bestmodel+1] <- 1
+    if (sum(models) > 1) {
+      object <- bas.lm(eval(object$call$formula),
+                       data=eval(object$call$data), 
+                       weights=eval(object$call$weights),
+                       n.models=1, alpha=object$g,
+                       initprobs=object$probne0, 
+                       prior=object$prior, modelprior=object$modelprior,
+                       update=NULL,bestmodel=models,
+                       prob.local=.0) 
+  }}
+  postprobs= object$postprobs
+  if (estimator == "MPM" | estimator== "HPM" ) n.models = 1
+  if (missing(n.models)) n.models=length(postprobs)
   
-  postsd = sqrt(object$postprobs %*% conditionalsd^2   +
-                object$postprobs %*% ((sweep(conditionalmeans, 2, postmean, FUN="-"))^2))
+  topm = order(-postprobs)[1:n.models]
+  postprobs = postprobs[topm]/sum(postprobs[topm])
+  shrinkage = object$shrinkage[topm]
+  conditionalmeans = list2matrix.bas(object, "mle")[topm, , drop=F]
+  conditionalmeans[,-1] = sweep(conditionalmeans[,-1, drop=F], 1,
+                                shrinkage,
+                                FUN="*") 
+  postmean = as.vector(postprobs %*% conditionalmeans)
+
+  conditionalsd  =  list2matrix.bas(object, "mle.se")[topm, , drop=F]
+  if (!(object$prior == "AIC" || object$prior == "BIC")) {
+    conditionalsd[ , -1] = sweep(conditionalsd[ ,-1, drop=F], 1, 
+                                 sqrt(shrinkage), FUN="*") }
+  
+  postsd = sqrt(postprobs %*% conditionalsd^2   +
+                postprobs %*% ((sweep(conditionalmeans, 2, postmean, FUN="-"))^2))
   postsd = as.vector(postsd) 
-  if (is.null(object$df)) {
-    df = rep(object$n, length(object$postprobs))
+  if (is.null(object$df[topm])) {
+    df = rep(object$n, length(postprobs))
     if (object$prior == "BIC" | object$prior == "AIC") {df = df - object$size}
     else {df = df - 1}
   }
-  else df = object$df
+  else df = object$df[topm]
   
   out = list(postmean=postmean, postsd=postsd, probne0 = object$probne0,
              conditionalmeans=conditionalmeans,conditionalsd=conditionalsd,
-             namesx=object$namesx, postprobs=object$postprobs,
-             n.vars=object$n.vars, n.models=object$n.models, df=df)
+             namesx=object$namesx, postprobs=postprobs,
+             n.vars=object$n.vars, n.models=n.models, df=df, estimator=estimator)
   class(out) = 'coef.bas'
   return(out)
 }
 
-print.coef.bas = function(x, n.models=5,digits = max(3, getOption("digits") - 3), ...) {
+print.coef.bas = function(x, 
+                          digits = max(3, getOption("digits") - 3), ...) {
   out = cbind(x$postmean, x$postsd, x$probne0)
   dimnames(out) = list(x$namesx, c("post mean", "post SD", "post p(B != 0)"))
 
   cat("\n Marginal Posterior Summaries of Coefficients: \n")
+  cat("\n Using ", x$estimator, "\n")
+  cat("\n Based on the top ", x$n.models, "models \n")
   print.default(format(out, digits = digits), print.gap = 2, 
                 quote = FALSE, ...)
   invisible()
 }
   
-# use to be pred.summary.top ???
 
 plot.coef.bas  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
   plotvar = function(prob0, mixprobs, df, means, sds, name,
                      e = 1e-04, nsteps = 500, ...) {
-    if (prob0 == 1) {
+    
+    if (prob0 == 1 | length(means) == 0) {
       xlower = -0
       xupper = 0
       xmax = 1
@@ -58,7 +86,7 @@ plot.coef.bas  = function(x, e = 1e-04, subset = 1:x$n.vars, ask=TRUE, ...) {
     xx = seq(xlower, xupper, length.out = nsteps)
     yy = rep(0, times = length(xx))
     maxyy = 1
-    if (prob0 < 1) {
+    if (prob0 < 1 & length(sds) > 0) {
       yy = mixprobs %*% apply(matrix(xx, ncol=1), 1,
                               FUN=function(x, d, m, s){dt(x=(x-m)/s, df=d)/s},
                               d=df, m=means, s=sds)

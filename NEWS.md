@@ -1,8 +1,24 @@
+#  BAS 1.4.4 March 14, 2017
+
+## Updates 
+
+* Extract coefficent summaries, credible intervals and plots for the `HPM` and ` MPM` in addition to the default `BMA` by adding a new `estimator` argument to the `coef` function. The new `n.models` argument to `coef` provides summaries based on the top `n.models` highest probability models to reduce computation time. 'n.models = 1' is equivalent to the highest probability model.
+
+* use of newdata that is a vector is now depricated for predict.bas; newdata must be a dataframe or missing, in which case fitted values based on the dataframe used in fitting is used
+
+* factor levels are handled as in `lm` or `glm` for prediction when there may be only level of a factor in the newdata
+
+## Bugs
+
+* fixed issue for prediction when newdata has just one row
+
+* fixed missing id in plot.bas for which=3
+
 #  BAS 1.4.3  February 18, 2017
 
 ## Updates
 
-* Register symbols (in progress)
+* Register symbols for foreign function calls
 * bin2int is now deprecated
 * fixed default MCMC.iteration in `bas.lm` to agree with documentation
 * updated vignette to include more examples, outlier detection, and finding the best predictive probability model
