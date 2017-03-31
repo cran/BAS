@@ -1,7 +1,7 @@
 c0d41d1ced25a62bb18a9587c9cdf887 *CHANGELOG
-e820e1c6b13da5ff6688db0f9e4099f6 *DESCRIPTION
-134a792bc2d839054fbb9a4baa2c0041 *NAMESPACE
-e9f009fd3aaa7bb27ec69770691a4c01 *NEWS.md
+9c48b6af7d8feefc5def20eaabc14965 *DESCRIPTION
+7c518e96189023bd522587ec9d01cdde *NAMESPACE
+d371441a850c19f9248d94aee7640dac *NEWS.md
 da0dcc38ea6d2b680e4b773b0631ceb4 *R/EB.bma.R
 0cd4149280af86e9780c26083c1b5aeb *R/as.matrix.R
 193df602e1b539fe1859c27a03c608b9 *R/bas.R
@@ -17,12 +17,13 @@ c0358fb466abdfafe35c4d756900fe66 *R/coefficients.R
 d80492df6ae861dec8c9e8601e28f36a *R/hypergeometric1F1.R
 e456f5dc132288305f98ce4f55064b75 *R/hypergeometric2F1.R
 0062d9bb12979c258b081a812df8aafe *R/image.bma.R
+64589ca65663e3aa678c92a9eb7c98b5 *R/interactions.R
 952e39687f2fc1c38fe3122d90efcbfd *R/modelpriors.R
 b4fa35c6133e63f52bba747abed90438 *R/plot.bma.R
-7b66ce3e09e1b3ef5779c09870d8d916 *R/predict.bma.R
+f8badcc059e4ba9a274c4f26fba1d9f8 *R/predict.bma.R
 0a9d8b9eb0cb0a89b84eb32ab8183f3a *R/summary.bma.R
 0f2f8ac6c8d92e9db9abeb2707459deb *R/update.bma.R
-f8d700f4e941612eb3fd27b5b83da19a *build/vignette.rds
+4beee395ce3f5118365f5b46580d5d44 *build/vignette.rds
 12ec17733c04dc3134435ed232b03f39 *data/Hald.txt.gz
 60450b774609e3a32f84c0e1992d2ab1 *data/bodyfat.rda
 ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
@@ -32,7 +33,7 @@ ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
 af5c6aad41d32e5616ccce5770206d43 *inst/CITATION
 33bc8ad0aeb1d85aead5d480ffa0d586 *inst/doc/BAS-vignette.R
 e4cfd9bc7afb913d55530a44ef761db6 *inst/doc/BAS-vignette.Rmd
-439618d0391b3264a8ac24d8e3af514e *inst/doc/BAS-vignette.html
+3951df89f437a1713521b5ba9af195e1 *inst/doc/BAS-vignette.html
 57aff869f3160a310a1eb80608bc09f6 *man/BAS-package.Rd
 f1f34d4d08bfe1c2e52d4f4d40fa1fbd *man/Bernoulli.Rd
 56a055586e17e14bfe2208a6f759a78f *man/EB.Rd
@@ -71,7 +72,7 @@ c6e1179e797dfdaee5f64ce00da58c1e *man/jeffreys.Rd
 6ab5bcf7c6b25b2a9181ed6eaa229ebf *man/plot.bma.Rd
 30f7df0878841cd273eb9fd5c37c8899 *man/plot.coefficients.Rd
 260789c092c21673e5ad6a00874b69d6 *man/predict.basglm.Rd
-45ec11b6b6e8908fe45cf4b4444a9be8 *man/predict.bma.Rd
+a4e7945d837a58dee4bd92c5b4e2b379 *man/predict.bma.Rd
 97805c8af7b2e89697c2241efd1f7100 *man/protein.Rd
 3f12ac5e6785446c32f9940d86e74701 *man/robust.Rd
 abe1247a247a5a7cadf802b430de02e6 *man/summary.bma.Rd
@@ -83,7 +84,7 @@ f4250fda61389ff8ebf38386bdd100dc *man/trunc.beta.binomial.Rd
 4f1e8cdbc11f66f3a5f5864338808894 *man/update.bma.Rd
 eaeba4f37813cc546dfa95850b4f3ecc *src/CHg_postzbeta.c
 b386931e18e19574fc86f5084467f291 *src/E.ZS.c
-2a6f9e9e044a78154d3cfda5936d6f48 *src/Makevars
+ac2607564e21e51307a31ffd2133e057 *src/Makevars
 5a22570963e0fd044fd874dc661773cd *src/Makevars.win
 f9a71e5162cbe9f01d796e8724121931 *src/ZS.approx.full.np.c
 ee0a3535b327e1898c73873713a63416 *src/ZS.approx.null.np.c
