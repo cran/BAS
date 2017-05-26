@@ -1,4 +1,19 @@
+#  BAS 1.4.6 May 24, 2017
+
+## Updates
+
+*  Added force.heredity.interaction function to allow higher order interactions to be included only if their "parents" or lower order interactions or main effects were included.   Currently tested with two way interactions.  This is implemented post-sampling; future  updates will add this at the sampling stage which will reduce memory usage and sampling times by reducing the number of models under consideration.
+
+## Bugs
+
+* Fixed unprotected ANS in C code in glm_sampleworep.c and sampleworep.c after call to PutRNGstate and possible stack imbalance in glm_mcmc  identified by [rchk](https://raw.githubusercontent.com/kalibera/cran-checks/master/rchk/results/BAS.out)
+
+* Fixed problem with predict for estimator=BPM when newdata was one row 
+
+
 #  BAS 1.4.5 March 28, 2017
+
+## Bugs
 
 * Fixed non-conformable error with `predict` when new data was from a dataframe with one row.
 

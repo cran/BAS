@@ -1,18 +1,17 @@
 ---
-title: "Using the Bayesian Adaptive Sampling (BAS) Package for Bayesian Model Averaging"
+title: "Using the Bayesian Adaptive Sampling (BAS) Package for Bayesian Model Averaging and Variable Selection"
 author: "Merlise A Clyde"
 date: "`r Sys.Date()`"
 r_packages:
   - rmarkdown
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Using the Bayesian Adaptive Sampling (BAS) Package for Bayesian Model Averaging}
+  %\VignetteIndexEntry{Using the Bayesian Adaptive Sampling (BAS) Package for Bayesian Model Averaging and Variable Selection}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 ```{r setup, include=FALSE}
-require(knitr)
-require(GGally)
+#require(knitr)
 require(MASS)
 ```
 
@@ -264,8 +263,7 @@ BPM = predict(crime.ZS, estimator="BPM")
 Let's see how they compare:
 
 ```{r, fig.width=6, fig.height=6}
-library(GGally)
-ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values
+GGally::ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values
                    MPM = as.vector(MPM$fit),  # this used fitted
                    BPM = as.vector(BPM$fit),  # this used fitted
                    BMA = as.vector(BMA$fit))) # this used predict
@@ -343,14 +341,14 @@ diagnostics(crime.ZS, type="model",  pch=16)
 
 In the left hand plot of pips, each point represents one posterior inclusion probability for the 15 variables estimated under the two methods. The two estimators are in pretty close agreement.  The plot of the model probabilities suggests that we should use more `MCMC.iterations` if we want more accurate estimates of the posterior model probabilities.
 
-```{r biggerMCMC}
+```{r biggerMCMC, eval=FALSE}
 crime.ZS =  bas.lm(y ~ ., 
                    data=UScrime,
                    prior="ZS-null",
                    modelprior=uniform(),
                    method = "MCMC", MCMC.iterations = 10^6)  
 
-diagnostics(crime.ZS, type="model", pch=16)
+# Don't run diagnostics(crime.ZS, type="model", pch=16)
 ```
 
 
@@ -376,7 +374,7 @@ The above call introduces using truncated prior distributions on the model space
 
 Looking at the summaries
 ```{r}
-kable(as.data.frame(summary(stack.bas)))
+knitr::kable(as.data.frame(summary(stack.bas)))
 ```
 
 

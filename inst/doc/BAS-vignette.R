@@ -1,6 +1,5 @@
 ## ----setup, include=FALSE------------------------------------------------
-require(knitr)
-require(GGally)
+#require(knitr)
 require(MASS)
 
 ## ----data----------------------------------------------------------------
@@ -90,8 +89,7 @@ BPM = predict(crime.ZS, estimator="BPM")
 (crime.ZS$namesx[attr(BPM$fit, 'model') +1])[-1]
 
 ## ---- fig.width=6, fig.height=6-----------------------------------------------
-library(GGally)
-ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values
+GGally::ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values
                    MPM = as.vector(MPM$fit),  # this used fitted
                    BPM = as.vector(BPM$fit),  # this used fitted
                    BMA = as.vector(BMA$fit))) # this used predict
@@ -138,14 +136,14 @@ crime.ZS =  bas.lm(y ~ .,
 diagnostics(crime.ZS, type="pip",  pch=16)
 diagnostics(crime.ZS, type="model",  pch=16)
 
-## ----biggerMCMC---------------------------------------------------------------
-crime.ZS =  bas.lm(y ~ ., 
-                   data=UScrime,
-                   prior="ZS-null",
-                   modelprior=uniform(),
-                   method = "MCMC", MCMC.iterations = 10^6)  
-
-diagnostics(crime.ZS, type="model", pch=16)
+## ----biggerMCMC, eval=FALSE---------------------------------------------------
+#  crime.ZS =  bas.lm(y ~ .,
+#                     data=UScrime,
+#                     prior="ZS-null",
+#                     modelprior=uniform(),
+#                     method = "MCMC", MCMC.iterations = 10^6)
+#  
+#  # Don't run diagnostics(crime.ZS, type="model", pch=16)
 
 ## ----add-out------------------------------------------------------------------
 data("stackloss")
@@ -159,5 +157,5 @@ stack.bas = bas.lm(stack.loss ~ ., data=stackloss,
                )
 
 ## -----------------------------------------------------------------------------
-kable(as.data.frame(summary(stack.bas)))
+knitr::kable(as.data.frame(summary(stack.bas)))
 
