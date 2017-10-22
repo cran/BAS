@@ -56,6 +56,8 @@ prob.heredity = function(model, parents, prob=.5) {
 #' Post processing function to force constraints on interaction inclusion bas BMA objects
 #'
 #' This function takes the output of a bas object and allows higher order interactions to be included only if their parent lower order interactions terms are in the model, by assigning zero prior probability, and hence posterior probability, to models that do include their respective parents.
+#' Currently only supports a common Bernoulli prior for inclusion.  Model probablities are given using the
+#' function `BAS:::prob.heredity`.
 #'
 #' @param object a bas linear model or generalized linear model object
 #' @param prior.prob  prior probability that a term is included conditional on parents being included
@@ -65,11 +67,21 @@ prob.heredity = function(model, parents, prob=.5) {
 #' @keywords regression
 #' @examples
 
+#' data("chickwts")
+#' bas.chk = bas.lm(weight ~ feed, data=chickwts)
+#  summary(bas.chk)  # 2^5 = 32 models
+#' bas.chk.int = force.heredity.bas(bas.chk)
+#  summary(bas.chk.int)  # two models now
+#'
+#'
 #' data(Hald)
 #' bas.hald = bas.lm(Y ~ .^2, data=Hald)
-
 #' bas.hald.int = force.heredity.bas(bas.hald)
 #' image(bas.hald.int)
+#'
+#' image(bas.hald.int)
+#'
+#'
 #' @family bas methods
 #' @export
 

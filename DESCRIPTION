@@ -1,6 +1,7 @@
 Package: BAS
-Version: 1.4.6
-Title: Bayesian Model Averaging using Bayesian Adaptive Sampling
+Version: 1.4.7
+Title: Bayesian Variable Selection and Model Averaging using Bayesian
+        Adaptive Sampling
 Authors@R: c(person("Merlise", "Clyde", email="clyde@stat.duke.edu",
 	   		       role=c("aut","cre", "cph")),
            person("Michael", "Littman", role="ctb"),
@@ -10,7 +11,7 @@ Authors@R: c(person("Merlise", "Clyde", email="clyde@stat.duke.edu",
 Depends: R (>= 3.0),
 Imports: stats, graphics, utils, grDevices
 Suggests: MASS, knitr, GGally, rmarkdown, roxygen2
-Description: Package for Bayesian Model Averaging in linear models and
+Description: Package for Bayesian Variable Selection and  Model Averaging in linear models and
     generalized linear models using stochastic or
     deterministic sampling without replacement from posterior
     distributions.  Prior distributions on coefficients are
@@ -41,11 +42,11 @@ NeedsCompilation: yes
 ByteCompile: yes
 VignetteBuilder: knitr
 RoxygenNote: 6.0.1
-Packaged: 2017-05-26 14:45:24 UTC; mclyde
+Packaged: 2017-10-22 17:37:06 UTC; mclyde
 Author: Merlise Clyde [aut, cre, cph],
   Michael Littman [ctb],
   Quanli Wang [ctb],
   Joyee Ghosh [ctb],
   Yingbo Li [ctb]
 Maintainer: Merlise Clyde <clyde@stat.duke.edu>
-Date/Publication: 2017-05-26 21:11:59 UTC
+Date/Publication: 2017-10-22 17:47:43 UTC

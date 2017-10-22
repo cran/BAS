@@ -3,7 +3,7 @@
 \name{bas.lm}
 \alias{bas.lm}
 \alias{bas}
-\title{Bayesian Adaptive Sampling Without Replacement for Variable Selection in
+\title{Bayesian Adaptive Sampling for Bayesian Model Averaging and Variable Selection in
 Linear Models}
 \usage{
 bas.lm(formula, data, subset, weights, na.action = "na.omit",
@@ -18,7 +18,8 @@ bas.lm(formula, data, subset, weights, na.action = "na.omit",
 Y ~ X.  All code assumes that an intercept will be included in each model
 and that the X's will be centered.}
 
-\item{data}{data frame}
+\item{data}{a data frame.  Factors will be converted to numerical vectors based on
+the using `model.matrix`.}
 
 \item{subset}{an optional vector specifying a subset of observations to be
 used in the fitting process.}
@@ -36,23 +37,57 @@ BAS with method="BAS" will try to enumerate all 2^p models. If enumeration
 is not possible (memory or time) then a value should be supplied which
 controls the number of sampled models using 'n.models'.  With method="MCMC",
 sampling will stop once the min(n.models, MCMC.iterations) occurs so
-MCMC.iterations be larger than n.models in order to explore the model space.
+MCMC.iterations be significantly larger than n.models in order to explore the model space.
 On exit for method= "MCMC" this is the number of unique models that have
-been sampled with counts stored in the output as "freq""}
+been sampled with counts stored in the output as "freq".}
 
 \item{prior}{prior distribution for regression coefficients.  Choices
-include "AIC", "BIC", "g-prior", "ZS-null", "ZS-full", "hyper-g",
-"hyper-g-laplace", "hyper-g-n", "EB-local", and "EB-global"}
+include
+\itemize{
+\item "AIC"
+\item "BIC"
+\item "g-prior", Zellner's g prior where `g` is specified using the argument `alpha`
+\item "JZS"  Jeffreys-Zellner-Siow prior which uses the Jeffreys
+prior on sigma and the Zellner-Siow Cauchy prior on the coefficients.
+The optional parameter `alpha` can be used to control
+the squared scale of the prior, where the default is alpha=1. Setting
+`alpha` is equal to rscale^2 in the BayesFactor package of Morey.
+This uses QUADMATH for numerical integration of g.
+\item  "ZS-null", a Laplace approximation to the 'JZS' prior
+for integration of g.  alpha = 1 only.
+\item "ZS-full" (to be deprecated),
+\item "hyper-g", a mixture of g-priors where the prior on
+g/(1+g) is a Beta(1, alpha/2) as in Liang et al (2008).  This
+uses the Cephes library for evaluation of the marginal
+likelihoods and may be numerically unstable for
+large n or R2 close to 1.  Default choice of alpha is 3.
+\item "hyper-g-laplace", Same as above but using a Laplace
+approximation to integrate over the prior on g.
+\item "hyper-g-n", a mixture of g-priors that where
+u = g/n and u ~ Beta(1, alpha/2)  to provide consistency
+when the null model is true.
+\item "EB-local", use the MLE of g from the marginal likelhood
+within each model
+\item "EB-global" uses an EM algorithm to find a common or
+global estimate of g, averaged over all models.  When it is not possible to
+enumerate all models, the EM algorithm uses only the
+models sampled under EB-local.
+}}
 
 \item{alpha}{optional hyperparameter in g-prior or hyper g-prior.  For
 Zellner's g-prior, alpha = g, for the Liang et al hyper-g or hyper-g-n
 method, recommended choice is alpha are between (2 < alpha < 4), with alpha
-= 3 recommended.}
+= 3 the default.  For the Zellner-Siow prior alpha = 1 by default, but can be used
+to modify the rate parameter in the gamma prior on g,  1/g ~ G(1/2, n*alpha/2) so that
+beta ~ C(0, sigma^2 alpha (X'X/n)^{-1}).}
 
 \item{modelprior}{Family of prior distribution on the models.  Choices
 include \code{\link{uniform}} \code{\link{Bernoulli}} or
-\code{\link{beta.binomial}} with the default being a
-\code{beta.binomial(1,1)}.}
+\code{\link{beta.binomial}}, \code{\link{tr.beta.binomial}},
+(with truncation) \code{\link{tr.poisson}} (a truncated Poisson), and
+\code{\link{tr.power.prior}} (a truncated power family),
+ with the default being a
+\code{beta.binomial(1,1)}.  Truncated versions are useful for p > n.}
 
 \item{initprobs}{Vector of length p or a character string specifiny which
 method is used to create the vector. This is used to order variables for
@@ -71,22 +106,29 @@ While the initprobs are not used in sampling for method="MCMC", this
 determines the order of the variables in the lookup table and affects memory
 allocation in large problems where enumeration is not feasible.  For
 variables that should always be included set the corresponding initprobs to
-1, i.e. the intercept should be included with probability one.}
+1, to overide the `modelprior`.}
 
 \item{method}{A character variable indicating which sampling method to use:
-method="BAS" uses Bayesian Adaptive Sampling (without replacement) using the
-sampling probabilities given in initprobs; method="MCMC" samples with
+\itemize{
+\item  "deterministic" uses the "top k" algorithm described in Ghosh and Clyde (2011)
+to sample models in order of approximate probability under conditional independence
+using the "initprobs".  This is the most efficient algorithm for enumeration.
+\item  "BAS" uses Bayesian Adaptive Sampling (without replacement) using the
+sampling probabilities given in initprobs under a model of conditional independence.
+These can be updated based on estimates of the marginal inclusion probabilities.
+\item  "MCMC" samples with
 replacement via a MCMC algorithm that combines the birth/death random walk
 in Hoeting et al (1997) of MC3 with a random swap move to interchange a
 variable in the model with one currently excluded as described in Clyde,
-Ghosh and Littman (2010); method="MCMC+BAS" runs an initial MCMC to
+Ghosh and Littman (2010).
+\item  "MCMC+BAS" runs an initial MCMC to
 calculate marginal inclusion probabilities and then samples without
 replacement as in BAS.  For BAS, the sampling probabilities can be updated
-as more models are sampled. (see update below).  We recommend "MCMC+BAS" or
-"MCMC" for high dimensional problems where enumeration is not feasible.}
+as more models are sampled. (see update below).
+}}
 
 \item{update}{number of iterations between potential updates of the sampling
-probabilities for method "BAS". If NULL do not update, otherwise the
+probabilities for method "BAS" or "MCMC+BAS". If NULL do not update, otherwise the
 algorithm will update using the marginal inclusion probabilities as they
 change while sampling takes place.  For large model spaces, updating is
 recommended. If the model space will be enumerated, leave at the default.}
@@ -98,8 +140,8 @@ the sampling. If NULL sampling starts with the null model}
 median probability model.  Not used at this time.}
 
 \item{prob.rw}{For any of the MCMC methods, probability of using the
-random-walk proposal; otherwise use a random "flip" move to propose a new
-model.}
+random-walk Metropolis proposal; otherwise use a random "flip" move
+to propose swap a variable that is excluded with a variable in the model.}
 
 \item{MCMC.iterations}{Number of iterations for the MCMC sampler; the
 default is n.models*10 if not set by the user.}
@@ -109,14 +151,17 @@ default is n.models*10 if not set by the user.}
 \item{delta}{truncation parameter to prevent sampling probabilities to
 degenerate to 0 or 1 prior to enumeration for sampling without replacement.}
 
-\item{thin}{For "MCMC", thin the MCMC every "thin" iterations; default is no
-thinning.}
+\item{thin}{For "MCMC", thin the MCMC chain every "thin" iterations; default is no
+thinning.  For large p, thinning can be used to significantly reduce memory
+requirements as models and associated summaries are saved only every thin iterations.  For thin = p, the  model and associated output are recorded every p iterations,
+similar to the Gibbs sampler in SSVS.}
 
 \item{renormalize}{For MCMC sampling, should posterior probabilities be
 based on renormalizing the marginal likelihoods times prior probabilities
 (TRUE) or frequencies from MCMC.  The latter are unbiased in long runs,
 while the former may have less variability.  May be compared via the
-diagnostic plot function.}
+diagnostic plot function \code{\link{diagnostics}}.
+See details in Clyde and Ghosh (2012).}
 }
 \value{
 \code{bas} returns an object of class \code{bas}
@@ -126,26 +171,34 @@ components:
 
 \item{postprob}{the posterior probabilities of the models selected}
 \item{priorprobs}{the prior probabilities of the models selected}
-\item{namesx}{the names of the variables} \item{R2}{R2 values for the
-models} \item{logmarg}{values of the log of the marginal likelihood for the
-models} \item{n.vars}{total number of independent variables in the full
-model, including the intercept} \item{size}{the number of independent
-variables in each of the models, includes the intercept} \item{which}{a list
+\item{namesx}{the names of the variables}
+\item{R2}{R2 values for the
+models}
+\item{logmarg}{values of the log of the marginal likelihood for the
+models.  This is equivalent to the log Bayes Factor for compaing
+each model to a base model with intercept only.}
+\item{n.vars}{total number of independent variables in the full
+model, including the intercept}
+\item{size}{the number of independent
+variables in each of the models, includes the intercept}
+\item{which}{a list
 of lists with one list per model with variables that are included in the
-model} \item{probne0}{the posterior probability that each variable is
+model}
+\item{probne0}{the posterior probability that each variable is
 non-zero computed using the renormalized marginal likelihoods of sampled
 models.  This may be biased if the number of sampled models is much smaller
 than the total number of models. Unbiased estimates may be obtained using
-method "MCMC".} \item{mle}{list of lists with one list per model giving the
+method "MCMC".}
+\item{mle}{list of lists with one list per model giving the
 MLE (OLS) estimate of each (nonzero) coefficient for each model. NOTE: The
 intercept is the mean of Y as each column of X has been centered by
 subtracting its mean.}
- \item{mle.se}{list of lists with one list per model
+\item{mle.se}{list of lists with one list per model
 giving the MLE (OLS) standard error of each coefficient for each model}
 \item{prior}{the name of the prior that created the BMA object}
-\item{alpha}{value of hyperparameter in prior used to create the BMA
-object.}
- \item{modelprior}{the prior distribution on models that created the
+\item{alpha}{value of hyperparameter in coefficient prior used to create the BMA
+object. }
+\item{modelprior}{the prior distribution on models that created the
 BMA object}
 \item{Y}{response}
 \item{X}{matrix of predictors}
@@ -160,16 +213,25 @@ can be extracted using \code{\link{coefficients.bas}}.  Fitted values and
 predictions can be obtained using the S3 functions \code{\link{fitted.bas}}
 and \code{\link{predict.bas}}.  BAS objects may be updated to use a
 different prior (without rerunning the sampler) using the function
-\code{\link{update.bas}}.
+\code{\link{update.bas}}. For MCMC sampling \code{\link{diagnostics}} can be used
+to assess whether the MCMC has run long enough so that the posterior probabilities
+are stable. For more details see the associated demos and vignette.
 }
 \description{
 Sample without replacement from a posterior distribution on models
 }
 \details{
-BAS provides several search algorithms to find high probability models for
-use in Bayesian Model Averaging or Bayesian model selection. For p less than
-20-25, BAS can enumerate all models depending on memory availability, for
-larger p, BAS samples without replacement using random or deterministic
+BAS provides several algorithms to sample from posterior distributions
+of models for
+use in Bayesian Model Averaging or Bayesian variable selection. For p less than
+20-25, BAS can enumerate all models depending on memory availability.  As BAS saves all
+models, MLEs, standard errors, log marginal liklihoods, prior and posterior and  probabilities
+memory requirements grow linearly with M*p where M is the number of models
+and p is the number of predictors.  For example, enumeration with p=21 with 2,097,152 takes just under
+2 Gigabytes on a 64 bit machine to store all summaries that would be needed for model averaging.
+(A future version will likely include an option to not store all summaries if
+users do not plan on using  model averaging or model selection on Best Predictive models.)
+For larger p, BAS samples without replacement using random or deterministic
 sampling. The Bayesian Adaptive Sampling algorithm of Clyde, Ghosh, Littman
 (2010) samples models without replacement using the initial sampling
 probabilities, and will optionally update the sampling probabilities every
@@ -179,10 +241,20 @@ results in high-dimensional problems. The deterinistic sampler provides a
 list of the top models in order of an approximation of independence using
 the provided \code{initprobs}.  This may be effective after running the
 other algorithms to identify high probability models and works well if the
-correlations of variables are small to modest.  The priors on coefficients
+correlations of variables are small to modest.
+We recommend "MCMC" for
+problems where enumeration is not feasible (memory or time constrained)
+or even modest p if the number of
+models sampled is not close to the number of possible models and/or there are significant
+correlations among the predictors as the bias in estimates of inclusion
+probabilties from "BAS" or "MSMS+BAS" may be large relative to the reduced
+variability from using the normalized model probabilites as shown in Clyde and Ghosh, 2012.
+Diagnostic plots with MCMC can be used to assess convergence.
+For large problems we recommend thinning with MCMC to reduce memory requirements.
+The priors on coefficients
 include Zellner's g-prior, the Hyper-g prior (Liang et al 2008, the
 Zellner-Siow Cauchy prior, Empirical Bayes (local and gobal) g-priors.  AIC
-and BIC are also included.
+and BIC are also included, while a range of priors on the model space are available.
 }
 \examples{
 
@@ -224,6 +296,9 @@ Sampling for Variable Selection and Model Averaging. Journal of
 Computational Graphics and Statistics.  20:80-101 \cr
 \url{http://dx.doi.org/10.1198/jcgs.2010.09049}
 
+Clyde, M. and Ghosh. (2012) Finite population estimators in stochastic search variable selection.
+Biometrika, 99 (4), 981-988. \url{http://dx.doi.org/10.1093/biomet/ass040}
+
 Clyde, M. and George, E. I. (2004) Model Uncertainty. Statist. Sci., 19,
 81-94. \cr \url{http://dx.doi.org/10.1214/088342304000000035}
 
@@ -249,6 +324,14 @@ North-Holland/Elsevier.
 Zellner, A. and Siow, A. (1980) Posterior odds ratios for selected
 regression hypotheses. In Bayesian Statistics: Proceedings of the First
 International Meeting held in Valencia (Spain), pp. 585-603.
+
+Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., \& Iverson, G.
+(2009). Bayesian t-tests for accepting and rejecting the null hypothesis.
+Psychonomic Bulletin & Review, 16, 225-237
+
+Rouder, J. N., Morey, R. D., Speckman, P. L., Province, J. M., (2012)
+Default Bayes Factors for ANOVA Designs. Journal of Mathematical Psychology.
+56.  p. 356-374.
 }
 \seealso{
 \code{\link{summary.bas}}, \code{\link{coefficients.bas}},
@@ -258,14 +341,15 @@ International Meeting held in Valencia (Spain), pp. 585-603.
 
 Other bas methods: \code{\link{BAS}},
   \code{\link{coef.bas}}, \code{\link{confint.coef.bas}},
-  \code{\link{confint.pred.bas}}, \code{\link{fitted.bas}},
+  \code{\link{confint.pred.bas}},
+  \code{\link{diagnostics}}, \code{\link{fitted.bas}},
   \code{\link{force.heredity.bas}},
   \code{\link{image.bas}}, \code{\link{predict.basglm}},
   \code{\link{predict.bas}}, \code{\link{summary.bas}},
   \code{\link{update.bas}}
 }
 \author{
-Merlise Clyde (\email{clyde@stat.duke.edu}) and Michael Littman
+Merlise Clyde (\email{clyde@duke.edu}) and Michael Littman
 }
 \concept{
 BMA
