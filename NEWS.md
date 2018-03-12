@@ -1,3 +1,26 @@
+#  BAS 1.4.8 March 10, 2018
+
+## Bugs 
+
+* fixed issue with scoping in eval of data in predict.bas if dataname is defined in local env.
+
+* fixed issue 10 in github (predict for estimator='BPM'
+failed  if there were NA's in the X data.  Delete NA's
+before finding the closest model.
+
+* fixed bug in 'JZS' prior - merged pull request #12 from vandenman/master
+
+* fixed bug in bas.glm when default betaprior (CCH) is used and inputs were INTEGER instead of REAL
+
+* removed warning with use of 'ZS-null' for backwards compatibility
+
+## Features added
+
+* updated print.bas to reflect changes in print.lm
+
+* Added Bayes.outlier function to calculate posterior probabilities of outliers using the method from 
+Chaloner & Brant for linear models.
+
 #  BAS 1.4.7 October 22, 2017
 
 ## Updates

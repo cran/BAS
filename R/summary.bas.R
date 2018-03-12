@@ -26,18 +26,19 @@
 #' crime.bic =  bas.lm(y ~ ., data=UScrime, n.models=2^15, prior="BIC",initprobs= "eplogp")
 #' print(crime.bic)
 #' summary(crime.bic)
-#' @rdname print
+#' @rdname print.bas
 #' @method print bas
 #' @export
-#'
-print.bas = function (x, digits = max(3, getOption("digits") - 3), ...)
+print.bas = function (x, digits = max(3L, getOption("digits") - 3L), ...)
 {
-    cat("\nCall:\n", deparse(x$call), "\n\n", sep = "")
+    cat("\nCall:\n", paste( deparse(x$call), sep = "\n",
+                            collapse = "\n"),
+                            "\n\n", sep = "")
     cat("\n Marginal Posterior Inclusion Probabilities: \n")
     out = x$probne0
     names(out) = x$namesx
-    print.default(format(out, digits = digits), print.gap = 2,
-        quote = FALSE, ...)
+    print.default(format(out, digits = digits), print.gap = 2L,
+        quote = FALSE)
     invisible()
 }
 
@@ -73,9 +74,10 @@ print.bas = function (x, digits = max(3, getOption("digits") - 3), ...)
 #' print(crime.bic)
 #' summary(crime.bic)
 #' @rdname summary
-#' @method summary bas
 #' @family bas methods
+#' @method summary bas
 #' @export
+
 summary.bas = function(object, n.models = 5, ...) {
   best = order(-object$postprobs)
   n.models = min(n.models, length(best))
