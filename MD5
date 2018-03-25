@@ -1,7 +1,7 @@
 c0d41d1ced25a62bb18a9587c9cdf887 *CHANGELOG
-5479085e23e8c5bd400358c83252c4b4 *DESCRIPTION
+df292888dff90afcb3df71c4be19c2fe *DESCRIPTION
 ff1b2d3ecdb0c132849c2ad8f2fa92f7 *NAMESPACE
-be0b5ac6942510031a12661a0bc62f03 *NEWS.md
+91b179f87b22c866c117a799daf186d9 *NEWS.md
 841b0b232ce45e5c5c5e901e3d4c66de *R/BAS-package.R
 d592f99fb469f115e2130aa67e42ca8f *R/CholRegPSD.R
 647aed86e900c68dd8ced547d29b0c2b *R/EB.global.R
@@ -12,7 +12,7 @@ c1b3d8d445c5b3d02fd762014fb64d57 *R/bas.gglm.R
 b54fad646a51054b4ad596506d466a0a *R/betapriors.R
 de29717b3ed8b561ac26e802494089f3 *R/cch.R
 c00aa7edea02b1b46ad07a2310395808 *R/coefficients.R
-61ed722405610954774964ea7b09fa39 *R/confint.coef.R
+b581d2e9ad3f6d00bfef2bdd3f584a80 *R/confint.coef.R
 4af25728a656a4ade111bc64a011306d *R/cv.summary.bas.R
 f938c85763768b7e0dc4f68517ce8e9b *R/data.R
 97148b4d7bcd392b95d8efef29bf2d9e *R/diagnostics.R
@@ -23,7 +23,7 @@ a733f6b30ddc60d2210c5118760644b0 *R/eplogprob.R
 d976a17d9519883ee27decca6662dd85 *R/image.bas.R
 eaceef50a5966bc77974e406f1f482c9 *R/interactions.R
 34cbc6514b418e253fe228759966ab02 *R/modelpriors.R
-f2e19c99db4a476ae5acff1851beee00 *R/outliers.R
+9d6494efc02eae24346c1d24648b6911 *R/outliers.R
 6b406fd4abddf9a1c0864138a36f615a *R/plot.bas.R
 0bcc1ff147e2a2236cead99460105825 *R/plot.coef.bas.R
 14ed2fba8c5f47555e1e8094df8f2835 *R/predict.bas.R
@@ -39,9 +39,9 @@ ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
 af5c6aad41d32e5616ccce5770206d43 *inst/CITATION
 f1cacfdd44d9dc53d482b7ed04d9a134 *inst/doc/BAS-vignette.R
 78fdf06b1aef9857cd97eb745a2ca293 *inst/doc/BAS-vignette.Rmd
-6009d532812476058bdd2d13ed8fa66e *inst/doc/BAS-vignette.html
+e9a9b4d390c70692740e7852e52f14bb *inst/doc/BAS-vignette.html
 270fa2960b5da3c8bbe5e0d1b08f9add *man/BAS.Rd
-42db3e8ca7d4c16fd141c29c72a10d61 *man/Bayes.outlier.Rd
+dd8fc6702261fd5f8612ada9e35816ef *man/Bayes.outlier.Rd
 85377e34191deb16d61d3af8c29b09dc *man/Bernoulli.Rd
 115ace8e233dae725f821d3f9d1f8ba2 *man/Bernoulli.heredity.Rd
 6be88affccc362b84fa624c0c635a6aa *man/CCH.Rd
@@ -58,7 +58,7 @@ a0838975d74ec968f3893daa1f052097 *man/bas.lm.Rd
 4c9a96c7237945db0ef5f5d98657a574 *man/beta.prime.Rd
 d9db9cfee8c59b6e9779197fc6e6e07b *man/bodyfat.Rd
 a7162f230500fc955b053eb0f2f0f040 *man/coef.Rd
-6c08bb15ce669963018158a33ceafa48 *man/confint.coef.Rd
+eb77e6130229f26c67033bb549756221 *man/confint.coef.Rd
 8bdbc7275e5d7c3c8a393ff988b9f2b4 *man/confint.pred.Rd
 adaf19d1a3b8382d216e412a9ad714f7 *man/cv.summary.bas.Rd
 09ea4d6c9fd99def513ecefdb9dcc1be *man/diagnostics.Rd
@@ -103,7 +103,7 @@ f9a71e5162cbe9f01d796e8724121931 *src/ZS.approx.full.np.c
 0b26d9d16ba0a4fa8f68f1407747ac21 *src/bas.h
 611e4af25a0895929f6d313c4460addc *src/bayesglm.c
 361687a9bd926c40942978e9ae5230ce *src/bayesreg.c
-413b7edae2c57e5dd12479d0bb4eff08 *src/betapriorfamily.c
+8427b6c5db1120e15a6c1f82a642cba5 *src/betapriorfamily.c
 c7a38ae22464130a48c1cbe032d78537 *src/cch.c
 47855fad9181fc36644465ce63228525 *src/ch2inv.f
 c2493a68c049b073346e3dbb5f7caff1 *src/const.c
