@@ -6,10 +6,10 @@
 \title{Fitted values for a BAS BMA objects}
 \usage{
 \method{fitted}{bas}(object, type = "response", estimator = "BMA",
-  top = NULL, ...)
+  top = NULL, na.action = na.pass, ...)
 }
 \arguments{
-\item{object}{An object of class 'bma' as created by \code{\link{bas}}}
+\item{object}{An object of class 'bas' as created by \code{\link{bas}}}
 
 \item{type}{type equals "response" is currently the only option.  Prior to
 version 1.2.2 type was used to specify the type of estimator.  In order to
@@ -26,6 +26,8 @@ model that is closest to BMA predictions under squared error loss}
 in constructing the BMA prediction, if NULL all models will be used.  If
 top=1, then this is equivalent to 'HPM'}
 
+\item{na.action}{function determining what should be done with missing values in newdata. The default is to predict NA.}
+
 \item{...}{optional arguments, not used currently}
 }
 \value{
@@ -35,7 +37,7 @@ A vector of length n of fitted values.
 Calculate fitted values for a BAS BMA object
 }
 \details{
-Calcuates fitted values at observed design matrix using either the highest
+Calculates fitted values at observed design matrix using either the highest
 probability model, 'HPM', the posterior mean (under BMA) 'BMA', the median
 probability model 'MPM' or the best predictive model 'BPM".  The median
 probability model is defined by including variable where the marginal
@@ -62,7 +64,7 @@ plot(Hald$Y, fitted(hald.gprior, estimator="BPM"))
 \references{
 Barbieri, M.  and Berger, J.O. (2004) Optimal predictive model
 selection. Annals of Statistics. 32, 870-897. \cr
-\url{http://projecteuclid.org/Dienst/UI/1.0/Summarize/euclid.aos/1085408489}
+\url{https://projecteuclid.org/euclid.aos/1085408489&url=/UI/1.0/Summarize/euclid.aos/1085408489}
 
 Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling for
 Variable Selection and Model Averaging. Journal of Computational Graphics

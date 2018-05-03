@@ -10,23 +10,23 @@
 #' dataframe, the variables are extracted using model.matrix using the call
 #' that created 'object'.  May be missing in which case the data used for
 #' fitting will be used for prediction.
-#' @param se.fit indicator for whether to compute se of fitted and predictied
+#' @param se.fit indicator for whether to compute se of fitted and predicted
 #' values
 #' @param type Type of predictions required. The default is on the scale of the
 #' linear predictors; the alternative "response" is on the scale of the
 #' response variable. Thus for a default binomial model the default predictions
 #' are of log-odds (probabilities on logit scale) and type = "response" gives
 #' the predicted probabilities.
-#' @param top A scalar interger M.  If supplied, subset the top M models, based
-#' on posterior probabilities for model predictions and BMA.
+#' @param top A scalar integer M.  If supplied, calculate results using the subset of the top M models
+#' based on posterior probabilities.
 #' @param estimator estimator used for predictions.  Currently supported
 #' options include: \cr 'HPM' the highest probability model \cr 'BMA' Bayesian
 #' model averaging, using optionally only the 'top' models \cr 'MPM' the median
 #' probability model of Barbieri and Berger. \cr 'BPM' the model that is
 #' closest to BMA predictions under squared error loss. BMA may be computed
 #' using only the 'top' models if supplied
-#' @param prediction logical value to indicate whether the observed design
-#' matrix used in fitting or the newdata will be used for predictions
+#' @param na.action  function determining what should be done with missing values in newdata.
+#' The default is to predict NA.
 #' @param ... optional extra arguments
 #' @return a list of \item{Ybma}{predictions using BMA} \item{Ypred}{matrix of
 #' predictions under each model} \item{postprobs}{renormalized probabilities of
@@ -52,12 +52,12 @@
 #' @export
 predict.basglm = function(object, newdata, se.fit=FALSE,
                           type=c("response", "link"), top=NULL,
-                          estimator="BMA", prediction=FALSE, ...) {
+                          estimator="BMA", na.action=na.pass,  ...) {
 #    browser()
     if (estimator == "HPM") top=1
 
     pred = predict.bas(object, newdata, se.fit=se.fit, top=top,
-                       estimator=estimator, prediction=prediction, ...)
+                       estimator=estimator, na.action=na.action, ...)
 
     if (length(type) > 1) type = type[1]
     if (type == "response")  {
@@ -112,13 +112,12 @@ predict.basglm = function(object, newdata, se.fit=FALSE,
 #' probability model of Barbieri and Berger. \cr 'BPM' the model that is
 #' closest to BMA predictions under squared error loss. BMA may be computed
 #' using only the 'top' models if supplied
-#' @param prediction logical value to indicate whether the observed design
-#' matrix used in fitting or the newdata will be used for estimating the mean
-#' or for making predictions.  The default is FALSE for estimation of the mean.
+#' @param na.action  function determining what should be done with missing values in newdata.
+#' The default is to predict NA.
 #' @param ... optional extra arguments
 #' @return a list of \item{fit}{fitted values based on the selected estimator}
 #' \item{Ybma}{predictions using BMA, the same as fit for non-BMA methods for
-#' compatibilty; will be deprecated} \item{Ypred}{matrix of predictions under
+#' compatabilty; will be deprecated} \item{Ypred}{matrix of predictions under
 #' each model for BMA} \item{se.fit}{se of fitted values; in the case of BMA
 #' this will be a matrix} \item{se.pred}{se for predicted values; in the case
 #' of BMA this will be a matrix} \item{se.bma.fit}{vector of posterior sd under
@@ -138,7 +137,7 @@ predict.basglm = function(object, newdata, se.fit=FALSE,
 #' data("Hald")
 #' hald.gprior =  bas.lm(Y ~ ., data=Hald, alpha=13, prior="g-prior")
 #'
-#' predict(hald.gprior, newdata=Hald, estimator="BPM", se.fit=TRUE, prediction=FALSE)
+#' predict(hald.gprior, newdata=Hald, estimator="BPM", se.fit=TRUE)
 #' # same as fitted
 #' fitted(hald.gprior,estimator="BPM")
 #'
@@ -147,17 +146,17 @@ predict.basglm = function(object, newdata, se.fit=FALSE,
 #' confint(hald.bma)
 #'
 #' hald.BPM = predict(hald.gprior, newdata=Hald[1,],
-#'                     prediction=TRUE, se.fit=TRUE,
+#'                     se.fit=TRUE,
 #'                     estimator="BPM")
 #' confint(hald.BPM)
 #'
 #' hald.hpm = predict(hald.gprior, newdata=Hald[1,],
-#'                     prediction=TRUE, se.fit=TRUE,
+#'                     se.fit=TRUE,
 #'                     estimator="HPM")
 #' confint(hald.hpm)
 #'
 #' hald.mpm = predict(hald.gprior, newdata=Hald[1,],
-#'                     prediction=TRUE, se.fit=TRUE,
+#'                     se.fit=TRUE,
 #'                     estimator="MPM")
 #' confint(hald.mpm)
 #'
@@ -166,7 +165,7 @@ predict.basglm = function(object, newdata, se.fit=FALSE,
 #' @family bas methods
 #' @export
 predict.bas = function(object, newdata, se.fit=FALSE, type="link",
-                       top=NULL,  estimator="BMA", prediction=FALSE,   ...) {
+                       top=NULL,  estimator="BMA", na.action=na.pass,  ...) {
   if (!(estimator %in% c("BMA", "HPM", "MPM", "BPM"))) {
     stop("Estimator must be one of 'BMA', 'BPM', 'HPM', or 'MPM'.")
   }
@@ -181,7 +180,7 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
     if (is.data.frame(newdata)) {
     #  newdata = model.matrix(eval(object$call$formula), newdata)
       Terms = delete.response(tt)
-      m = model.frame(Terms, newdata, na.action = na.pass,
+      m = model.frame(Terms, newdata, na.action = na.action,
                       xlev = object$xlevels)
       newdata <- model.matrix(Terms, m,
                               contrasts.arg = object$contrasts)
@@ -300,16 +299,16 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
    }
 
 }
-  #browser()
+ # browser()
   se=list(se.fit=NULL, se.pred=NULL,
           se.bma.fit=NULL, se.bma.pred=NULL)
 
   if (se.fit)  {
        if (estimator != "BMA") {
-         se = .se.fit(fit, newdata, object, prediction, insample)   }
+         se = .se.fit(fit, newdata, object, insample)   }
        else   {
          se = .se.bma(Ybma, newdata, Ypred, best, object,
-                      prediction, insample) }
+                       insample) }
 
   }
 
@@ -318,7 +317,7 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
              se.bma.fit=se$se.bma.fit, se.bma.pred=se$se.bma.pred,
              df=df,
              best=best, bestmodel=models,
-             prediction=prediction, estimator=estimator)
+             estimator=estimator)
 
   class(out) = 'pred.bas'
   return(out)
@@ -331,7 +330,7 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
 #'
 #' Calculate fitted values for a BAS BMA object
 #'
-#' Calcuates fitted values at observed design matrix using either the highest
+#' Calculates fitted values at observed design matrix using either the highest
 #' probability model, 'HPM', the posterior mean (under BMA) 'BMA', the median
 #' probability model 'MPM' or the best predictive model 'BPM".  The median
 #' probability model is defined by including variable where the marginal
@@ -346,7 +345,7 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
 #' collinearity may drop relevant predictors.
 #'
 #' @aliases fitted.bas fitted
-#' @param object An object of class 'bma' as created by \code{\link{bas}}
+#' @param object An object of class 'bas' as created by \code{\link{bas}}
 #' @param type type equals "response" is currently the only option.  Prior to
 #' version 1.2.2 type was used to specify the type of estimator.  In order to
 #' be consistent with the predict.bas function this has been deprecated and
@@ -359,13 +358,14 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
 #' @param top optional argument specifying that the 'top' models will be used
 #' in constructing the BMA prediction, if NULL all models will be used.  If
 #' top=1, then this is equivalent to 'HPM'
+#' @param na.action function determining what should be done with missing values in newdata. The default is to predict NA.
 #' @param ... optional arguments, not used currently
 #' @return A vector of length n of fitted values.
 #' @author Merlise Clyde \email{clyde@@AT@@stat.duke.edu}
 #' @seealso \code{\link{predict.bas}}
 #' @references Barbieri, M.  and Berger, J.O. (2004) Optimal predictive model
 #' selection. Annals of Statistics. 32, 870-897. \cr
-#' \url{http://projecteuclid.org/Dienst/UI/1.0/Summarize/euclid.aos/1085408489}
+#' \url{https://projecteuclid.org/euclid.aos/1085408489&url=/UI/1.0/Summarize/euclid.aos/1085408489}
 #'
 #' Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling for
 #' Variable Selection and Model Averaging. Journal of Computational Graphics
@@ -385,7 +385,8 @@ predict.bas = function(object, newdata, se.fit=FALSE, type="link",
 #' @family bas methods
 #' @family predict methods
 #' @export
-fitted.bas = function(object,  type="response", estimator="BMA", top=NULL, ...) {
+fitted.bas = function(object,  type="response", estimator="BMA", top=NULL,
+                      na.action=na.pass, ...) {
     if (type %in% c("HPM", "MPM", "BPM", "BMA")) {
         warning(paste("type = ", type,
                       " is being deprecated, use estimator = ", type))
@@ -396,22 +397,26 @@ fitted.bas = function(object,  type="response", estimator="BMA", top=NULL, ...) 
   X = object$X
   if (is.null(top)) top=nmodels
   if (estimator=="HPM") {
-   yhat = predict.bas(object, top=1, estimator="HPM", prediction=FALSE)$fit
+   yhat = predict.bas(object, newdata=NULL, top=1, estimator="HPM",
+                      na.action=na.action)$fit
   }
   if (estimator == "BMA") {
-   yhat = predict.bas(object, top=top, estimator="BMA", prediction=FALSE)$fit
+   yhat = predict.bas(object, newdata=NULL, top=top, estimator="BMA",
+                      na.action=na.action)$fit
   }
   if (estimator == "MPM") {
-    yhat = predict(object, top=top, estimator="MPM", prediction=FALSE)$fit
+    yhat = predict(object,  newdata=NULL, top=top, estimator="MPM",
+                   na.action=na.action)$fit
  }
   if (estimator=="BPM") {
-      yhat = predict.bas(object, top=top, estimator="BPM", prediction=FALSE)$fit
+      yhat = predict.bas(object, newdata=NULL, top=top, estimator="BPM",
+                         na.action=na.action)$fit
   }
 
 return(as.vector(yhat))
 }
 
-.se.fit= function(yhat, X, object, pred, insample) {
+.se.fit= function(yhat, X, object, insample) {
 
   n = object$n
   model = attr(yhat, "model")
@@ -441,7 +446,7 @@ return(as.vector(yhat))
   return(list(se.fit=se.fit, se.pred=se.pred, residual.scale=sqrt(bayes_mse)))
 }
 
-.se.bma = function(fit, Xnew, Ypred, best, object, pred, insample){
+.se.bma = function(fit, Xnew, Ypred, best, object, insample){
 
 n = object$n
 

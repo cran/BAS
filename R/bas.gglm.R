@@ -81,7 +81,7 @@
 #' probabilities, and will optionally update the sampling probabilities every
 #' "update" models using the estimated marginal inclusion probabilties. BAS
 #' uses different methods to obtain the \code{initprobs}, which may impact the
-#' results in high-dimensional problems. The deterinistic sampler provides a
+#' results in high-dimensional problems. The deterministic sampler provides a
 #' list of the top models in order of an approximation of independence using
 #' the provided \code{initprobs}.  This may be effective after running the
 #' other algorithms to identify high probability models and works well if the
@@ -92,8 +92,8 @@
 #' predictors, Y ~ X.  All code assumes that an intercept will be included in
 #' each model.
 #' @param family a description of the error distribution and link function for
-#' exponential family; currently only binomial() with the logitistic link and
-#' poission() with the log link are available.
+#' exponential family; currently only `binomial()` with the logistic link and
+#' `poisson()` with the log link are available.
 #' @param data data frame
 #' @param weights optional vector of weights to be used in the fitting process.
 #' May be missing in which case weights are 1.
@@ -123,16 +123,25 @@
 #' giving the method used to construct the sampling probabilities if "Uniform"
 #' each predictor variable is equally likely to be sampled (equivalent to
 #' random sampling without replacement). If "eplogp", use the
-#' \code{\link{eplogprob}} function to aproximate the Bayes factor using
-#' p-values to find initial marginal inclusion probabilitites and sample
-#' without replacement using these inclusion probabilaties, which may be
-#' updated using estimates of the marginal inclusion probabilites. "eplogp"
+#' \code{\link{eplogprob}} function to approximate the Bayes factor using
+#' p-values to find initial marginal inclusion probabilities and sample
+#' without replacement using these inclusion probabilities, which may be
+#' updated using estimates of the marginal inclusion probabilities. "eplogp"
 #' assumes that MLEs from the full model exist; for problems where that is not
 #' the case or 'p' is large, initial sampling probabilities may be obtained
 #' using \code{\link{eplogprob.marg}} which fits a model to each predictor
-#' seaparately.  For variables that should always be included set the
-#' corresponding initprobs to 1. To run a Markov Chain to provide initial
+#' separately.  To run a Markov Chain to provide initial
 #' estimates of marginal inclusion probabilities, use method="MCMC+BAS" below.
+#' While the initprobs are not used in sampling for method="MCMC", this
+#' determines the order of the variables in the lookup table and affects memory
+#' allocation in large problems where enumeration is not feasible.  For
+#' variables that should always be included set the corresponding initprobs to
+#' 1, to override the `modelprior` or use `include.always` to force these variables
+#' to always be included in the model.
+#' @param include.always A formula with terms that should always be included
+#' in the model with probability one.  By default this is `~ 1` meaning that the
+#' intercept is always included.  This will also overide any of the values in `initprobs`
+#' above by setting them to 1.
 #' @param method A character variable indicating which sampling method to use:
 #' method="BAS" uses Bayesian Adaptive Sampling (without replacement) using the
 #' sampling probabilities given in initprobs and updates using the marginal
@@ -143,7 +152,7 @@
 #' method="MCMC+BAS" runs an initial MCMC as above to calculate marginal
 #' inclusion probabilities and then samples without replacement as in BAS;
 #' method = "deterministic" runs an deterministic sampling using the initial
-#' probabilites (no updating); this is recommended for fast enumeration or if a
+#' probabilities (no updating); this is recommended for fast enumeration or if a
 #' model of independence is a good approximation to the joint posterior
 #' distribution of the model indicators.  For BAS, the sampling probabilities
 #' can be updated as more models are sampled. (see 'update' below).  We
@@ -190,7 +199,7 @@
 #' object} \item{Q}{the Q statistic for each model used in the marginal
 #' likelihood approximation} \item{Y}{response} \item{X}{matrix of predictors}
 #' \item{family}{family object from the original call} \item{betaprior}{family
-#' object for prior on coefficients, including hyperparamters}
+#' object for prior on coefficients, including hyperparameters}
 #' \item{modelprior}{family object for prior on the models}
 #' @author Merlise Clyde (\email{clyde@@stat.duke.edu}), Quanli Wang and Yingbo
 #' Li
@@ -243,6 +252,7 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
     betaprior=CCH(alpha=.5, beta=as.numeric(nrow(data)), s=0),
     modelprior=beta.binomial(1,1),
     initprobs="Uniform",
+    include.always=~1,
     method="MCMC",
     update=NULL,
     bestmodel=NULL,
@@ -265,10 +275,10 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
       data <- environment(formula)
 
     #browser()
-    mf <- match.call(expand.dots = FALSE)
+    mfall <- match.call(expand.dots = FALSE)
     m <- match(c("formula", "data", "subset", "weights", "na.action",
-                 "etastart", "mustart", "offset"), names(mf), 0L)
-    mf <- mf[c(1L, m)]
+                 "etastart", "mustart", "offset"), names(mfall), 0L)
+    mf <- mfall[c(1L, m)]
     mf$drop.unused.levels <- TRUE
     mf[[1L]] <- quote(stats::model.frame)
     mf <- eval(mf, parent.frame())
@@ -303,7 +313,29 @@ bas.glm = function(formula, family = binomial(link = 'logit'),
 
  Y = glm.obj$y
 
+
+
   prob <- .normalize.initprobs(initprobs, glm.obj)
+
+  # set up variables to always include
+  if ("include.always" %in% names(mfall)) {
+    minc <- match(c("include.always", "data", "subset"),  names(mfall), 0L)
+    mfinc <- mfall[c(1L, minc)]
+    mfinc$drop.unused.levels <- TRUE
+    names(mfinc)[2] = "formula"
+    mfinc[[1L]] <- quote(stats::model.frame)
+    mfinc <- eval(mfinc, parent.frame())
+    mtinc <- attr(mfinc, "terms")
+    X.always = model.matrix(mtinc, mfinc, contrasts)
+
+    keep = match(colnames(X.always)[-1], colnames(X))
+    prob[keep] = 1.0
+    if (ncol(X.always) == ncol(X)) {
+      # just one model with all variables forced in
+      # use method='BAS" as deterministic and MCMC fail in this context
+      method='BAS'
+    }
+  }
 	n.models <- .normalize.n.models(n.models, p, prob, method)
 	modelprior <- .normalize.modelprior(modelprior,p)
 

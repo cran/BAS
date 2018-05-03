@@ -8,9 +8,10 @@ Generalized Linear Models}
 bas.glm(formula, family = binomial(link = "logit"), data, weights, subset,
   offset, na.action = "na.omit", n.models = NULL, betaprior = CCH(alpha =
   0.5, beta = as.numeric(nrow(data)), s = 0), modelprior = beta.binomial(1,
-  1), initprobs = "Uniform", method = "MCMC", update = NULL,
-  bestmodel = NULL, prob.rw = 0.5, MCMC.iterations = NULL,
-  control = glm.control(), laplace = FALSE, renormalize = FALSE)
+  1), initprobs = "Uniform", include.always = ~1, method = "MCMC",
+  update = NULL, bestmodel = NULL, prob.rw = 0.5,
+  MCMC.iterations = NULL, control = glm.control(), laplace = FALSE,
+  renormalize = FALSE)
 }
 \arguments{
 \item{formula}{generalized linear model formula for the full model with all
@@ -18,8 +19,8 @@ predictors, Y ~ X.  All code assumes that an intercept will be included in
 each model.}
 
 \item{family}{a description of the error distribution and link function for
-exponential family; currently only binomial() with the logitistic link and
-poission() with the log link are available.}
+exponential family; currently only `binomial()` with the logistic link and
+`poisson()` with the log link are available.}
 
 \item{data}{data frame}
 
@@ -58,16 +59,26 @@ probability one and does not need to be added here) or a character string
 giving the method used to construct the sampling probabilities if "Uniform"
 each predictor variable is equally likely to be sampled (equivalent to
 random sampling without replacement). If "eplogp", use the
-\code{\link{eplogprob}} function to aproximate the Bayes factor using
-p-values to find initial marginal inclusion probabilitites and sample
-without replacement using these inclusion probabilaties, which may be
-updated using estimates of the marginal inclusion probabilites. "eplogp"
+\code{\link{eplogprob}} function to approximate the Bayes factor using
+p-values to find initial marginal inclusion probabilities and sample
+without replacement using these inclusion probabilities, which may be
+updated using estimates of the marginal inclusion probabilities. "eplogp"
 assumes that MLEs from the full model exist; for problems where that is not
 the case or 'p' is large, initial sampling probabilities may be obtained
 using \code{\link{eplogprob.marg}} which fits a model to each predictor
-seaparately.  For variables that should always be included set the
-corresponding initprobs to 1. To run a Markov Chain to provide initial
-estimates of marginal inclusion probabilities, use method="MCMC+BAS" below.}
+separately.  To run a Markov Chain to provide initial
+estimates of marginal inclusion probabilities, use method="MCMC+BAS" below.
+While the initprobs are not used in sampling for method="MCMC", this
+determines the order of the variables in the lookup table and affects memory
+allocation in large problems where enumeration is not feasible.  For
+variables that should always be included set the corresponding initprobs to
+1, to override the `modelprior` or use `include.always` to force these variables
+to always be included in the model.}
+
+\item{include.always}{A formula with terms that should always be included
+in the model with probability one.  By default this is `~ 1` meaning that the
+intercept is always included.  This will also overide any of the values in `initprobs`
+above by setting them to 1.}
 
 \item{method}{A character variable indicating which sampling method to use:
 method="BAS" uses Bayesian Adaptive Sampling (without replacement) using the
@@ -79,7 +90,7 @@ excluded (see Clyde, Ghosh, and Littman (2010) for details);
 method="MCMC+BAS" runs an initial MCMC as above to calculate marginal
 inclusion probabilities and then samples without replacement as in BAS;
 method = "deterministic" runs an deterministic sampling using the initial
-probabilites (no updating); this is recommended for fast enumeration or if a
+probabilities (no updating); this is recommended for fast enumeration or if a
 model of independence is a good approximation to the joint posterior
 distribution of the model indicators.  For BAS, the sampling probabilities
 can be updated as more models are sampled. (see 'update' below).  We
@@ -135,7 +146,7 @@ coefficient for each model} \item{deviance}{the GLM deviance for each model}
 object} \item{Q}{the Q statistic for each model used in the marginal
 likelihood approximation} \item{Y}{response} \item{X}{matrix of predictors}
 \item{family}{family object from the original call} \item{betaprior}{family
-object for prior on coefficients, including hyperparamters}
+object for prior on coefficients, including hyperparameters}
 \item{modelprior}{family object for prior on the models}
 }
 \description{
@@ -151,7 +162,7 @@ sampling. The Bayesian Adaptive Sampling algorithm of Clyde, Ghosh, Littman
 probabilities, and will optionally update the sampling probabilities every
 "update" models using the estimated marginal inclusion probabilties. BAS
 uses different methods to obtain the \code{initprobs}, which may impact the
-results in high-dimensional problems. The deterinistic sampler provides a
+results in high-dimensional problems. The deterministic sampler provides a
 list of the top models in order of an approximation of independence using
 the provided \code{initprobs}.  This may be effective after running the
 other algorithms to identify high probability models and works well if the

@@ -48,13 +48,13 @@
   	deg = sum(initprobs >= 1) + sum(initprobs <= 0)
   	if (deg > 1 & n.models == 2^(p - 1)) {
     		n.models = 2^(p - deg)
-    		warning(paste("There are", as.character(deg),
-                "degenerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
+#    		warning(paste("There are", as.character(deg),
+#                "degenerate sampling probabilities (0 or 1); decreasing the number of models to",                 as.character(n.models)))
   	}
 
   	if (n.models > 2^30) stop("Dimension of model space is too big to enumerate\n  Rerun with a smaller value for n.models")
   	if (n.models > 2^25)
-            warning("Number of models is BIG -this may take a while")
+            warning("Number of models is BIG - this may take a while and you may run out of memory")
     return(n.models)
 }
 
@@ -70,7 +70,7 @@
 #' of models for
 #' use in Bayesian Model Averaging or Bayesian variable selection. For p less than
 #' 20-25, BAS can enumerate all models depending on memory availability.  As BAS saves all
-#' models, MLEs, standard errors, log marginal liklihoods, prior and posterior and  probabilities
+#' models, MLEs, standard errors, log marginal likelihoods, prior and posterior and  probabilities
 #' memory requirements grow linearly with M*p where M is the number of models
 #' and p is the number of predictors.  For example, enumeration with p=21 with 2,097,152 takes just under
 #' 2 Gigabytes on a 64 bit machine to store all summaries that would be needed for model averaging.
@@ -82,7 +82,7 @@
 #' probabilities, and will optionally update the sampling probabilities every
 #' "update" models using the estimated marginal inclusion probabilties. BAS
 #' uses different methods to obtain the \code{initprobs}, which may impact the
-#' results in high-dimensional problems. The deterinistic sampler provides a
+#' results in high-dimensional problems. The deterministic sampler provides a
 #' list of the top models in order of an approximation of independence using
 #' the provided \code{initprobs}.  This may be effective after running the
 #' other algorithms to identify high probability models and works well if the
@@ -92,13 +92,13 @@
 #' or even modest p if the number of
 #' models sampled is not close to the number of possible models and/or there are significant
 #' correlations among the predictors as the bias in estimates of inclusion
-#' probabilties from "BAS" or "MSMS+BAS" may be large relative to the reduced
-#' variability from using the normalized model probabilites as shown in Clyde and Ghosh, 2012.
+#' probabilities from "BAS" or "MSMS+BAS" may be large relative to the reduced
+#' variability from using the normalized model probabilities as shown in Clyde and Ghosh, 2012.
 #' Diagnostic plots with MCMC can be used to assess convergence.
 #' For large problems we recommend thinning with MCMC to reduce memory requirements.
 #' The priors on coefficients
 #' include Zellner's g-prior, the Hyper-g prior (Liang et al 2008, the
-#' Zellner-Siow Cauchy prior, Empirical Bayes (local and gobal) g-priors.  AIC
+#' Zellner-Siow Cauchy prior, Empirical Bayes (local and global) g-priors.  AIC
 #' and BIC are also included, while a range of priors on the model space are available.
 #'
 #' @aliases bas bas.lm
@@ -151,7 +151,7 @@
 #' \item "hyper-g-n", a mixture of g-priors that where
 #' u = g/n and u ~ Beta(1, alpha/2)  to provide consistency
 #' when the null model is true.
-#' \item "EB-local", use the MLE of g from the marginal likelhood
+#' \item "EB-local", use the MLE of g from the marginal likelihood
 #' within each model
 #' \item "EB-global" uses an EM algorithm to find a common or
 #' global estimate of g, averaged over all models.  When it is not possible to
@@ -171,16 +171,16 @@
 #' \code{\link{tr.power.prior}} (a truncated power family),
 #'  with the default being a
 #' \code{beta.binomial(1,1)}.  Truncated versions are useful for p > n.
-#' @param initprobs Vector of length p or a character string specifiny which
+#' @param initprobs Vector of length p or a character string specifying which
 #' method is used to create the vector. This is used to order variables for
 #' sampling all methods for potentially more efficient storage while sampling
 #' and provides the initial inclusion probabilities used for sampling without
-#' replacement with method="BAS".  Options for the charactier string giving the
+#' replacement with method="BAS".  Options for the character string giving the
 #' method are: "Uniform" or "uniform" where each predictor variable is equally
 #' likely to be sampled (equivalent to random sampling without replacement);
-#' "eplogp" uses the \code{\link{eplogprob}} function to aproximate the Bayes
+#' "eplogp" uses the \code{\link{eplogprob}} function to approximate the Bayes
 #' factor from p-values from the full model to find initial marginal inclusion
-#' probabilitites; "marg-eplogp" uses\code{\link{eplogprob.marg}} function to
+#' probabilities; "marg-eplogp" uses\code{\link{eplogprob.marg}} function to
 #' aproximate the Bayes factor from p-values from the full model each simple
 #' linear regression.  To run a Markov Chain to provide initial estimates of
 #' marginal inclusion probabilities for "BAS", use method="MCMC+BAS" below.
@@ -188,7 +188,12 @@
 #' determines the order of the variables in the lookup table and affects memory
 #' allocation in large problems where enumeration is not feasible.  For
 #' variables that should always be included set the corresponding initprobs to
-#' 1, to overide the `modelprior`.
+#' 1, to override the `modelprior` or use `include.always` to force these variables
+#' to always be included in the model.
+#' @param include.always A formula with terms that should always be included
+#' in the model with probability one.  By default this is `~ 1` meaning that the
+#' intercept is always included.  This will also overide any of the values in `initprobs`
+#' above by setting them to 1.
 #' @param method A character variable indicating which sampling method to use:
 #'\itemize{
 #'\item  "deterministic" uses the "top k" algorithm described in Ghosh and Clyde (2011)
@@ -246,7 +251,7 @@
 #' \item{R2}{R2 values for the
 #' models}
 #' \item{logmarg}{values of the log of the marginal likelihood for the
-#' models.  This is equivalent to the log Bayes Factor for compaing
+#' models.  This is equivalent to the log Bayes Factor for comparing
 #' each model to a base model with intercept only.}
 #' \item{n.vars}{total number of independent variables in the full
 #' model, including the intercept}
@@ -369,6 +374,7 @@
 #' \dontrun{demo(BAS.USCrime) }
 #'
 #' @rdname bas.lm
+#' @keywords regression
 #' @family BAS methods
 #' @concept BMA
 #' @concept variable selection
@@ -376,7 +382,8 @@
 bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
     n.models=NULL,  prior="ZS-null", alpha=NULL,
     modelprior=beta.binomial(1,1),
-    initprobs="Uniform", method="BAS", update=NULL,
+    initprobs="Uniform", include.always = ~ 1,
+    method="BAS", update=NULL,
     bestmodel=NULL, prob.local=0.0,
     prob.rw=0.5,
     MCMC.iterations=NULL,
@@ -387,10 +394,10 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
   call = match.call()
 
   # from lm
-  mf <- match.call(expand.dots = FALSE)
+  mfall <- match.call(expand.dots = FALSE)
   m <- match(c("formula", "data", "subset", "weights", "na.action",
-               "offset"), names(mf), 0L)
-  mf <- mf[c(1L, m)]
+               "offset"), names(mfall), 0L)
+  mf <- mfall[c(1L, m)]
   mf$drop.unused.levels <- TRUE
   mf[[1L]] <- quote(stats::model.frame)
   mf <- eval(mf, parent.frame())
@@ -407,6 +414,7 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
   Y = model.response(mf, "numeric")
   mt <- attr(mf, "terms")
   X = model.matrix(mt, mf, contrasts)
+
   #X = model.matrix(formula, mf)
 
 
@@ -418,7 +426,7 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
  weights=as.vector(model.weights(mf))
  if (is.null(weights)) weights = rep(1, n)
 
-  if (length(weights) != n) stop(simpleError(paste("weights are of length ", length(weights), "not of length ", n)))
+ if (length(weights) != n) stop(simpleError(paste("weights are of length ", length(weights), "not of length ", n)))
 
   mean.x = apply(X[,-1, drop=F], 2, weighted.mean, w=weights)
   ones = X[,1]
@@ -446,21 +454,26 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
    if (length(initprobs) == (p-1))
        initprobs = c(1.0, initprobs)
 
-#   if (length(initprobs) != p)
-#    stop(simpleError(paste("length of initprobs is not", p)))
+  # set up variables to always include
+  if ("include.always" %in% names(mfall)) {
+    minc <- match(c("include.always", "data", "subset"),  names(mfall), 0L)
+    mfinc <- mfall[c(1L, minc)]
+    mfinc$drop.unused.levels <- TRUE
+    names(mfinc)[2] = "formula"
+    mfinc[[1L]] <- quote(stats::model.frame)
+    mfinc <- eval(mfinc, parent.frame())
+    mtinc <- attr(mfinc, "terms")
+    X.always = model.matrix(mtinc, mfinc, contrasts)
 
-#  pval = summary(lm.obj)$coefficients[,4]
-#  if (any(is.na(pval))) {
-#    print(paste("warning full model is rank deficient"))
-#    initprobs[is.na(pval)] = 0.0
-#  }
-#
-#  if (initprobs[1] < 1.0 | initprobs[1] > 1.0) initprobs[1] = 1.0
-# intercept is always included otherwise we get a segmentation
-# fault (relax later)
+    keep = match(colnames(X.always)[-1], colnames(X))
+    initprobs[keep] = 1.0
+    if (ncol(X.always) == ncol(X)) {
+      # just one model with all variables forced in
+      # use method='BAS" as deterministic and MCMC fail in this context
+      method='BAS'
+    }
+  }
 
-  #  prob = as.numeric(initprobs)
-  #MCMC-BAS
   if (is.null(n.models)) n.models = min(2^p, 2^19)
   if (is.null(MCMC.iterations)) MCMC.iterations = as.integer(n.models*10)
   Burnin.iterations = as.integer(MCMC.iterations)
@@ -485,7 +498,7 @@ bas.lm = function(formula, data,  subset, weights, na.action="na.omit",
   int = TRUE  # assume that an intercept is always included
 
 if (prior == "ZS-full") .Deprecated("prior='JZS'",
-  msg="The Zellner-Siow prior will be deprecated in the next version of the
+  msg="The Zellner-Siow full prior (Liang et al 2008)  will be deprecated in the next version of the
   package. Recommended alternative is the Jeffreys-Zellner-Siow prior 'JZS'")
 
 # if (prior == "ZS-null") warning("We recommend using the implementation using the Jeffreys-Zellner-Siow prior (prior='JZS') which uses numerical integration rahter than the Laplace approximation")
