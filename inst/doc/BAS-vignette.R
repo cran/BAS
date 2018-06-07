@@ -79,15 +79,15 @@ HPM = predict(crime.ZS, estimator="HPM")
 HPM$bestmodel
 
 ## -----------------------------------------------------------------------------
-(crime.ZS$namesx[HPM$bestmodel +1])[-1]
+variable.names(HPM)
 
 ## ----MPM----------------------------------------------------------------------
 MPM = predict(crime.ZS, estimator="MPM")
-(crime.ZS$namesx[attr(MPM$fit, 'model') +1])[-1]
+variable.names(MPM)
 
 ## ----BPM----------------------------------------------------------------------
 BPM = predict(crime.ZS, estimator="BPM")
-(crime.ZS$namesx[attr(BPM$fit, 'model') +1])[-1]
+variable.names(BPM)
 
 ## ---- fig.width=6, fig.height=6-----------------------------------------------
 GGally::ggpairs(data.frame(HPM = as.vector(HPM$fit),  #this used predict so we need to extract fitted values

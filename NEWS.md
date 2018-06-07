@@ -1,3 +1,13 @@
+# BAS 1.5.1  June 6, 2018
+
+## Features
+
+* added S3 method `variable.names` to extract variable names in the highest probability model, median probability
+model, and best probability model for objects created by `predict`.
+
+## Bugs
+
+Fixed incorrect documentation in `predict.basglm` which had that  `type = "link"` was the default for prediction [issue #18](https://github.com/merliseclyde/BAS/issues/18)
 
 # BAS 1.5.0  May 2, 2018
 

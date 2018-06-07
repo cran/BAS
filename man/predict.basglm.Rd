@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict.bas.R
 \name{predict.basglm}
 \alias{predict.basglm}
-\title{Prediction Method for an object of class basglm}
+\title{Prediction Method for an Object of Class basglm}
 \usage{
 \method{predict}{basglm}(object, newdata, se.fit = FALSE,
   type = c("response", "link"), top = NULL, estimator = "BMA",
@@ -20,11 +20,12 @@ fitting will be used for prediction.}
 \item{se.fit}{indicator for whether to compute se of fitted and predicted
 values}
 
-\item{type}{Type of predictions required. The default is on the scale of the
-linear predictors; the alternative "response" is on the scale of the
-response variable. Thus for a default binomial model the default predictions
-are of log-odds (probabilities on logit scale) and type = "response" gives
-the predicted probabilities.}
+\item{type}{Type of predictions required. The default is  "response" is on the scale of the
+response variable, with the alternative being on the linear predictor
+scale, `type ='link'`. Thus for a default binomial model
+`type = 'response'` gives
+the predicted probabilities, while with `'link'`, the estimates
+are of log-odds (probabilities on logit scale).}
 
 \item{top}{A scalar integer M.  If supplied, calculate results using the subset of the top M models
 based on posterior probabilities.}
@@ -42,21 +43,33 @@ The default is to predict NA.}
 \item{...}{optional extra arguments}
 }
 \value{
-a list of \item{Ybma}{predictions using BMA} \item{Ypred}{matrix of
-predictions under each model} \item{postprobs}{renormalized probabilities of
-the top models} \item{best}{index of top models included}
+a list of
+ \item{fit}{predictions using BMA or other estimators}
+ \item{Ypred}{matrix of predictions under model(s)}
+ \item{postprobs}{renormalized probabilities of
+the top models}
+\item{best}{index of top models included}
 }
 \description{
-Predictions under model averaging from a BMA (BAS) object for GLMS
+Predictions under model averaging from a BMA (BAS) object for GLMs
+under different loss functions.
 }
 \details{
-Use BMA to form predictions using the top highest probability models.
+This function first calls the predict method for class bas
+(linear models) to form predictions on the linear predictor
+scale for `BMA`, `HPM`, `MPM` etc. If the estimator is `BMA`
+and `type='response'` then the
+inverse link is applied to fitted values for type equal `'link'`
+and model averaging takes place in the `reponse` scale. Thus applying
+the inverse link to BMA estimate with `type = 'link'` is
+not equal to the fitted values for `type = 'response'` under
+BMA due to the  nonlinear transformation under the inverse link.
 }
 \examples{
 
-library(MASS)
-data(Pima.tr)
-data(Pima.te)
+
+data(Pima.tr, package="MASS")
+data(Pima.te, package="MASS")
 Pima.bas = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7, method="BAS",
            betaprior=CCH(a=1, b=nrow(Pima.tr)/2, s=0), family=binomial(),
            modelprior=uniform())
@@ -69,7 +82,8 @@ Pima.bas = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7, method="BAS",
 \code{\link{fitted.bas}}
 
 Other predict methods: \code{\link{fitted.bas}},
-  \code{\link{predict.bas}}
+  \code{\link{predict.bas}},
+  \code{\link{variable.names.pred.bas}}
 
 Other bas methods: \code{\link{BAS}}, \code{\link{bas.lm}},
   \code{\link{coef.bas}}, \code{\link{confint.coef.bas}},
@@ -77,7 +91,8 @@ Other bas methods: \code{\link{BAS}}, \code{\link{bas.lm}},
   \code{\link{diagnostics}}, \code{\link{fitted.bas}},
   \code{\link{force.heredity.bas}},
   \code{\link{image.bas}}, \code{\link{predict.bas}},
-  \code{\link{summary.bas}}, \code{\link{update.bas}}
+  \code{\link{summary.bas}}, \code{\link{update.bas}},
+  \code{\link{variable.names.pred.bas}}
 }
 \author{
 Merlise Clyde
