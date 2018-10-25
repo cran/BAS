@@ -65,10 +65,11 @@ double *makeprob(double *prob, double *y, double c, double w, double
 		 sigma2, int p, int inc_int);
 void update_tree(SEXP modelspace, struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, int *model);
 void update_tree_file(struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, FILE *file);
+double random_switch_heredity(int *model, struct Var *vars, int n, int pmodel, int *varin, int *varout, SEXP Rparents);
+double random_walk_heredity(int *model, struct Var *vars, int n, SEXP Rparents);
 double random_switch(int *model, struct Var *vars, int n, int pmodel, int *varin, int *varout);
 double random_walk(int *model, struct Var *vars, int n);
 int update_probs(double *probs, struct Var *var, int m, int k, int p);
-void update_MCMC_probs(double *probs, struct Var *vars, int n, int p);
 void print_subset(int subset, int rank, Bit **models, Bit *model,
 		  double *subsetsum, int *pattern, int *position,
 		  int n, struct Var *vars, int p);
@@ -83,7 +84,6 @@ void set_bits(char *bits, int subset, int *pattern, int *position, int n);
 int sortvars(struct Var *vars, double *prob, int p);
 
 void Lapack_chol2inv(double *cov, int p,double *covwork);
-void F77_NAME(ch2inv)(double *cov, int *p, int *nr, double *covwork, int *info);
 void F77_NAME(dpofa)(double *a, int *lda, int *n, int *info);
 void F77_NAME(dposl)(double *a, int *lda, int *n, double  *b);
 void F77_NAME(dpoco)(double *a, int *lda, int *n, double *rcond, double *z, int  *info);
@@ -112,7 +112,7 @@ void dgemv_(const char *trans, int *m, int *n, double *alpha, double *A,
 
 */
 
-void cholregold(double *residuals, double *X, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
+int cholregpivot(double *XtY, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
 void cholreg(double *XtY, double *XtX, double *coefficients,double *se, double *mse,  int p, int n);
 double quadform (double *bwork, double *R,  int p);
 double **matalloc(int das,int dbs);
@@ -271,16 +271,19 @@ void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, 
 
 int *GetModel_m(SEXP Rmodel_m, int *model, int p);
 
-void CreateTree(NODEPTR branch, struct Var *vars, int *bestmodel, int *model, int n, int m, SEXP modeldim);
+void CreateTree(NODEPTR branch, struct Var *vars, int *bestmodel,
+                int *model, int n, int m, SEXP modeldim, SEXP Rparents);
 
 void CreateTree_with_pigamma(NODEPTR branch, struct Var *vars, int *bestmodel, int *model, int n, int m,
-                             SEXP modeldim, double *pigamma);
+                             SEXP modeldim, double *pigamma, SEXP Rparents);
 
 double GetNextModelCandidate(int pmodel_old, int n, int n_sure, int *model, struct Var *vars, double problocal,
-                             int *varin, int *varout);
+                             int *varin, int *varout, SEXP Rparents);
+double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int nsure);
 
 void GetNextModel_swop(NODEPTR branch, struct Var *vars, int *model, int n, int m,  double *pigamma,
-                       double problocal, SEXP modeldim,int *bestmodel);
+                       double problocal, SEXP modeldim,int *bestmodel,
+                       SEXP Rparents);
 
 void Substract_visited_probability_mass(NODEPTR branch, struct Var *vars, int *model, int n, int m, double *pigamma, double eps);
 
@@ -289,7 +292,9 @@ void SetModel1(SEXP Rfit, SEXP Rmodel_m,
 
 void SetModel2(double logmargy, double shrinkage_m, double prior_m,
                SEXP sampleprobs, SEXP logmarg, SEXP shrinkage, SEXP priorprobs, int m);
-
+double FitModel(SEXP Rcoef_m, SEXP Rse_m, double *XtY, double *XtX, int *model_m,
+                double *XtYwork, double *XtXwork, double yty, double SSY, int pmodel, int p,
+                int nobs, int m, double *pmse_m, int *rank_m, int pivot);
 SEXP glm_FitModel(SEXP RX, SEXP RY, SEXP Rmodel_m,  //input data
                   SEXP Roffset, SEXP Rweights,
                   glmstptr * glmfamily, SEXP Rcontrol,

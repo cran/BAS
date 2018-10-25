@@ -6,12 +6,12 @@
 \alias{coefficients}
 \alias{coefficients.bas}
 \alias{print.coef.bas}
-\alias{print.coef.bas}
 \title{Coefficients of a Bayesian Model Average object}
 \usage{
 \method{coef}{bas}(object, n.models, estimator = "BMA", ...)
 
-\method{print}{coef.bas}(x, digits = max(3, getOption("digits") - 3), ...)
+\method{print}{coef.bas}(x, digits = max(3, getOption("digits") - 3),
+  ...)
 }
 \arguments{
 \item{object}{object of class 'bas' created by BAS}
@@ -32,11 +32,14 @@ probability model), and 'BMA'}
 }
 \value{
 \code{coefficients} returns an object of class coef.bas with the
-following: \item{conditionalmeans}{a matrix with conditional posterior means
-for each model} \item{conditionalsd}{ standard deviations for each model }
-\item{postmean}{marginal posterior means of each regression coefficient
-using BMA} \item{postsd}{marginal posterior standard deviations using BMA}
-\item{postne0}{vector of posterior inclusion probabilities, marginal
+following:
+ \item{conditionalmeans}{a matrix with conditional posterior means
+for each model}
+ \item{conditionalsd}{ standard deviations for each model }
+ \item{postmean}{marginal posterior means of each regression coefficient
+using BMA}
+ \item{postsd}{marginal posterior standard deviations using BMA}
+ \item{postne0}{vector of posterior inclusion probabilities, marginal
 probability that a coefficient is non-zero}
 }
 \description{
@@ -44,8 +47,6 @@ Extract conditional posterior means and standard deviations, marginal
 posterior means and standard deviations, posterior probabilities, and
 marginal inclusions probabilities under Bayesian Model Averaging from an
 object of class 'bas'
-
-Print coefficients generated from coef.bas
 }
 \details{
 Calculates posterior means and (approximate) standard deviations of the
@@ -108,6 +109,8 @@ Other bas methods: \code{\link{BAS}}, \code{\link{bas.lm}},
   \code{\link{variable.names.pred.bas}}
 }
 \author{
-Merlise Clyde \email{clyde@stat.duke.edu}
+Merlise Clyde \email{clyde@duke.edu}
 }
+\concept{bas coefs}
+\concept{bas methods}
 \keyword{regression}
