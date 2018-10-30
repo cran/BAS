@@ -9,9 +9,11 @@ void PrecomputeData(double *Xwork, double *Ywork, double *wts, double **pXtXwork
 
 	int p2 = p * p;
 	*pXtXwork  = (double *) R_alloc(p2, sizeof(double));
-	*pXtYwork = vecalloc(p);
+	*pXtYwork = (double *) R_alloc(p, sizeof(double));
 	*pXtX  = (double *) R_alloc(p2, sizeof(double));
-	*pXtY = vecalloc(p);
+	*pXtY = (double *) R_alloc(p, sizeof(double));
+	memset(*pXtX,0.0, p2 * sizeof(double));
+	memset(*pXtY,0.0, p * sizeof(double));
 
 	for (j=0, l=0; j < p; j++) {
 	  for	 (i=0; i < nobs; i++) {
@@ -27,7 +29,7 @@ void PrecomputeData(double *Xwork, double *Ywork, double *wts, double **pXtXwork
 	}
 
 	//precompute XtX
-	memset(*pXtX,0, p2 * sizeof(double));
+
 	F77_NAME(dsyrk)(uplo, trans, &p, &nobs, &one, &Xwork[0], &nobs, &zero, *pXtX, &p);
 
 	double ybar = 0.0;
@@ -39,6 +41,7 @@ void PrecomputeData(double *Xwork, double *Ywork, double *wts, double **pXtXwork
 	*yty = F77_NAME(ddot)(&nobs, &Ywork[0], &inc, &Ywork[0], &inc);
 	*SSY = *yty - (double) nwts* ybar *ybar;
 
+// compute X^TY	
 	F77_NAME(dgemv)(trans, &nobs, &p, &one, &Xwork[0], &nobs, &Ywork[0], &inc, &zero, *pXtY,&inc);
 }
 
@@ -121,12 +124,13 @@ void gexpectations(int p, int pmodel, int nobs, double R2, double alpha, int met
 
 
 
-int cholregpivot(double *XtY, double *XtX, double *coefficients, double *se, double *mse, int p, int n)
+int cholregpivot(double *XtY, double *XtX, double *coefficients, double *se, double *mse, int p, int n,
+                 int pivot, double tol)
 {
 	/* On entry *coefficients equals X'Y, which is over written with the OLS estimates */
 	/* On entry MSE = Y'Y */
 
-  double  one, ete=0.0, zero, tol=100*DBL_EPSILON, *work, *tmpcoef;
+  double  one, ete=0.0, zero, *work, *tmpcoef;
 	int  job, l, i, j, info, inc, rank, *piv, p2;
 	zero = 0.0;
 	one = 1.0;

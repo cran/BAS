@@ -3,14 +3,14 @@
 // [[register]]
 SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
                    SEXP Rmodeldim, SEXP incint, SEXP Ralpha,
-                   SEXP method, SEXP modelprior, SEXP Rpivot)
+                   SEXP method, SEXP modelprior, SEXP Rpivot, SEXP Rtol)
 {
   SEXP   RXwork = PROTECT(duplicate(X)), RYwork = PROTECT(duplicate(Y));
   int nProtected = 2;
 
   int  nModels=LENGTH(Rmodeldim);
   int  pivot = LOGICAL(Rpivot)[0];
-
+  double  tol = REAL(Rtol)[0];
   SEXP ANS = PROTECT(allocVector(VECSXP, 13)); ++nProtected;
   SEXP ANS_names = PROTECT(allocVector(STRSXP, 13)); ++nProtected;
   SEXP Rprobs = PROTECT(duplicate(Rprobinit)); ++nProtected;
@@ -48,7 +48,8 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
   Ywork = REAL(RYwork);
   Xwork = REAL(RXwork);
   wts = REAL(Rweights);
-
+  yty = 0.0;
+  SSY = 0.0;
 
 	PrecomputeData(Xwork, Ywork, wts, &XtXwork, &XtYwork, &XtX, &XtY, &yty, &SSY, p, nobs);
 
@@ -65,6 +66,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 
   models = cmatalloc(k,p);
   model = (int *) R_alloc(p, sizeof(int));
+  memset(model, 0.0, p*sizeof(int));
 
   k = topk(models, probs, k, vars, n, p);
 
@@ -77,7 +79,8 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 
     Rcoef_m = NEW_NUMERIC(p); PROTECT(Rcoef_m);
     Rse_m = NEW_NUMERIC(p); PROTECT(Rse_m);
-    coefficients = REAL(Rcoef_m);  se_m = REAL(Rse_m);
+    coefficients = REAL(Rcoef_m);
+    se_m = REAL(Rse_m);
 
     memcpy(coefficients, XtY,  p*sizeof(double));
     memcpy(XtXwork, XtX, p*p*sizeof(double));
@@ -85,7 +88,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 
     mse_m = yty;
 
-    rank_m =  cholregpivot(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs);
+    rank_m =  cholregpivot(XtYwork, XtXwork, coefficients, se_m, &mse_m, p, nobs, pivot, tol);
 
     RSquareFull =  1.0 - (mse_m * (double) ( nobs - rank_m))/SSY;
     UNPROTECT(2);
@@ -139,7 +142,7 @@ SEXP deterministic(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 
       R2_m = FitModel(Rcoef_m, Rse_m, XtY, XtX, model_m, XtYwork, XtXwork,
                       yty, SSY, pmodel, p, nobs, m, &mse_m, &rank_m,
-                      pivot);
+                      pivot, tol);
       INTEGER(rank)[m] = rank_m;
 
       SET_ELEMENT(beta, m, Rcoef_m);
@@ -226,11 +229,15 @@ int topk(Bit **models, double *prob, int k, struct Var *vars, int n, int p)
 
 
   /* Ask for too many models? */
+
+  /*   Can't get here due to checks
+
   if (log((double) k)/log((double) 2.0) > (double) n) {
     REprintf("Warning: Asked for %d models, but there are only 2^%d with non-zero prob.\n",
 	k, n);
     k = 1<<n;
   }
+  */
 
   /*  Rprintf("Deterministic sample of (approx) top %d models\n", k); */
 
@@ -238,15 +245,29 @@ int topk(Bit **models, double *prob, int k, struct Var *vars, int n, int p)
   for (i = 0; i < n; i++) list[i] = vars[i].logit;
 
   model = (unsigned char *) R_alloc(n, sizeof(Bit));
+  memset(model, 0, n*sizeof(Bit));
 
   qsize = 2*k;  /* Largest number of items in priority queue. */
   subsetsum = (double *) R_alloc(qsize, sizeof(double));
+  memset(subsetsum, 0.0, qsize* sizeof(double));
+
   parent = (int *) R_alloc(qsize, sizeof(int));
+  memset(parent, 0, qsize* sizeof(int));
+
   type =(int *) R_alloc(qsize, sizeof(int));
+  memset(type, 0, qsize* sizeof(int));
+
   position = (int *) R_alloc(qsize, sizeof(int));
+  memset(position, 0, qsize* sizeof(int));
+
   pattern = (int *) R_alloc(qsize, sizeof(int));
+  memset(pattern, 0, qsize* sizeof(int));
+
   queue = (int *) R_alloc(qsize, sizeof(int));
+  memset(queue, 0, qsize* sizeof(int));
+
   bits = (char *) R_alloc(n, sizeof(char));
+  memset(bits, 0, n* sizeof(char));
 
   queuesize = 0;
   /* Store relevant information for root node. */

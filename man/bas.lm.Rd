@@ -13,7 +13,7 @@ bas.lm(formula, data, subset, weights, na.action = "na.omit",
   bestmodel = NULL, prob.local = 0, prob.rw = 0.5,
   MCMC.iterations = NULL, lambda = NULL, delta = 0.025, thin = 1,
   renormalize = FALSE, force.heredity = TRUE, pivot = FALSE,
-  bigmem = FALSE)
+  tol = 1e-07, bigmem = FALSE)
 }
 \arguments{
 \item{formula}{linear model formula for the full model with all predictors,
@@ -104,7 +104,7 @@ likely to be sampled (equivalent to random sampling without replacement);
 "eplogp" uses the \code{\link{eplogprob}} function to approximate the Bayes
 factor from p-values from the full model to find initial marginal inclusion
 probabilities; "marg-eplogp" uses\code{\link{eplogprob.marg}} function to
-aproximate the Bayes factor from p-values from the full model each simple
+approximate the Bayes factor from p-values from the full model each simple
 linear regression.  To run a Markov Chain to provide initial estimates of
 marginal inclusion probabilities for "BAS", use method="MCMC+BAS" below.
 While the initprobs are not used in sampling for method="MCMC", this
@@ -116,7 +116,7 @@ to always be included in the model.}
 
 \item{include.always}{A formula with terms that should always be included
 in the model with probability one.  By default this is `~ 1` meaning that the
-intercept is always included.  This will also overide any of the values in `initprobs`
+intercept is always included.  This will also override any of the values in `initprobs`
 above by setting them to 1.}
 
 \item{method}{A character variable indicating which sampling method to use:
@@ -180,13 +180,16 @@ order terms are included.  Currently only supported with `method='MCMC'`.
 Default is TRUE.}
 
 \item{pivot}{Logical variable to allow pivoting of columns when obtaining the
-OLS estimates of a model so that models that are not full rank can be fit.
+OLS estimates of a model so that models that are not full rank can be fit. Defaults to TRUE.
 Currently coefficients that are not estimable are set to zero.  Use caution with
-interpreting BMA estimates of parameters.  (Experimental).}
+interpreting BMA estimates of parameters.}
+
+\item{tol}{1e-7 as}
 
 \item{bigmem}{Logical variable to indicate that there is access to
 large amounts of memory (physical or virtual) for enumeration
-with large model spaces, e.g. > 2^25.}
+with large model spaces, e.g. > 2^25. default; used in determining rank of X^TX in cholesky decompostion
+with pivoting.}
 }
 \value{
 \code{bas} returns an object of class \code{bas}
@@ -263,7 +266,7 @@ For larger p, BAS samples without replacement using random or deterministic
 sampling. The Bayesian Adaptive Sampling algorithm of Clyde, Ghosh, Littman
 (2010) samples models without replacement using the initial sampling
 probabilities, and will optionally update the sampling probabilities every
-"update" models using the estimated marginal inclusion probabilties. BAS
+"update" models using the estimated marginal inclusion probabilities. BAS
 uses different methods to obtain the \code{initprobs}, which may impact the
 results in high-dimensional problems. The deterministic sampler provides a
 list of the top models in order of an approximation of independence using
@@ -348,7 +351,7 @@ out =  bas.lm(fullModelFormula,
               data = d,
               alpha = 0.125316,
               prior = "JZS",
-              weights = facFifty, force.heredity = FALSE, pivot = TRUE)
+              weights = facFifty, force.heredity = FALSE)
 
 # more complete demo's
 demo(BAS.hald)

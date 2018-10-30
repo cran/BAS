@@ -191,12 +191,13 @@ return(prob);
 extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
                             SEXP Rmodeldim, SEXP incint, SEXP Ralpha,
                             SEXP method, SEXP modelprior, SEXP Rupdate,
-                            SEXP Rbestmodel, SEXP plocal, SEXP Rparents, SEXP Rpivot) {
+                            SEXP Rbestmodel, SEXP plocal, SEXP Rparents, SEXP Rpivot, SEXP Rtol) {
 	int nProtected = 0;
 	SEXP RXwork = PROTECT(duplicate(X)); nProtected++;
 	SEXP RYwork = PROTECT(duplicate(Y)); nProtected++;
 	int nModels=LENGTH(Rmodeldim);
 	int pivot = LOGICAL(Rpivot)[0];
+	double tol = REAL(Rtol)[0];
 
 	//  Rprintf("Allocating Space for %d Models\n", nModels) ;
 	SEXP ANS = PROTECT(allocVector(VECSXP, 13)); ++nProtected;
@@ -234,7 +235,7 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 	Xwork = REAL(RXwork);
 	wts = REAL(Rweights);
 
-	double *XtXwork, *XtYwork,*XtX, *XtY, yty,SSY;
+	double *XtXwork, *XtYwork,*XtX, *XtY, yty=0.0,SSY=0.0;
 	PrecomputeData(Xwork, Ywork, wts, &XtXwork, &XtYwork, &XtX, &XtY, &yty, &SSY, p, nobs);
 
 	struct Var *vars = (struct Var *) R_alloc(p, sizeof(struct Var)); // Info about the model variables.
@@ -284,7 +285,7 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
   model_m = GetModel_m(Rmodel_m, model, p);
 
 	R2_m = FitModel(Rcoef_m, Rse_m, XtY, XtX, model_m, XtYwork, XtXwork, yty, SSY,
-                 pmodel, p, nobs, m, &mse_m, &rank_m, pivot);
+                 pmodel, p, nobs, m, &mse_m, &rank_m, pivot, tol);
 	INTEGER(rank)[m] = rank_m;
 
 	gexpectations(p, rank_m, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
@@ -339,8 +340,11 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 		model_m = GetModel_m(Rmodel_m, model, p);
 
 		R2_m = FitModel(Rcoef_m, Rse_m, XtY, XtX, model_m, XtYwork, XtXwork, yty, SSY,
-                  pmodel, p, nobs, m, &mse_m, &rank_m, pivot);
+                  pmodel, p, nobs, m, &mse_m, &rank_m, pivot, tol);
 		INTEGER(rank)[m] = rank_m;
+		// initialize 
+		logmargy= 0.0;
+		shrinkage_m = 1.0;
 		gexpectations(p, rank_m, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
 //    Rprintf("rank %d dim %d\n", rank_m, pmodel);
 //		gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);

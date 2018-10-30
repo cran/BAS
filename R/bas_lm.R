@@ -81,7 +81,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' sampling. The Bayesian Adaptive Sampling algorithm of Clyde, Ghosh, Littman
 #' (2010) samples models without replacement using the initial sampling
 #' probabilities, and will optionally update the sampling probabilities every
-#' "update" models using the estimated marginal inclusion probabilties. BAS
+#' "update" models using the estimated marginal inclusion probabilities. BAS
 #' uses different methods to obtain the \code{initprobs}, which may impact the
 #' results in high-dimensional problems. The deterministic sampler provides a
 #' list of the top models in order of an approximation of independence using
@@ -182,7 +182,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' "eplogp" uses the \code{\link{eplogprob}} function to approximate the Bayes
 #' factor from p-values from the full model to find initial marginal inclusion
 #' probabilities; "marg-eplogp" uses\code{\link{eplogprob.marg}} function to
-#' aproximate the Bayes factor from p-values from the full model each simple
+#' approximate the Bayes factor from p-values from the full model each simple
 #' linear regression.  To run a Markov Chain to provide initial estimates of
 #' marginal inclusion probabilities for "BAS", use method="MCMC+BAS" below.
 #' While the initprobs are not used in sampling for method="MCMC", this
@@ -193,7 +193,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' to always be included in the model.
 #' @param include.always A formula with terms that should always be included
 #' in the model with probability one.  By default this is `~ 1` meaning that the
-#' intercept is always included.  This will also overide any of the values in `initprobs`
+#' intercept is always included.  This will also override any of the values in `initprobs`
 #' above by setting them to 1.
 #' @param method A character variable indicating which sampling method to use:
 #' \itemize{
@@ -245,12 +245,14 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' order terms are included.  Currently only supported with `method='MCMC'`.
 #' Default is TRUE.
 #' @param pivot Logical variable to allow pivoting of columns when obtaining the
-#' OLS estimates of a model so that models that are not full rank can be fit.
+#' OLS estimates of a model so that models that are not full rank can be fit. Defaults to TRUE.
 #' Currently coefficients that are not estimable are set to zero.  Use caution with
-#' interpreting BMA estimates of parameters.  (Experimental).
+#' interpreting BMA estimates of parameters.
+#' @param tol 1e-7 as
 #' @param bigmem Logical variable to indicate that there is access to
 #' large amounts of memory (physical or virtual) for enumeration
-#' with large model spaces, e.g. > 2^25.
+#' with large model spaces, e.g. > 2^25. default; used in determining rank of X^TX in cholesky decompostion
+#' with pivoting.
 #'
 #' @return \code{bas} returns an object of class \code{bas}
 #'
@@ -419,7 +421,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #'               data = d,
 #'               alpha = 0.125316,
 #'               prior = "JZS",
-#'               weights = facFifty, force.heredity = FALSE, pivot = TRUE)
+#'               weights = facFifty, force.heredity = FALSE)
 #'
 #' # more complete demo's
 #' demo(BAS.hald)
@@ -456,6 +458,7 @@ bas.lm <- function(formula,
                    renormalize = FALSE,
                    force.heredity = TRUE,
                    pivot = FALSE,
+                   tol = 1e-7,
                    bigmem = FALSE) {
   num.updates <- 10
   call <- match.call()
@@ -720,6 +723,7 @@ bas.lm <- function(formula,
       plocal = as.numeric(prob.local),
       Rparents = parents,
       Rpivot = pivot,
+      Rtol = tol,
       PACKAGE = "BAS"
     ),
     "MCMC+BAS" = .Call(
@@ -762,7 +766,8 @@ bas.lm <- function(formula,
       as.numeric(delta),
       as.integer(thin),
       Rparents = parents,
-      Rpivot = pivot
+      Rpivot = pivot,
+      Rtol = tol
     ),
     "deterministic" = .Call(
       C_deterministic,
@@ -775,7 +780,8 @@ bas.lm <- function(formula,
       alpha = as.numeric(alpha),
       method = as.integer(method.num),
       modelprior = modelprior,
-      Rpivot = pivot
+      Rpivot = pivot,
+      Rtol = tol
     )
   )
   result$rank_deficient <- FALSE
