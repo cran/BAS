@@ -56,14 +56,17 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
   SEXP NumUnique = PROTECT(allocVector(INTSXP, 1)); ++nProtected;
   SEXP Rse_m = NULL, Rcoef_m = NULL, Rmodel_m;
 
-  double *Xwork, *Ywork, *wts, *coefficients,*probs, shrinkage_m, *MCMC_probs,
+  double *Xwork, *Ywork, *wts, *coefficients,*probs, shrinkage_m,
     SSY, yty, mse_m, *se_m, MH=0.0, prior_m=1.0, *real_model,
     R2_m, RSquareFull, alpha, prone, denom, logmargy, postold, postnew;
   int nobs, p, k, i, j, m, n, l, pmodel, pmodel_old, *xdims, *model_m, *bestmodel, *varin, *varout;
   int mcurrent,  update, n_sure;
-  double  mod, rem, problocal, *pigamma,  eps, *hyper_parameters;
-  double *XtX, *XtY, *XtXwork, *XtYwork, *SSgam, *Cov, *priorCov, *marg_probs;
-  double  lambda,  delta, one=1.0;
+  double  mod, rem, problocal, *pigamma,  eps;
+//  double *hyper_parameters, delta;  //For future use
+  double *XtX, *XtY, *XtXwork, *XtYwork;
+ // double *marg_probs;
+ // double *SSgam, *Cov, *priorCov;
+  double  lambda, one=1.0;
 
   int inc=1;
   int *model, *modelold, bit, *modelwork, old_loc, new_loc;
@@ -80,13 +83,14 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
   k = LENGTH(modelprobs);
   update = INTEGER(Rupdate)[0];
   lambda=REAL(LAMBDA)[0];
-  delta = REAL(DELTA)[0];
+  //  delta = REAL(DELTA)[0];
   //  Rprintf("delta %f lambda %f", delta, lambda);
   eps = DBL_EPSILON;
   problocal = REAL(plocal)[0];
   //  Rprintf("Update %i and prob.switch %f\n", update, problocal);
   /* Extract prior on models  */
-  hyper_parameters = REAL(getListElement(modelprior,"hyper.parameters"));
+
+ // hyper_parameters = REAL(getListElement(modelprior,"hyper.parameters"));
 
   /*  Rprintf("n %d p %d \n", nobs, p);  */
 
@@ -107,12 +111,13 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
 
   for (i =n; i <p; i++) REAL(MCMCprobs)[vars[i].index] = probs[vars[i].index];
   for (i =0; i <n; i++) REAL(MCMCprobs)[vars[i].index] = 0.0;
-  MCMC_probs =  REAL(MCMCprobs);
+
+  int noInclusionIs1 = no_prior_inclusion_is_1(p, probs);
 
 
   pigamma = vecalloc(p);
   real_model = vecalloc(n);
-  marg_probs = vecalloc(n);
+//  marg_probs = vecalloc(n);
   modelold = ivecalloc(p);
   model = ivecalloc(p);
   modelwork= ivecalloc(p);
@@ -121,7 +126,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
 
 
   /* create gamma gamma' matrix */
-  SSgam  = (double *) R_alloc(n * n, sizeof(double));
+/*  SSgam  = (double *) R_alloc(n * n, sizeof(double));
   Cov  = (double *) R_alloc(n * n, sizeof(double));
   priorCov  = (double *) R_alloc(n * n, sizeof(double));
   for (j=0; j < n; j++) {
@@ -134,7 +139,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
     marg_probs[i] = 0.0;
   }
 
-
+*/
 
 
 
@@ -229,7 +234,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
     REAL(sampleprobs)[m] = 1.0;
     REAL(logmarg)[m] = logmargy;
     REAL(shrinkage)[m] = shrinkage_m;
-    prior_m  = compute_prior_probs(model,pmodel,p, modelprior);
+    prior_m  = compute_prior_probs(model,pmodel,p, modelprior, noInclusionIs1);
     REAL(priorprobs)[m] = prior_m;
 
     UNPROTECT(3);
@@ -313,7 +318,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
       memcpy(coefficients, XtYwork, sizeof(double)*pmodel);
       cholreg(XtYwork, XtXwork, coefficients, se_m, &mse_m, pmodel, nobs);
       if (pmodel > 1)  R2_m = 1.0 - (mse_m * (double) ( nobs - pmodel))/SSY;
-      prior_m = compute_prior_probs(model,pmodel,p, modelprior);
+      prior_m = compute_prior_probs(model,pmodel,p, modelprior, noInclusionIs1);
       gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
       postnew = logmargy + log(prior_m);
     }
@@ -364,7 +369,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
    }
 
    // Update SSgam = gamma gamma^T + SSgam
-   F77_NAME(dsyr)("U", &n,  &one, &real_model[0], &inc,  &SSgam[0], &n);
+ //  F77_NAME(dsyr)("U", &n,  &one, &real_model[0], &inc,  &SSgam[0], &n);
    m++;
   }
 
@@ -515,7 +520,7 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim, SEXP
    gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0],  RSquareFull, SSY, &logmargy, &shrinkage_m);
    REAL(logmarg)[m] = logmargy;
    REAL(shrinkage)[m] = shrinkage_m;
-   REAL(priorprobs)[m] = compute_prior_probs(model,pmodel,p, modelprior);
+   REAL(priorprobs)[m] = compute_prior_probs(model,pmodel,p, modelprior, noInclusionIs1);
 
 
     if (m > 1) {

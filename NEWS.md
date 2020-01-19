@@ -1,3 +1,27 @@
+#  BAS 1.5.4
+
+## Features
+
+* Modified prior probabilities to adjust for the number of variables always
+included when using include.always.  [Pull request #41](https://github.com/merliseclyde/BAS/pull/41) by Don van de Bergh.  [Issue #40](https://github.com/merliseclyde/BAS/issues/40)
+
+## Bug Fixes 
+
+* Fixed valgrind error in src/ZS_approx_null_np.c for invalid write noted in CRAN checks
+
+* fixed function declaration type-mismatch and argument errors identified by LTO noted in CRAN checks
+
+* Added `contrast=NULL` argument to `bas.lm` and `bas.glm` so that non-NULL contrasts do not
+trigger warning in `model.matrix` as of R 3.6.0.  [Bug #44](https://github.com/merliseclyde/BAS/issues/44)
+
+* Added check for sample size equal to zero due to subsetting or missing data
+[Bug #37](https://github.com/merliseclyde/BAS/issues/37)
+
+## Other 
+
+* Put ORCID in quotes in author list (per R-dev changes)
+
+
 #  BAS 1.5.3
 
 ## Bug Fixes  
@@ -14,7 +38,7 @@ Fixed errors identified on cran checks https://cran.r-project.org/web/checks/che
 
 ## Features
 
-* Included an option `pivot=TRUE` in `bas.lm` to fit the models using a pivoted Cholesky decomposition to allow models that are rank-deficient.  [Enhancment #24](https://github.com/merliseclyde/BAS/issues/24) and [Bug #21](https://github.com/merliseclyde/BAS/issues/21).  Currently coefficients that are not-estimable are set to zero so that `predict` and other methods will work as before.  The vector `rank` is added to the output (see documenation for `bas.lm`) and the degrees of freedom methods that assume a uniform prior for obtaining estimates (AIC and BIC) are adjusted to use `rank` rather than `size`.  
+* Included an option `pivot=TRUE` in `bas.lm` to fit the models using a pivoted Cholesky decomposition to allow models that are rank-deficient.  [Enhancment #24](https://github.com/merliseclyde/BAS/issues/24) and [Bug #21](https://github.com/merliseclyde/BAS/issues/21).  Currently coefficients that are not-estimable are set to zero so that `predict` and other methods will work as before.  The vector `rank` is added to the output (see documentation for `bas.lm`) and the degrees of freedom methods that assume a uniform prior for obtaining estimates (AIC and BIC) are adjusted to use `rank` rather than `size`.  
 
 * Added option `force.heredity=TRUE`to force lower order terms to be included if higher order terms are present (hierarchical constraint) for `method='MCMC'` and `method='BAS'` with `bas.lm` and `bas.glm`.  Updated Vignette to illustrate. [enhancement #19](https://github.com/merliseclyde/BAS/issues/19).  Checks to see if  _parents_ are included using `include.always` pass  [issue #26](https://github.com/merliseclyde/BAS/issues/26).
 
@@ -24,7 +48,7 @@ Fixed errors identified on cran checks https://cran.r-project.org/web/checks/che
 
 * update `fitted.bas` to use predict so that code covers both GLM and LM cases with `type='link'` or `type='response'`
 
-* Updates to package for [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2055/badge)](https://bestpractices.coreinfrastructure.org/projects/2055)  certification
+* Updates to package for [CII Best Practices Badge](https://bestpractices.coreinfrastructure.org/projects/2055)  certification
 
 * Added [Code Coverage](https://codecov.io/gh/merliseclyde/BAS) support and more extensive tests using `test_that`.
 
@@ -36,7 +60,7 @@ Fixed errors identified on cran checks https://cran.r-project.org/web/checks/che
 
 * fixed  [issue #34](https://github.com/merliseclyde/BAS/issues/34) for `bas.glm` where variables in `include.always` had marginal inclusion probabilities that were incorrect.  Added unit test in `test-bas-glm.R`
 
-* fixed [issue #33](https://github.com/merliseclyde/BAS/issues/33)  for Jeffreys prior where marginal inclusion probabilities were not renomalized after dropping intercept model 
+* fixed [issue #33](https://github.com/merliseclyde/BAS/issues/33)  for Jeffreys prior where marginal inclusion probabilities were not renormalized after dropping intercept model 
 
 * fixed [issue #32](https://github.com/merliseclyde/BAS/issues/32) 
 to allow vectorization for `phi1` function in R/cch.R
@@ -182,7 +206,7 @@ Chaloner & Brant for linear models.
 
 ## Updates 
 
-* Extract coefficent summaries, credible intervals and plots for the `HPM` and ` MPM` in addition to the default `BMA` by adding a new `estimator` argument to the `coef` function. The new `n.models` argument to `coef` provides summaries based on the top `n.models` highest probability models to reduce computation time. 'n.models = 1' is equivalent to the highest probability model.
+* Extract coefficient summaries, credible intervals and plots for the `HPM` and ` MPM` in addition to the default `BMA` by adding a new `estimator` argument to the `coef` function. The new `n.models` argument to `coef` provides summaries based on the top `n.models` highest probability models to reduce computation time. 'n.models = 1' is equivalent to the highest probability model.
 
 * use of newdata that is a vector is now depricated for predict.bas; newdata must be a dataframe or missing, in which case fitted values based on the dataframe used in fitting is used
 
@@ -224,7 +248,7 @@ Chaloner & Brant for linear models.
 ## Bug Fixes
 
 * the modification in 1.4.0 to automatically handle NA's led to
-  errors if the response was transformed as part of the forumula; 
+  errors if the response was transformed as part of the formula; 
   this is fixed 
 
 ## Features
@@ -237,7 +261,7 @@ Chaloner & Brant for linear models.
 * added `na.action` for `bas.lm` and `bas.glm` to omit missing data.
 * new function to plot credible intervals created by `confint.pred.bas` or `confint.coef.bas`.   See the help files for an example or the vignette.
 * added `se.fit` option in `predict.basglm`.
-* Added `testBF` as a `betaprior` option for `bas.glm` to implement Bayes Fatcors based on the likelihood ratio statistic's distribution for GLMs.
+* Added `testBF` as a `betaprior` option for `bas.glm` to implement Bayes Factors based on the likelihood ratio statistic's distribution for GLMs.
 * DOI for this version is http://dx.doi.org/10.5281/zenodo.60948
 
 
@@ -255,7 +279,7 @@ A vignette has been added at long last!  This illustrates several of the new fea
 
 ## Deprication 
 * deprecated use of `type` to specify estimator in fitted.bas	and replaced with `estimator` so that `predict()` and `fitted()` are compatible with other S3 methods. 
-* updated funtions to be of class `bas` to avoid NAMESPACE conficts with  other libraries
+* updated functions to be of class `bas` to avoid NAMESPACE conflicts with  other libraries
 	
 
 # BAS 1.2.2 June 29, 2016

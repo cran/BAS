@@ -5,14 +5,31 @@
 \title{Bayesian Adaptive Sampling Without Replacement for Variable Selection in
 Generalized Linear Models}
 \usage{
-bas.glm(formula, family = binomial(link = "logit"), data, weights,
-  subset, offset, na.action = "na.omit", n.models = NULL,
+bas.glm(
+  formula,
+  family = binomial(link = "logit"),
+  data,
+  weights,
+  subset,
+  contrasts = NULL,
+  offset,
+  na.action = "na.omit",
+  n.models = NULL,
   betaprior = CCH(alpha = 0.5, beta = as.numeric(nrow(data)), s = 0),
-  modelprior = beta.binomial(1, 1), initprobs = "Uniform",
-  include.always = ~1, method = "MCMC", update = NULL,
-  bestmodel = NULL, prob.rw = 0.5, MCMC.iterations = NULL,
-  control = glm.control(), laplace = FALSE, renormalize = FALSE,
-  force.heredity = TRUE, bigmem = FALSE)
+  modelprior = beta.binomial(1, 1),
+  initprobs = "Uniform",
+  include.always = ~1,
+  method = "MCMC",
+  update = NULL,
+  bestmodel = NULL,
+  prob.rw = 0.5,
+  MCMC.iterations = NULL,
+  control = glm.control(),
+  laplace = FALSE,
+  renormalize = FALSE,
+  force.heredity = TRUE,
+  bigmem = FALSE
+)
 }
 \arguments{
 \item{formula}{generalized linear model formula for the full model with all
@@ -29,6 +46,8 @@ exponential family; currently only `binomial()` with the logistic link and
 May be missing in which case weights are 1.}
 
 \item{subset}{subset of data used in fitting}
+
+\item{contrasts}{an optional list. See the contrasts.arg of `model.matrix.default()`.}
 
 \item{offset}{a priori known component to be included in the linear
 predictor; by default 0.}
@@ -195,13 +214,16 @@ pima.cch = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
 summary(pima.cch)
 image(pima.cch)
 
+# Note MCMC.iterations are set to 1000 for illustration purposes
+# Please check convergence diagnostics and run longer in practice
+
 pima.robust = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
-              method="MCMC", MCMC.iterations=20000,
+              method="MCMC", MCMC.iterations=5000,
               betaprior=robust(), family=binomial(),
               modelprior=beta.binomial(1,1))
 
 pima.BIC = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
-              method="BAS+MCMC", MCMC.iterations=1000,
+              method="BAS+MCMC", MCMC.iterations=5000,
               betaprior=bic.prior(), family=binomial(),
               modelprior=uniform())
 # Poisson example
@@ -211,25 +233,24 @@ if(requireNamespace("glmbb", quietly=TRUE)) {
   crabs.bas = bas.glm(satell ~ color*spine*width + weight, data=crabs,
                       family=poisson(),
                       betaprior=EB.local(), modelprior=uniform(),
-                      method='MCMC', n.models=2^10, MCMC.iterations=10000,
+                      method='MCMC', n.models=2^10, MCMC.iterations=5000,
                       prob.rw=.95)
 }
 }
 \references{
-Li, Y. and Clyde, M. (2015) Mixtures of g-priors in Generalized
-Linear Models. \url{http://arxiv.org/abs/1503.06913}
-
+Li, Y. and Clyde, M. (2019) Mixtures of g-priors in Generalized
+Linear Models. Journal of the American Statistical Association. 113:1828-1845 \cr
+\url{https://doi.org/10.1080/01621459.2018.1469992} \cr
 Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling for
 Variable Selection and Model Averaging. Journal of Computational Graphics
 and Statistics.  20:80-101 \cr
-\url{http://dx.doi.org/10.1198/jcgs.2010.09049}
-
+\url{http://dx.doi.org/10.1198/jcgs.2010.09049} \cr
 Raftery, A.E, Madigan, D. and Hoeting, J.A. (1997) Bayesian Model Averaging
 for Linear Regression Models. Journal of the American Statistical
 Association.
 }
 \author{
-Merlise Clyde (\email{clyde@stat.duke.edu}), Quanli Wang and Yingbo
+Merlise Clyde (\email{clyde@duke.edu}), Quanli Wang and Yingbo
 Li
 }
 \concept{BMA}

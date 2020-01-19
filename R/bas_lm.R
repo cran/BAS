@@ -93,7 +93,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' or even modest p if the number of
 #' models sampled is not close to the number of possible models and/or there are significant
 #' correlations among the predictors as the bias in estimates of inclusion
-#' probabilities from "BAS" or "MSMS+BAS" may be large relative to the reduced
+#' probabilities from "BAS" or "MCMC+BAS" may be large relative to the reduced
 #' variability from using the normalized model probabilities as shown in Clyde and Ghosh, 2012.
 #' Diagnostic plots with MCMC can be used to assess convergence.
 #' For large problems we recommend thinning with MCMC to reduce memory requirements.
@@ -113,6 +113,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' @param weights an optional vector of weights to be used in the fitting
 #' process. Should be NULL or a numeric vector. If non-NULL, Bayes estimates
 #' are obtained assuming that Y ~ N(Xb, sigma^2 diag(1/weights)).
+#' @param contrasts an optional list. See the contrasts.arg of `model.matrix.default()`.
 #' @param na.action a function which indicates what should happen when the data
 #' contain NAs. The default is "na.omit".
 #' @param n.models number of models to sample either without replacement
@@ -245,13 +246,15 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' order terms are included.  Currently only supported with `method='MCMC'`.
 #' Default is TRUE.
 #' @param pivot Logical variable to allow pivoting of columns when obtaining the
-#' OLS estimates of a model so that models that are not full rank can be fit. Defaults to TRUE.
+#' OLS estimates of a model so that models that are not full rank can be fit.
+#' Defaults to TRUE.
 #' Currently coefficients that are not estimable are set to zero.  Use caution with
 #' interpreting BMA estimates of parameters.
 #' @param tol 1e-7 as
 #' @param bigmem Logical variable to indicate that there is access to
 #' large amounts of memory (physical or virtual) for enumeration
-#' with large model spaces, e.g. > 2^25. default; used in determining rank of X^TX in cholesky decompostion
+#' with large model spaces, e.g. > 2^25. default; used in determining rank of X^TX in cholesky
+#' decomposition
 #' with pivoting.
 #'
 #' @return \code{bas} returns an object of class \code{bas}
@@ -416,12 +419,14 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #'               weights = facFifty, force.heredity = FALSE, pivot = FALSE)
 #'
 #'
-#' # use pivot = TRUE to fit non-full rank case
+#' # use pivot = TRUE to fit non-full rank case  (default)
+#' # This is slower but safer
+#'
 #' out =  bas.lm(fullModelFormula,
 #'               data = d,
 #'               alpha = 0.125316,
 #'               prior = "JZS",
-#'               weights = facFifty, force.heredity = FALSE)
+#'               weights = facFifty, force.heredity = FALSE, pivot = TRUE)
 #'
 #' # more complete demo's
 #' demo(BAS.hald)
@@ -439,6 +444,7 @@ bas.lm <- function(formula,
                    data,
                    subset,
                    weights,
+                   contrasts=NULL,
                    na.action = "na.omit",
                    n.models = NULL,
                    prior = "ZS-null",
@@ -457,7 +463,7 @@ bas.lm <- function(formula,
                    thin = 1,
                    renormalize = FALSE,
                    force.heredity = TRUE,
-                   pivot = FALSE,
+                   pivot = TRUE,
                    tol = 1e-7,
                    bigmem = FALSE) {
   num.updates <- 10
@@ -526,6 +532,8 @@ bas.lm <- function(formula,
   namesx <- dimnames(X)[[2]]
   namesx[1] <- "Intercept"
   n <- dim(X)[1]
+
+  if (n == 0) {stop("Sample size is zero; check data and subset arguments")}
 
   weights <- as.vector(model.weights(mf))
   if (is.null(weights)) {
@@ -688,11 +696,14 @@ bas.lm <- function(formula,
 
 
   if (is.null(update)) {
-    if (n.models == 2^(p - 1)) {
-      update <- n.models + 1
-    } else {
-      (update <- n.models / num.updates)
-    }
+    if (force.heredity) {  # do not update tree for BAS
+      update <- n.models + 1}
+    else {
+      if (n.models == 2^(p - 1)) {
+        update <- n.models + 1
+      } else {
+        (update <- n.models / num.updates)
+      }}
   }
 
   modelindex <- as.list(1:n.models)

@@ -55,7 +55,8 @@ double trunc_beta_binomial(int modeldim, int p, double *hyper);
 double trunc_poisson(int modeldim, int p, double *hyper);
 double trunc_power_prior(int modeldim, int p, double *hyper);
 double Bernoulli(int *model, int p, double *hyper);
-double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior);
+int no_prior_inclusion_is_1(int p, double *probs);
+double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior, int noInclusionIs1);
 void compute_margprobs_old(Bit **models, SEXP Rmodelprobs, double *margprobs, int k, int p);
 void compute_modelprobs(SEXP modelprobs, SEXP logmarg, SEXP priorprobs,  int k);
 void set_bits(char *bits, int subset, int *pattern, int *position, int n);
@@ -305,4 +306,11 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr * family, SEXP Roffset, SEXP Rweights, S
 SEXP gglm_lpy(SEXP RX, SEXP RY,SEXP Rcoef, SEXP Rmu, SEXP Rweights, glmstptr * glmfamily, betapriorptr * betapriorfamily, SEXP Rlaplace);
 
 
+// issue 38
+static inline int lessThanOne(double a)
+{
+  // DBL_EPSILON is too restrictive. This might need further tweaking
+  double LOCAL_DBL_EPSILON = 1E-10;
+  return (1.0 - a) >= (LOCAL_DBL_EPSILON);
+}
 

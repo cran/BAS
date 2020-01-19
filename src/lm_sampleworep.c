@@ -28,6 +28,8 @@ void SetModel(SEXP Rcoef_m, SEXP Rse_m, SEXP Rmodel_m, double mse_m, double R2_m
 void SetModel_lm(SEXP Rcoef_m, SEXP Rse_m, SEXP Rmodel_m, double mse_m, double R2_m,
               SEXP beta, SEXP se, SEXP modelspace, SEXP mse, SEXP R2, int m);
 
+// extern inline int lessThanOne(double a);
+
 void CreateTree_with_pigamma(NODEPTR branch, struct Var *vars,
                              int *bestmodel, int *model, int n,
                              int m, SEXP modeldim, double *pigamma,
@@ -188,6 +190,8 @@ double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int ns
 return(prob);
 }
 
+
+
 extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
                             SEXP Rmodeldim, SEXP incint, SEXP Ralpha,
                             SEXP method, SEXP modelprior, SEXP Rupdate,
@@ -241,11 +245,14 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 	struct Var *vars = (struct Var *) R_alloc(p, sizeof(struct Var)); // Info about the model variables.
 	probs =  REAL(Rprobs);
 	int n = sortvars(vars, probs, p);
+	int noInclusionIs1 = no_prior_inclusion_is_1(p, probs);
 
 	SEXP  Rse_m = NULL, Rcoef_m = NULL, Rmodel_m = NULL;
 	RSquareFull = CalculateRSquareFull(XtY, XtX, XtXwork, XtYwork, Rcoef_m, Rse_m, p, nobs, yty, SSY);
 
 	int *model = ivecalloc(p);
+	memset(model, 0, p * sizeof(int));
+
 	/* fill in the sure things */
 	for (i = n; i < p; i++)  {
 		model[vars[i].index] = (int) vars[i].prob;
@@ -293,7 +300,7 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 //	gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
 
 //  check should this depend on rank or pmodel?
-	double prior_m  = compute_prior_probs(model,pmodel,p, modelprior);
+	double prior_m  = compute_prior_probs(model,pmodel,p, modelprior, noInclusionIs1);
 
 
 
@@ -316,7 +323,8 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 	}  */
 
 	// Sample models
-	for (m = 1;  m < k && pigamma[0] < 1.0; m++) {
+	//	for (m = 1;  m < k && pigamma[0] < 1.0; m++) {
+	for (m = 1;  m < k && lessThanOne(pigamma[0]); m++) {
 	//  Rprintf("model %d, starting pigamma = %lf\n", m, pigamma[0]);
 	  INTEGER(modeldim)[m] = 0;
 		for (i = n; i < p; i++)  {
@@ -342,14 +350,14 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 		R2_m = FitModel(Rcoef_m, Rse_m, XtY, XtX, model_m, XtYwork, XtXwork, yty, SSY,
                   pmodel, p, nobs, m, &mse_m, &rank_m, pivot, tol);
 		INTEGER(rank)[m] = rank_m;
-		// initialize 
+		// initialize
 		logmargy= 0.0;
 		shrinkage_m = 1.0;
 		gexpectations(p, rank_m, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
 //    Rprintf("rank %d dim %d\n", rank_m, pmodel);
 //		gexpectations(p, pmodel, nobs, R2_m, alpha, INTEGER(method)[0], RSquareFull, SSY, &logmargy, &shrinkage_m);
 
-		prior_m = compute_prior_probs(model,pmodel,p, modelprior);
+		prior_m = compute_prior_probs(model,pmodel,p, modelprior, noInclusionIs1);
 		SetModel2(logmargy, shrinkage_m, prior_m, sampleprobs, logmarg, shrinkage, priorprobs, m);
 		SetModel_lm(Rcoef_m, Rse_m, Rmodel_m, mse_m, R2_m,	beta, se, modelspace, mse, R2,m);
 	  UNPROTECT(3);

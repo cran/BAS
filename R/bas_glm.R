@@ -61,6 +61,7 @@ normalize.initprobs.glm <- function(initprobs, glm.obj) {
 #' @param weights optional vector of weights to be used in the fitting process.
 #' May be missing in which case weights are 1.
 #' @param subset subset of data used in fitting
+#' @param contrasts an optional list. See the contrasts.arg of `model.matrix.default()`.
 #' @param offset a priori known component to be included in the linear
 #' predictor; by default 0.
 #' @param na.action a function which indicates what should happen when the data
@@ -172,16 +173,15 @@ normalize.initprobs.glm <- function(initprobs, glm.obj) {
 #' object for prior on coefficients, including hyperparameters}
 #' \item{modelprior}{family object for prior on the models}
 #' \item{include.always}{indices of variables that are forced into the model}
-#' @author Merlise Clyde (\email{clyde@@stat.duke.edu}), Quanli Wang and Yingbo
+#' @author Merlise Clyde (\email{clyde@@duke.edu}), Quanli Wang and Yingbo
 #' Li
-#' @references Li, Y. and Clyde, M. (2015) Mixtures of g-priors in Generalized
-#' Linear Models. \url{http://arxiv.org/abs/1503.06913}
-#'
+#' @references Li, Y. and Clyde, M. (2019) Mixtures of g-priors in Generalized
+#' Linear Models. Journal of the American Statistical Association. 113:1828-1845 \cr
+#' \url{https://doi.org/10.1080/01621459.2018.1469992} \cr
 #' Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling for
 #' Variable Selection and Model Averaging. Journal of Computational Graphics
 #' and Statistics.  20:80-101 \cr
-#' \url{http://dx.doi.org/10.1198/jcgs.2010.09049}
-#'
+#' \url{http://dx.doi.org/10.1198/jcgs.2010.09049} \cr
 #' Raftery, A.E, Madigan, D. and Hoeting, J.A. (1997) Bayesian Model Averaging
 #' for Linear Regression Models. Journal of the American Statistical
 #' Association.
@@ -201,13 +201,16 @@ normalize.initprobs.glm <- function(initprobs, glm.obj) {
 #' summary(pima.cch)
 #' image(pima.cch)
 #'
+#' # Note MCMC.iterations are set to 1000 for illustration purposes
+#' # Please check convergence diagnostics and run longer in practice
+#'
 #' pima.robust = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
-#'               method="MCMC", MCMC.iterations=20000,
+#'               method="MCMC", MCMC.iterations=5000,
 #'               betaprior=robust(), family=binomial(),
 #'               modelprior=beta.binomial(1,1))
 #'
 #' pima.BIC = bas.glm(type ~ ., data=Pima.tr, n.models= 2^7,
-#'               method="BAS+MCMC", MCMC.iterations=1000,
+#'               method="BAS+MCMC", MCMC.iterations=5000,
 #'               betaprior=bic.prior(), family=binomial(),
 #'               modelprior=uniform())
 #' # Poisson example
@@ -217,7 +220,7 @@ normalize.initprobs.glm <- function(initprobs, glm.obj) {
 #'   crabs.bas = bas.glm(satell ~ color*spine*width + weight, data=crabs,
 #'                       family=poisson(),
 #'                       betaprior=EB.local(), modelprior=uniform(),
-#'                       method='MCMC', n.models=2^10, MCMC.iterations=10000,
+#'                       method='MCMC', n.models=2^10, MCMC.iterations=5000,
 #'                       prob.rw=.95)
 #' }
 #' @concept BMA
@@ -226,7 +229,7 @@ normalize.initprobs.glm <- function(initprobs, glm.obj) {
 #' @rdname bas.glm
 #' @export
 bas.glm <- function(formula, family = binomial(link = "logit"),
-                    data, weights, subset, offset, na.action = "na.omit",
+                    data, weights, subset, contrasts=NULL, offset, na.action = "na.omit",
                     n.models = NULL,
                     betaprior = CCH(alpha = .5, beta = as.numeric(nrow(data)), s = 0),
                     modelprior = beta.binomial(1, 1),
@@ -287,6 +290,7 @@ bas.glm <- function(formula, family = binomial(link = "logit"),
   p <- dim(X)[2]
   nobs <- dim(X)[1]
 
+  if (nobs == 0) {stop("Sample size is zero; check data and subset arguments")}
   #   weights = as.vector(model.weights(mf))
 
   weights <- as.vector(model.weights(mf))
@@ -401,11 +405,14 @@ bas.glm <- function(formula, family = binomial(link = "logit"),
 
 
   if (is.null(update)) {
-    if (n.models == 2^(p - 1)) {
-      update <- n.models + 1
-    } else {
-      (update <- n.models / num.updates)
-    }
+    if (force.heredity) {  # do not update tree for BAS
+      update <- n.models + 1}
+    else {
+      if (n.models == 2^(p - 1)) {
+        update <- n.models + 1
+      } else {
+        (update <- n.models / num.updates)
+      }}
   }
 
 
