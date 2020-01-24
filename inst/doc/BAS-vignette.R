@@ -46,10 +46,6 @@ coef.ZS <- coef(crime.ZS)
 ## ----plot---------------------------------------------------------------------
 plot(coef.ZS, subset = c(5:6), ask = F)
 
-## ----coefall------------------------------------------------------------------
-
-plot(coef.ZS, ask = FALSE)
-
 ## ----confint-coef-------------------------------------------------------------
 
 confint(coef.ZS)
@@ -60,8 +56,8 @@ plot(confint(coef.ZS, parm = 2:16))
 ## ---- warning=FALSE,  fig.width=7---------------------------------------------
 plot(confint(coef(crime.ZS, estimator = "HPM")))
 
-## ---- warning=FALSE,  fig.width=7---------------------------------------------
-plot(confint(coef(crime.ZS, estimator = "MPM")))
+## ---- warning=FALSE,  fig.width=7, eval=FALSE---------------------------------
+#  plot(confint(coef(crime.ZS, estimator = "MPM")))
 
 ## ----choice of estimator------------------------------------------------------
 muhat.BMA <- fitted(crime.ZS, estimator = "BMA")
@@ -155,7 +151,7 @@ diagnostics(crime.ZS, type = "model", pch = 16)
 #    method = "MCMC", MCMC.iterations = 10^6
 #  )
 #  
-#  # Don't run diagnostics(crime.ZS, type="model", pch=16)
+#  diagnostics(crime.ZS, type="model", pch=16)
 
 ## ----add-out------------------------------------------------------------------
 data("stackloss")
@@ -176,23 +172,15 @@ data(ToothGrowth)
 ToothGrowth$dose <- factor(ToothGrowth$dose)
 levels(ToothGrowth$dose) <- c("Low", "Medium", "High")
 
-## -----------------------------------------------------------------------------
-TG.bas <- bas.lm(len ~ supp + dose,
+## ---- fig.width=7-------------------------------------------------------------
+TG.bas <- bas.lm(len ~ supp*dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS"
 )
 
 image(TG.bas)
 
-## -----------------------------------------------------------------------------
-TG.bas <- bas.lm(len ~ supp + dose,
-  data = ToothGrowth,
-  modelprior = uniform(), method = "BAS", force.heredity = FALSE
-)
-
-image(TG.bas)
-
-## -----------------------------------------------------------------------------
+## ---- fig.width=7-------------------------------------------------------------
 TG.bas <- bas.lm(len ~ supp * dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS", force.heredity = TRUE
@@ -208,7 +196,7 @@ TG.bas <- bas.lm(len ~ supp * dose,
 TG.herid.bas <- force.heredity.bas(TG.bas)
 
 ## ----climate------------------------------------------------------------------
-climate <- read.table("https://stat.duke.edu/sites/stat.duke.edu/files/climate.dat", header = T)
+data(climate, package="BAS")
 str(climate)
 summary(climate)
 
@@ -222,14 +210,15 @@ climate.bas <- bas.lm(deltaT ~ proxy * poly(latitude, 2),
   data = climate,
   weights = 1 / sdev^2,
   prior = "hyper-g-n", alpha = 3.0,
-  n.models = 2^20,
+  n.models = 2^20, 
+  force.heredity=TRUE,
   modelprior = uniform()
 )
 
-## ----climate-image------------------------------------------------------------
+## ----climate-image, fig.width=7-----------------------------------------------
 image(climate.bas, rotate = F)
 
-## ----wtreg-wo-contraint-------------------------------------------------------
+## ----wtreg-wo-contraint, fig.width=7------------------------------------------
 # May take a while to enumerate all 2^20 models
 climate.bas <- bas.lm(deltaT ~ proxy * poly(latitude, 2),
   data = climate,

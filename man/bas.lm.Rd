@@ -29,7 +29,7 @@ bas.lm(
   delta = 0.025,
   thin = 1,
   renormalize = FALSE,
-  force.heredity = TRUE,
+  force.heredity = FALSE,
   pivot = TRUE,
   tol = 1e-07,
   bigmem = FALSE
@@ -198,8 +198,9 @@ See details in Clyde and Ghosh (2012).}
 
 \item{force.heredity}{Logical variable to force all levels of a factor to be
 included together and to include higher order interactions only if lower
-order terms are included.  Currently only supported with `method='MCMC'`.
-Default is TRUE.}
+order terms are included.  Currently supported with `method='MCMC'`
+and experimentally with `method='BAS'` on non-Solaris platforms.
+Default is FALSE.}
 
 \item{pivot}{Logical variable to allow pivoting of columns when obtaining the
 OLS estimates of a model so that models that are not full rank can be fit.
@@ -390,13 +391,13 @@ demo(BAS.USCrime)
 Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive
 Sampling for Variable Selection and Model Averaging. Journal of
 Computational Graphics and Statistics.  20:80-101 \cr
-\url{http://dx.doi.org/10.1198/jcgs.2010.09049}
+\url{https://dx.doi.org/10.1198/jcgs.2010.09049}
 
 Clyde, M. and Ghosh. J. (2012) Finite population estimators in stochastic search variable selection.
-Biometrika, 99 (4), 981-988. \url{http://dx.doi.org/10.1093/biomet/ass040}
+Biometrika, 99 (4), 981-988. \url{https://dx.doi.org/10.1093/biomet/ass040}
 
 Clyde, M. and George, E. I. (2004) Model Uncertainty. Statist. Sci., 19,
-81-94. \cr \url{http://dx.doi.org/10.1214/088342304000000035}
+81-94. \cr \url{https://dx.doi.org/10.1214/088342304000000035}
 
 Clyde, M. (1999) Bayesian Model Averaging and Model Search Strategies (with
 discussion). In Bayesian Statistics 6. J.M. Bernardo, A.P. Dawid, J.O.
@@ -405,12 +406,12 @@ Berger, and A.F.M. Smith eds. Oxford University Press, pages 157-185.
 Hoeting, J. A., Madigan, D., Raftery, A. E. and Volinsky, C. T. (1999)
 Bayesian model averaging: a tutorial (with discussion). Statist. Sci., 14,
 382-401. \cr
-\url{http://dx.doi.org/10.1214/ss/1009212519}
+\url{https://dx.doi.org/10.1214/ss/1009212519}
 
 Liang, F., Paulo, R., Molina, G., Clyde, M. and Berger, J.O. (2008) Mixtures
 of g-priors for Bayesian Variable Selection. Journal of the American
 Statistical Association.  103:410-423.  \cr
-\url{http://dx.doi.org/10.1198/016214507000001337}
+\url{https://dx.doi.org/10.1198/016214507000001337}
 
 Zellner, A. (1986) On assessing prior distributions and Bayesian regression
 analysis with g-prior distributions. In Bayesian Inference and Decision

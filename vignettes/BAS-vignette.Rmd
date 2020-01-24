@@ -8,6 +8,7 @@ r_packages:
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Using the Bayesian Adaptive Sampling (BAS) Package for Bayesian Model Averaging and Variable Selection}
+  %VignetteEngine{knitr::rmarkdown}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -24,7 +25,7 @@ Zellner-Siow Cauchy prior or mixtures of g-priors from
 [Liang et al (2008)](https://dx.doi.org/10.1198/016214507000001337)
 for linear models, as well as other options including AIC, BIC, RIC and Empirical Bayes methods.  Extensions to Generalized Linear Models are based on the 
 mixtures of g-priors in GLMs of
-[Li and Clyde (2019)](https://doi.org/10.1080/01621459.2018.1469992) using an 
+[Li and Clyde (2019)](https://dx.doi.org/10.1080/01621459.2018.1469992) using an 
 integrated Laplace approximation.
 
 `BAS` uses an adaptive sampling algorithm  to sample without replacement from the space of models or MCMC sampling which is recommended for sampling problems with a large number of predictors. See [Clyde, Littman & Ghosh](https://dx.doi.org/10.1198/jcgs.2010.09049) for more details for the sampling algorithms.
@@ -166,14 +167,7 @@ plot(coef.ZS, subset = c(5:6), ask = F)
 ```
 
 The vertical bar represents the posterior probability that the coefficient is 0 while
-the  bell shaped curve represents the density of plausible values from all the models where the coefficient is non-zero.   This is scaled so that the height of the density for non-zero values is the probability that the coefficient is non-zero.  
-
-Omitting the `subset` argument provides all of the marginal distributions
-
-```{r coefall}
-
-plot(coef.ZS, ask = FALSE)
-```
+the  bell shaped curve represents the density of plausible values from all the models where the coefficient is non-zero.   This is scaled so that the height of the density for non-zero values is the probability that the coefficient is non-zero.  Omitting the `subset` argument provides all of the marginal distributions.
 
 
 To obtain credible intervals for coefficients, `BAS` includes a `confint` method to create Highest Posterior Density intervals from the summaries from `coef`.
@@ -199,7 +193,7 @@ plot(confint(coef(crime.ZS, estimator = "HPM")))
 
 or the median probability model
 
-```{r, warning=FALSE,  fig.width=7}
+```{r, warning=FALSE,  fig.width=7, eval=FALSE}
 plot(confint(coef(crime.ZS, estimator = "MPM")))
 ```
 
@@ -360,7 +354,7 @@ crime.ZS <- bas.lm(y ~ .,
   method = "MCMC", MCMC.iterations = 10^6
 )
 
-# Don't run diagnostics(crime.ZS, type="model", pch=16)
+diagnostics(crime.ZS, type="model", pch=16)
 ```
 
 
@@ -400,9 +394,9 @@ ToothGrowth$dose <- factor(ToothGrowth$dose)
 levels(ToothGrowth$dose) <- c("Low", "Medium", "High")
 ```
 
-and fit the model
-```{r}
-TG.bas <- bas.lm(len ~ supp + dose,
+and fit the model of main effects and two way interaction without any constraints:
+```{r, fig.width=7}
+TG.bas <- bas.lm(len ~ supp*dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS"
 )
@@ -410,22 +404,12 @@ TG.bas <- bas.lm(len ~ supp + dose,
 image(TG.bas)
 ```
 
-From the image of the model space, we see that all levels of a factor  enter or drop from the model together.  This  hierarchical "heredity" is the default option set by `force.heredity = TRUE`.  To drop that restriction and allow levels of a factor or interaction of a factor  to enter or leave independently use `force.heredity = FALSE`. 
+From the image of the model space, we see that levels of a factor  enter or drop from the model independently and that interactions may be included without the main effects.  This may lead to more parsimonious models, however, the hypotheses that are being tested  about the coefficients that represent the factor depend on the choice for the reference group.  To force levels of a factor to enter or leave together we can use `force.heredity = TRUE`. 
 
-```{r}
-TG.bas <- bas.lm(len ~ supp + dose,
-  data = ToothGrowth,
-  modelprior = uniform(), method = "BAS", force.heredity = FALSE
-)
-
-image(TG.bas)
-```
-
-This may lead to more parsimonious models, however, the hypotheses that are being tested  about the coefficients that represent the factor depend on the choice for the reference group.
 
 The `force.heredity` option also forces interactions to be included only if the main effects are also included, or for models with several factors and higher order interactions, the heredity constraint implies that all lower order interactions must be included before adding higher order interactions.
 
-```{r}
+```{r, fig.width=7}
 TG.bas <- bas.lm(len ~ supp * dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS", force.heredity = TRUE
@@ -460,7 +444,7 @@ where $X_\gamma$ is the design matrix under model $\gamma$ and $W$ is the $n \ti
 
 To illustrate, we will use the climate data, available at the url below
 ```{r climate}
-climate <- read.table("https://stat.duke.edu/sites/stat.duke.edu/files/climate.dat", header = T)
+data(climate, package="BAS")
 str(climate)
 summary(climate)
 ```
@@ -479,20 +463,21 @@ climate.bas <- bas.lm(deltaT ~ proxy * poly(latitude, 2),
   data = climate,
   weights = 1 / sdev^2,
   prior = "hyper-g-n", alpha = 3.0,
-  n.models = 2^20,
+  n.models = 2^20, 
+  force.heredity=TRUE,
   modelprior = uniform()
 )
 ```
 
 Examining the image of the top  models,
-```{r climate-image}
+```{r climate-image, fig.width=7}
 image(climate.bas, rotate = F)
 ```
 
 we see that all levels of a factor  enter or drop from the model together, as well as the vectors in the design matrix to represent the term `poly`.   
 Rerunning without the constraint, 
 
-```{r wtreg-wo-contraint}
+```{r wtreg-wo-contraint, fig.width=7}
 # May take a while to enumerate all 2^20 models
 climate.bas <- bas.lm(deltaT ~ proxy * poly(latitude, 2),
   data = climate,

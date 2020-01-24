@@ -27,7 +27,7 @@ bas.glm(
   control = glm.control(),
   laplace = FALSE,
   renormalize = FALSE,
-  force.heredity = TRUE,
+  force.heredity = FALSE,
   bigmem = FALSE
 )
 }
@@ -146,8 +146,9 @@ probabilities or use Monte Carlo frequencies. Applies only to MCMC sampling.}
 
 \item{force.heredity}{Logical variable to force all levels of a factor to be
 included together and to include higher order interactions only if lower
-order terms are included.  Currently only supported with `method='MCMC'`.
-Default is TRUE.}
+order terms are included.  Currently only supported with `method='MCMC'`
+and `method='BAS'` (experimental) on non-Solaris platforms.
+Default is FALSE.}
 
 \item{bigmem}{Logical variable to indicate that there is access to
 large amounts of memory (physical or virtual) for enumeration
@@ -240,11 +241,11 @@ if(requireNamespace("glmbb", quietly=TRUE)) {
 \references{
 Li, Y. and Clyde, M. (2019) Mixtures of g-priors in Generalized
 Linear Models. Journal of the American Statistical Association. 113:1828-1845 \cr
-\url{https://doi.org/10.1080/01621459.2018.1469992} \cr
+\url{https://dx.doi.org/10.1080/01621459.2018.1469992} \cr
 Clyde, M. Ghosh, J. and Littman, M. (2010) Bayesian Adaptive Sampling for
 Variable Selection and Model Averaging. Journal of Computational Graphics
 and Statistics.  20:80-101 \cr
-\url{http://dx.doi.org/10.1198/jcgs.2010.09049} \cr
+\url{https://dx.doi.org/10.1198/jcgs.2010.09049} \cr
 Raftery, A.E, Madigan, D. and Hoeting, J.A. (1997) Bayesian Model Averaging
 for Linear Regression Models. Journal of the American Statistical
 Association.

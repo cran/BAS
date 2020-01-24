@@ -1,4 +1,19 @@
-#  BAS 1.5.4
+# BAS 1.5.5
+
+##  Changes
+
+* Fixed WARNING under fedora-clang-devel. Added climate.dat file to package for
+building vignette so that package does not violate CRAN's policy 
+for accessing internet resources and is more permament if file location/url 
+changes locally.
+
+* Fixed testthat errors under Solaris.  Default settings for `force.heredity` is
+set back to FALSE in `bas.lm` and `bas.glm` so that methods work on all 
+platforms.  For Solaris, users who wish to impose the `force.heredity` 
+constraint may use the post-processing function.
+
+
+# BAS 1.5.4
 
 ## Features
 
@@ -38,7 +53,7 @@ Fixed errors identified on cran checks https://cran.r-project.org/web/checks/che
 
 ## Features
 
-* Included an option `pivot=TRUE` in `bas.lm` to fit the models using a pivoted Cholesky decomposition to allow models that are rank-deficient.  [Enhancment #24](https://github.com/merliseclyde/BAS/issues/24) and [Bug #21](https://github.com/merliseclyde/BAS/issues/21).  Currently coefficients that are not-estimable are set to zero so that `predict` and other methods will work as before.  The vector `rank` is added to the output (see documentation for `bas.lm`) and the degrees of freedom methods that assume a uniform prior for obtaining estimates (AIC and BIC) are adjusted to use `rank` rather than `size`.  
+* Included an option `pivot=TRUE` in `bas.lm` to fit the models using a pivoted Cholesky decomposition to allow models that are rank-deficient.  [Enhancement #24](https://github.com/merliseclyde/BAS/issues/24) and [Bug #21](https://github.com/merliseclyde/BAS/issues/21).  Currently coefficients that are not-estimable are set to zero so that `predict` and other methods will work as before.  The vector `rank` is added to the output (see documentation for `bas.lm`) and the degrees of freedom methods that assume a uniform prior for obtaining estimates (AIC and BIC) are adjusted to use `rank` rather than `size`.  
 
 * Added option `force.heredity=TRUE`to force lower order terms to be included if higher order terms are present (hierarchical constraint) for `method='MCMC'` and `method='BAS'` with `bas.lm` and `bas.glm`.  Updated Vignette to illustrate. [enhancement #19](https://github.com/merliseclyde/BAS/issues/19).  Checks to see if  _parents_ are included using `include.always` pass  [issue #26](https://github.com/merliseclyde/BAS/issues/26).
 
@@ -81,7 +96,7 @@ and added unit test to "tests/testthat/test-special-functions.R"
 
 * added warning if marginal likelihoods/posterior probabilities are NA with default model fitting method with suggestion that models be rerun with `pivot = TRUE`.  This uses a modified Cholesky decomposition with pivoting so that if the model is rank deficient or nearly singular the dimensionality is reduced.  [Bug #21](https://github.com/merliseclyde/BAS/issues/21).   
 
-* corrected count for first model with `method='MCMC'` which lead to potential model with 0 probabiliy and errors in `image`.
+* corrected count for first model with `method='MCMC'` which lead to potential model with 0 probability and errors in `image`.
 
 * coerced predicted values to be a vector under BMA (was a matrix)
 
@@ -208,7 +223,7 @@ Chaloner & Brant for linear models.
 
 * Extract coefficient summaries, credible intervals and plots for the `HPM` and ` MPM` in addition to the default `BMA` by adding a new `estimator` argument to the `coef` function. The new `n.models` argument to `coef` provides summaries based on the top `n.models` highest probability models to reduce computation time. 'n.models = 1' is equivalent to the highest probability model.
 
-* use of newdata that is a vector is now depricated for predict.bas; newdata must be a dataframe or missing, in which case fitted values based on the dataframe used in fitting is used
+* use of newdata that is a vector is now deprecated for predict.bas; newdata must be a dataframe or missing, in which case fitted values based on the dataframe used in fitting is used
 
 * factor levels are handled as in `lm` or `glm` for prediction when there may be only level of a factor in the newdata
 
@@ -277,7 +292,7 @@ A vignette has been added at long last!  This illustrates several of the new fea
   
 
 
-## Deprication 
+## Deprecation 
 * deprecated use of `type` to specify estimator in fitted.bas	and replaced with `estimator` so that `predict()` and `fitted()` are compatible with other S3 methods. 
 * updated functions to be of class `bas` to avoid NAMESPACE conflicts with  other libraries
 	
@@ -358,7 +373,7 @@ A vignette has been added at long last!  This illustrates several of the new fea
 	SLR models to create starting probabilities or order variables
 	especially for p > n case
 	- added standalone function for hypergeometric1F1 using Cephes
-	library and a Laplace aproximation
+	library and a Laplace approximation
 	-Added class "BAS" so that predict and fitted functions (S3
 	methods) are not masked by functions in the BVS package: to do
 	modify the rest of the S3 methods.
@@ -429,7 +444,7 @@ A vignette has been added at long last!  This illustrates several of the new fea
 
 # BAS 0.4
 
-	- fixed fortran calls to use F77_NAME macro 
+	- fixed FORTRAN calls to use F77_NAME macro 
 	- changed  allocation of objects for .Call to prevent some objects from being overwritten.  
   
 # BAS 0.3
