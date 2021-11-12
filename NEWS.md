@@ -1,3 +1,14 @@
+# BAS 1.6.0
+
+## Changes
+
+* update Fortran code to be compliant with `USE_FC_LEN_T`  for character strings
+
+## Bug Fixes 
+
+* fixed warning in src code for `log_laplace_F21` which had an uninitialized variable 
+leading to NaN being returned from `R` function `hypergeometric2F1`
+
 # BAS 1.5.5
 
 ##  Changes
@@ -65,7 +76,7 @@ Fixed errors identified on cran checks https://cran.r-project.org/web/checks/che
 
 * Updates to package for [CII Best Practices Badge](https://bestpractices.coreinfrastructure.org/projects/2055)  certification
 
-* Added [Code Coverage](https://codecov.io/gh/merliseclyde/BAS) support and more extensive tests using `test_that`.
+* Added [Code Coverage](https://app.codecov.io/gh/merliseclyde/BAS) support and more extensive tests using `test_that`.
 
 ## Bugs
 
