@@ -3,7 +3,6 @@
 \docType{package}
 \name{BAS}
 \alias{BAS}
-\alias{BAS-package}
 \title{BAS: Bayesian Model Averaging using Bayesian Adaptive Sampling}
 \description{
 Package for Bayesian Model Averaging in linear models using stochastic or
