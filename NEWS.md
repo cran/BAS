@@ -1,3 +1,13 @@
+# BAS 1.6.3
+
+## Changes
+
+* Added checks and unit-tests to see if modelprior is of class 'prior' resolving Github Issue #57
+
+* Removed `polevl.c`, `psi.c`  and `gamma.c` from Cephes as no longer used after switching to `R`'s internal functions
+
+*
+
 # BAS 1.6.2
 
 * replaced deprecated `DOUBLE_EPS` with `DBL_EPSILON` for R 4.2.0 release (in two places) so restore on CRAN

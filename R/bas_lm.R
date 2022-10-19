@@ -60,10 +60,6 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 }
 
 
-is.solaris<-function() {
-  grepl('SunOS',Sys.info()['sysname'])
-}
-
 #' Bayesian Adaptive Sampling for Bayesian Model Averaging and Variable Selection in
 #' Linear Models
 #'
@@ -168,7 +164,7 @@ is.solaris<-function() {
 #' = 3 the default.  For the Zellner-Siow prior alpha = 1 by default, but can be used
 #' to modify the rate parameter in the gamma prior on g,  1/g ~ G(1/2, n*alpha/2) so that
 #' beta ~ C(0, sigma^2 alpha (X'X/n)^{-1}).
-#' @param modelprior Family of prior distribution on the models.  Choices
+#' @param modelprior A function for a family of prior distribution on the models.  Choices
 #' include \code{\link{uniform}} \code{\link{Bernoulli}} or
 #' \code{\link{beta.binomial}}, \code{\link{tr.beta.binomial}},
 #' (with truncation) \code{\link{tr.poisson}} (a truncated Poisson), and
@@ -354,7 +350,7 @@ is.solaris<-function() {
 #' regression hypotheses. In Bayesian Statistics: Proceedings of the First
 #' International Meeting held in Valencia (Spain), pp. 585-603.
 #'
-#' Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., \& Iverson, G.
+#' Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., and Iverson, G.
 #' (2009). Bayesian t-tests for accepting and rejecting the null hypothesis.
 #' Psychonomic Bulletin & Review, 16, 225-237
 #'
@@ -409,12 +405,16 @@ is.solaris<-function() {
 #'
 #' # exmple with non-full rank case
 #'
-#'  loc <- system.file("testdata", package = "BAS")
-#'  d <- read.csv(paste(loc, "JASP-testdata.csv", sep = "/"))
+#' loc <- system.file("testdata", package = "BAS")
+#' d <- read.csv(paste(loc, "JASP-testdata.csv", sep = "/"))
 #' fullModelFormula <- as.formula("contNormal ~  contGamma * contExpon +
 #'                                 contGamma * contcor1 + contExpon * contcor1")
 #'
-#' # should give warning; use pivot = T to fit non-full rank case (fails on i386)
+#' # don't run the following due to time limits on CRAN 
+#' 
+#' \dontrun{
+#' # will trigger a warning 
+#' 
 #'  out = bas.lm(fullModelFormula,
 #'               data = d,
 #'               alpha = 0.125316,
@@ -430,7 +430,7 @@ is.solaris<-function() {
 #'               alpha = 0.125316,
 #'               prior = "JZS",
 #'               weights = facFifty, force.heredity = FALSE, pivot = TRUE)
-#'
+#' }
 #' # more complete demo's
 #' demo(BAS.hald)
 #' \dontrun{
@@ -554,6 +554,7 @@ bas.lm <- function(formula,
   X <- cbind(ones, sweep(X[, -1, drop = FALSE], 2, mean.x))
   p <- dim(X)[2] # with intercept
 
+  if (!inherits(modelprior, "prior") )  stop("modelprior should be an object of class prior,  uniform(),  beta.binomial(), etc")
 
   if (n <= p) {
     if (modelprior$family == "Uniform" ||
@@ -658,7 +659,7 @@ bas.lm <- function(formula,
 
   parents <- matrix(1, 1, 1)
   if (method == "MCMC+BAS" |
-    method == "deterministic" | is.solaris()) {
+    method == "deterministic" ) {
     force.heredity <- FALSE
   } # does not work with updating the tree
   if (force.heredity) {

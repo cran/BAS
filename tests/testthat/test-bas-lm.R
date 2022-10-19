@@ -183,6 +183,15 @@ test_that("methods", {
   ))
 })
 
+# issue "Error in bas.lm: $ operator is invalid for atomic vectors" #5
+test_that("model prior string", {
+  data(Hald)
+  expect_error(bas.lm(Y ~ .,
+                      prior = "BIC", modelprior = "uniform",
+                      data = Hald)
+  )
+})
+
 test_that("big model space", {
   data("protein")
   expect_error(bas.lm(prot.act1 ~ (buf + pH + NaCl + con + ra +
@@ -353,4 +362,9 @@ test_that("check non-full rank", {
   expect_equal(basObj.EBL$postprobs, basObj.up$postprobs,
                tolerance=.001)
   # follow up
+  expect_warning(bas.lm(fullModelFormula,
+                                  data = d,
+                                   alpha = 0.125316,
+                                   prior = "JZS",
+                                   weights = facFifty, force.heredity = FALSE, pivot = FALSE))
 })

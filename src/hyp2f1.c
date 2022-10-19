@@ -64,51 +64,26 @@ Cephes Math Library Release 2.8:  June, 2000
 Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
 */
 
+/* cleaned up to use with R */
+
 #include "mconf.h"
 #include <R.h>
 #include <Rmath.h>
 
 
-#ifdef DEC
-#define EPS2 1.0e-11
-#endif
-
-#ifdef IBMPC
-#define EPS2 1.0e-10
-#endif
-
-#ifdef MIEEE
-#define EPS2 1.0e-10
-#endif
-
-#ifdef UNK
-#define EPS2 1.0e-10
-#endif
 
 #define ETHRESH 1.0e-12
 
 #define EPS DBL_EPSILON
 
-#ifdef ANSIPROT
-extern double fabs ( double );
-extern double pow ( double, double );
-//extern double round ( double );
-extern double log ( double );
-extern double exp ( double );
-extern double psi ( double );
+
 static double hyt2f1(double, double, double, double, double *);
 static double hys2f1(double, double, double, double, double *);
 double hyp2f1(double, double, double, double);
-#else
-double fabs(), pow(), gammafn(), lgammafn(), log(), exp(), psi();
-static double hyt2f1();
-static double hys2f1();
-double hyp2f1();
-#endif
+
 extern double MAXNUM, MACHEP;
 
-double hyp2f1( a, b, c, x )
-double a, b, c, x;
+double hyp2f1( double a, double b, double c,  double x )
 {
 double d, d1, d2, e;
 double p, q, r, s, y, ax;
@@ -275,9 +250,8 @@ return( MAXNUM );
 /* Apply transformations for |x| near 1
  * then call the power series
  */
-static double hyt2f1( a, b, c, x, loss )
-double a, b, c, x;
-double *loss;
+static double hyt2f1( double a, double b, double c, double x, double *loss )
+// double *loss;
 {
 double p, q, r, s, t, y, d, err, err1;
 double ax, id, d1, d2, e, y1;
@@ -358,15 +332,15 @@ else
 	ax = log(s);
 
 	/* sum for t = 0 */
-	y = psi(1.0) + psi(1.0+e) - psi(a+d1) - psi(b+d1) - ax;
+	y = digamma(1.0) + digamma(1.0+e) - digamma(a+d1) - digamma(b+d1) - ax;
 	y /= gammafn(e+1.0);
 
 	p = (a+d1) * (b+d1) * s / gammafn(e+2.0);	/* Poch for t=1 */
 	t = 1.0;
 	do
 		{
-		r = psi(1.0+t) + psi(1.0+t+e) - psi(a+t+d1)
-			- psi(b+t+d1) - ax;
+		r = digamma(1.0+t) + digamma(1.0+t+e) - digamma(a+t+d1)
+			- digamma(b+t+d1) - ax;
 		q = p * r;
 		y += q;
 		p *= s * (a+t+d1) / (t+1.0);
@@ -435,9 +409,8 @@ return(y);
 
 /* Defining power series expansion of Gauss hypergeometric function */
 
-static double hys2f1( a, b, c, x, loss )
-double a, b, c, x;
-double *loss; /* estimates loss of significance */
+static double hys2f1( double a, double b, double c, double x, double *loss )
+// double *loss; /* estimates loss of significance */
 {
 double f, g, h, k, m, s, u, umax;
 int i;

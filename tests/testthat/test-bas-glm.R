@@ -99,6 +99,25 @@ test_that("GLM logit", {
   expect_equal(pima_BAS$probne0, pima_det$probne0)
 })
 
+# issue "Error in bas.lm: $ operator is invalid for atomic vectors" #5
+
+test_that("model prior string", {
+  data(Hald)
+  expect_error(bas.glm(type ~ ., data = Pima.tr,
+                       method = "deterministic", betaprior = bic.prior(),
+                       family = binomial(), modelprior = "uniform")
+  )
+})
+
+
+test_that("beta prior string", {
+  data(Hald)
+  expect_error(bas.glm(type ~ ., data = Pima.tr,
+                       method = "deterministic", betaprior = "BIC",
+                       family = binomial(), modelprior = uniform())
+  )
+})
+
 test_that("missing data arg", {
   data(Pima.tr, package = "MASS")
   pima_BAS <- bas.glm(type ~ .,
@@ -223,6 +242,18 @@ test_that("hyper.g prior for GLM", {
                        family = binomial(),
                        modelprior = uniform())
   )
+})
+
+# code coverage with Laplace 
+test_that("hyper.g prior for GLM", {
+  data(Pima.tr, package = "MASS")
+  pima_BAS <- bas.glm(type ~ ., data = Pima.tr, method = "BAS",
+                      betaprior = CCH(alpha=3,beta=1), laplace= TRUE,
+                      family = binomial(),
+                      modelprior = uniform()
+  )
+  expect_equal(0, sum(pima_BAS$shrinkage > 1))
+ 
 })
 
 # FIXED Issue #31

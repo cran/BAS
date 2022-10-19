@@ -108,7 +108,7 @@ method, recommended choice is alpha are between (2 < alpha < 4), with alpha
 to modify the rate parameter in the gamma prior on g,  1/g ~ G(1/2, n*alpha/2) so that
 beta ~ C(0, sigma^2 alpha (X'X/n)^{-1}).}
 
-\item{modelprior}{Family of prior distribution on the models.  Choices
+\item{modelprior}{A function for a family of prior distribution on the models.  Choices
 include \code{\link{uniform}} \code{\link{Bernoulli}} or
 \code{\link{beta.binomial}}, \code{\link{tr.beta.binomial}},
 (with truncation) \code{\link{tr.poisson}} (a truncated Poisson), and
@@ -422,7 +422,7 @@ Zellner, A. and Siow, A. (1980) Posterior odds ratios for selected
 regression hypotheses. In Bayesian Statistics: Proceedings of the First
 International Meeting held in Valencia (Spain), pp. 585-603.
 
-Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., \& Iverson, G.
+Rouder, J. N., Speckman, P. L., Sun, D., Morey, R. D., and Iverson, G.
 (2009). Bayesian t-tests for accepting and rejecting the null hypothesis.
 Psychonomic Bulletin & Review, 16, 225-237
 
