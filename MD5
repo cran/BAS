@@ -1,12 +1,12 @@
 c0d41d1ced25a62bb18a9587c9cdf887 *CHANGELOG
-fc39b3c909dc867101f4405bf3b01a5e *DESCRIPTION
+ea2c509937fde52dc0ba8c2a7f128990 *DESCRIPTION
 59e96dde7c545a883ba0370abc3f3ea6 *NAMESPACE
-f62c88d02d25e1e769bf7664c53a70ac *NEWS.md
+18a033f48e4557a58f2ad8149bc5f88d *NEWS.md
 86e170d52d91141bbbb55f5b51fc15a8 *R/BAS-package.R
 66b59151230dfce7a0d54765dcfb37c9 *R/EB_global.R
 dc33b9080b16149b35b136ad657d844b *R/as_matrix.R
 dd07ea0922616d59fe109cfa08cba648 *R/bas_glm.R
-705be50c8169f1967fbe4fd3a927c4d8 *R/bas_lm.R
+c8b9ae0b3c2b0901ac40aa4534fb069e *R/bas_lm.R
 cab650b40e0887eb3c5f30bad10e2d4a *R/beta_priors.R
 b89a7242700a56bcac99d9e0a4005048 *R/cch.R
 1760a7c3c79486813682934a699ed51b *R/coefficients.R
@@ -41,7 +41,7 @@ ae42599ddc287b3fd588e5cd4ba760d5 *data/protein.txt.gz
 a48bc93f2aa57e0c233fe386d8997c06 *inst/CITATION
 bb515dd1ffd58d311ff5e1df1a177f18 *inst/doc/BAS-vignette.R
 9547fc8d5b946565358c02af3f6b516d *inst/doc/BAS-vignette.Rmd
-006c8bfcf27d5b1ff72d92023f52adf3 *inst/doc/BAS-vignette.html
+51e95e6bffb5968f2c20e9b35f64e7d9 *inst/doc/BAS-vignette.html
 133fe7f7c6d0c298a8b7aa8675ccb39b *inst/testdata/JASP-testdata.csv
 da8015c9b1a17297240f1f9eff16b2b3 *man/BAS.Rd
 795846a7735e00460f3ba83640eae5e4 *man/Bayes.outlier.Rd
@@ -54,8 +54,8 @@ b64260f76b2a9614d9bbe6d50b0ec129 *man/EB.local.Rd
 b7fcf5b71f10b0eac4aec64559892fbf *man/IC.prior.Rd
 e775222076b4beac29696f9f19332169 *man/Jeffreys.Rd
 fb6d45ae1265b6f9b3c6d394c95d0aac *man/TG.Rd
-3da5356ffc15d5676d93b2729b7d640e *man/bas.glm.Rd
-1b546a923c426a51eb0badd6469d0080 *man/bas.lm.Rd
+74a11e5410da04e95d29aa46539a1f2b *man/bas.glm.Rd
+e23d0d89874b141c962f0a31a7f15eb5 *man/bas.lm.Rd
 19c67aa72c15b9c890bbaefe5ffafacb *man/bayesglm.fit.Rd
 c9be44b09e747ac6aefb220f4e6e7401 *man/beta.binomial.Rd
 349d9f4e69fb811b742d5e13813dd560 *man/beta.prime.Rd
@@ -136,7 +136,8 @@ b3cc33a1e45534c4ad6b3d32596afe93 *src/tree_structures.c
 7d1cee1187519c2f4e11d386a0623689 *tests/testthat.R
 14f7f983290544ad17d11a5130a8b2f4 *tests/testthat/Rplots.pdf
 7b2e64408d4babd968c191aeffb09549 *tests/testthat/test-bas-glm.R
-3ae33fad33bf78373c0e167450f6e160 *tests/testthat/test-bas-lm.R
+05c7702c64c72275a599da62189e4db8 *tests/testthat/test-bas-lm-lowrank.R
+809e79de1010a84272fe3dfa1e496601 *tests/testthat/test-bas-lm.R
 2cdc98da02a6264539897aa079fabdff *tests/testthat/test-coefficients.R
 d92e7bebee13df75c644defa1d75076d *tests/testthat/test-diagnostics.R
 759805d65498b35f61a1f1b3008487ec *tests/testthat/test-image.R

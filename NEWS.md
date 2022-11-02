@@ -1,3 +1,14 @@
+# BAS 1.6.4
+
+## Changes
+
+* skipped test on CRAN that fails to show a warning in the non full rank case 
+when `pivot=FALSE` for `bas.lm` as default uses pivoting and documentation 
+indicates that `pivot=FALSE` should only be used in the full rank case so that
+users should not encounter this issue in practice.  Users will continue to see 
+a warning of NA's are returned, but should be aware that not all platforms may
+produce an warning (such as M1mac).  Github issue #62
+
 # BAS 1.6.3
 
 ## Changes
@@ -6,7 +17,6 @@
 
 * Removed `polevl.c`, `psi.c`  and `gamma.c` from Cephes as no longer used after switching to `R`'s internal functions
 
-*
 
 # BAS 1.6.2
 
