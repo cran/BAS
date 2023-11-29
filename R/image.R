@@ -68,7 +68,7 @@ image.bas <- function(x, top.models = 20, intensity = TRUE, prob = TRUE, log = T
   if (is.null(subset)) subset <- 1:nvar
   if (drop.always.included) {
     keep <- x$include.always
-    if (is.null(keep)) keep <- 1
+    if (is.null(keep)) keep <- 1  # nocov
     subset <- subset[!subset %in% keep]
     if (length(subset) == 0) stop("no models in subset to show; modify subset or drop.always.included")
   }
@@ -88,7 +88,7 @@ image.bas <- function(x, top.models = 20, intensity = TRUE, prob = TRUE, log = T
     nzeros <- length(zeros)
 
     if (nzeros > 1) {
-      scale[zeros] <- seq(scale[zeros[1] - 1], 0.0, length = nzeros) / 1000
+      scale[zeros] <- seq(scale[zeros[1] - 1], 0.0, length = nzeros) / 1000 # nocov
     }
   }
 

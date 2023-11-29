@@ -84,10 +84,16 @@ coef.bas <- function(object, n.models, estimator = "BMA", ...) {
     models <- rep(0, nvar + 1)
     models[bestmodel + 1] <- 1
     if (sum(models) > 1) {
+      
+      # fix for issue #39 and #56 
+      modelform = as.formula(eval(object$call$formula, parent.frame()))
+      environment(modelform) = environment()
+      data = eval(object$call$data)
+      weights = eval(object$call$weights)
       object <- bas.lm(
-        eval(object$call$formula),
-        data = eval(object$call$data),
-        weights = eval(object$call$weights),
+        formula=modelform,
+        data = data,
+        weights = weights,
         n.models = 1,
         alpha = object$g,
         initprobs = object$probne0,
@@ -117,8 +123,13 @@ coef.bas <- function(object, n.models, estimator = "BMA", ...) {
   )
   postmean <- as.vector(postprobs %*% conditionalmeans)
 
+  # workaround for issue #65
+  if (inherits(object, "basglm")) {
+     object$prior = object$betaprior$class
+  }
+  
   conditionalsd <- list2matrix.bas(object, "mle.se")[topm, , drop = F]
-  if (!(object$prior == "AIC" || object$prior == "BIC")) {
+  if (!(object$prior == "AIC" | object$prior == "BIC" | object$prior == "IC")) {
     conditionalsd[, -1] <- sweep(conditionalsd[, -1, drop = F], 1,
       sqrt(shrinkage),
       FUN = "*"
@@ -129,13 +140,14 @@ coef.bas <- function(object, n.models, estimator = "BMA", ...) {
     postprobs %*% ((sweep(conditionalmeans, 2, postmean, FUN = "-")
     )^2))
   postsd <- as.vector(postsd)
-  if (is.null(object$df[topm])) {
+  if (is.null(object$df[topm])) { # nocov start
     df <- rep(object$n, length(postprobs))
-    if (object$prior == "BIC" | object$prior == "AIC") {
+    if (object$prior == "BIC" | object$prior == "AIC" | object$prior == "IC") {
       df <- df - object$rank
     } else {
       df <- df - 1
-    }
+    } 
+    # nocov end
   } else {
     df <- object$df[topm]
   }

@@ -17,7 +17,7 @@
 #' @param offset a priori known component to be included in the linear
 #' predictor
 #' @param family a description of the error distribution and link function for
-#' exponential family; currently only binomial() and poisson() with canonical
+#' exponential family; currently only binomial(), poisson(), and Gamma() with canonical
 #' links are implemented.
 #' @param coefprior function specifying prior distribution on coefficients with
 #' optional hyperparameters leading to marginal likelihood calculations;
@@ -56,13 +56,19 @@ bayesglm.fit <-
              mustart = NULL, offset = rep(0, nobs), family = binomial(),
              coefprior = bic.prior(nobs),
              control = glm.control(), intercept = TRUE) {
+    
+   
+    
+    if (!is.double(y)) stop("y must be a numeric vector/matrix")
+    
+    if (!is.double(x)) stop("x must be a numeric vector/matrix")
+    
     x <- as.matrix(x)
-    y <- as.numeric(y)
-    ynames <- if (is.matrix(y)) {
-      rownames(y)
-    } else {
-      names(y)
-    }
+    ynames <- if (is.matrix(y)){
+                  rownames(y)}
+              else { names(y)
+              }
+    
     conv <- FALSE
     nobs <- NROW(y)
     nvars <- ncol(x)
@@ -70,7 +76,7 @@ bayesglm.fit <-
     if (is.null(weights)) weights <- rep.int(1, nobs)
     if (is.null(offset)) offset <- rep.int(0, nobs)
     eval(family$initialize)
-    # if (coefprior$family == "BIC") coefprior$hyper = as.numeric(nobs)
+    if (coefprior$family == "BIC" & is.null(coefprior$hyper)) coefprior$hyper = as.numeric(nobs)
 
     newfit <- .Call(C_glm_fit,
       RX = x, RY = y,

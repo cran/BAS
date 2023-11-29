@@ -8,6 +8,8 @@
  double lik_full(double g, double eps ,int n, int p, int k);
  double info_full(double g, double eps, int n, int p, int k);
 
+ // legacy code not in use currently
+ //  # nocov start
 void LogBF_ZS_full_vect(double *R2full, double *r2curr, int *n, int *ptotal, int *dim, int *nmodels, double *logmarg) {
   double LogBF_ZS_full(double r2full, double r2curr, int n, int ptotal, int d);
 
@@ -16,7 +18,7 @@ void LogBF_ZS_full_vect(double *R2full, double *r2curr, int *n, int *ptotal, int
         logmarg[i] = LogBF_ZS_full(*R2full , r2curr[i], *n, *ptotal, dim[i]);
      }
 }
-
+// # nocov end
 
 double LogBF_ZS_full(double r2full, double r2curr, int n, int ptotal, int d){
 /*
@@ -76,10 +78,11 @@ double LogBF_ZS_full(double r2full, double r2curr, int n, int ptotal, int d){
 
   posroot_full(a,b,c,&root,&status);
 
+  // # nocov start
   if(status!=1.){
     if(status==0.) Rprintf("\n No positive roots\n");
     else Rprintf("\n More than one positive root\n");
-  }
+  } // # nocov end
   else{
     if (k != p) {
       ZSlogmarg = -lik_full(root,eps,n,p,k)+(-log(4.*asin(1.))+ log(-info_full(root,eps,n,p,k)))/2.;
@@ -135,6 +138,8 @@ void posroot_full(double a, double b, double c, double *root, double *status)
     *root=(A+B)-a/3.;
     if(*root>=0) *status=1.;
   }
+  // # nocov start
+  // negative root should not occur
   else{
     A=acos(R/sqrt(Q3));
     aux= 2. * sqrt(Q);
@@ -145,10 +150,11 @@ void posroot_full(double a, double b, double c, double *root, double *status)
     for(i=0;i<3;i++) x[i]=x[i]-aux;
     for(i=0;i<3;i++){
       if (x[i]>=0.){
-	*status=*status+1.;
-	*root=x[i];
+      	*status=*status+1.;
+	      *root=x[i];
       }
     }
   }
+  // # nocov end
 }
 

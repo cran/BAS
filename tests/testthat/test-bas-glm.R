@@ -1,5 +1,6 @@
 context("bas.glm")
 
+
 test_that("bas.glm initprobs" , {
  data(Pima.tr, package="MASS")
  expect_error(bas.glm(type ~ .,
@@ -52,11 +53,18 @@ test_that("GLM logit", {
                        family = "gaussian",
                        modelprior = uniform())
   )
+  newprior = bic.prior(); newprior$family = "homeless"; newprior$class  = "homeless"
   expect_error(bas.glm(type ~ .,
                        data = Pima.tr, method = "BAS",
-                       betaprior = bic.prior(),
-                       family = "homeless",
+                       betaprior = newprior,
+                       family =  binomial(),
                        modelprior = uniform())
+  )
+  expect_error(bas.glm(type ~ .,
+                        data = Pima.tr, method = "BAS",
+                        betaprior = bic.prior(),
+                        family = "homeless",
+                        modelprior = uniform())             
   )
   pima_det <- bas.glm(type ~ ., data = Pima.tr,
     method = "deterministic", betaprior = bic.prior(),
@@ -491,4 +499,77 @@ test_that("phi1 and NAs in bas.glm", {
                 n.models=2^10, MCMC.iterations=10,
                 prob.rw=.95)
   expect_equal(TRUE, is.finite(exp(b$logmarg[2] - b$logmarg[1])))
+})
+
+
+# github issue 61 
+ test_that("Jeffreys prior and include.always", {
+  data(Pima.tr, package="MASS"); 
+  formula <- type ~1 + npreg + glu + bp + bmi + ped; 
+  covariates <- ~1 + npreg; 
+  # Do not expect error  so second arg is NA
+  expect_error(bas.glm(formula = formula, data = Pima.tr, 
+                        family = binomial(), 
+                        laplace = FALSE, 
+                        betaprior = Jeffreys(), 
+                        modelprior = uniform(), 
+                        method = "BAS", 
+                        include.always = covariates ),
+               NA)
+})
+
+# test BIC priors
+test_that("regression coef and IC priors", {
+  data(Pima.tr, package="MASS"); 
+  formula <- type ~1 + npreg + glu + bp + bmi + ped; 
+  covariates <- ~ 1 + npreg + glu + bp + bmi + ped;
+  pima.bas = bas.glm(formula = formula, data = Pima.tr, 
+                       family = binomial(), 
+                       laplace = FALSE, 
+                       betaprior = bic.prior(), 
+                       modelprior = uniform(), 
+                       include.always = covariates,
+                       method = "BAS")
+
+  pima.glm =  glm(formula = formula, data = Pima.tr, 
+                   family = binomial()) 
+
+  # postmode and MLE under full models should be equal
+  expect_equal(as.numeric(coef(pima.bas)$postmean), as.numeric(coef(pima.glm)))
+  
+  pima.bas = bas.glm(formula = type ~ bp + bmi, data = Pima.tr, 
+                     family = binomial(), 
+                     betaprior = bic.prior(), 
+                     modelprior = uniform(), 
+                     method = "BAS")
+  
+  # github issue
+  expect_warning(coef(pima.bas), NA)
+  
+})
+
+# test gamma model
+test_that("gamma regression coef", {
+  
+  data(wafer, package="faraway")
+  wafer_glm <- glm(formula = resist ~ .,
+                   family  = Gamma(link = "log"),
+                   data    = wafer)
+  # postmode and MLE under full models should be equal
+  wafer_bas = bas.glm(resist~ ., data=wafer,  include.always = ~ .,
+                      betaprior = bic.prior() ,family = Gamma(link = "log"))
+  expect_equal(as.numeric(coef(wafer_bas)$postmean), as.numeric(coef(wafer_glm)))
+  
+  # expect error  but due to glm not bas as link =logit not possible
+  # add error checking for BAS
+  expect_error(wafer_bas = bas.glm(resist~ ., data=wafer, 
+                      betaprior = bic.prior() ,family = Gamma(link = "logit")))
+  
+  wafer_bas = bas.glm(resist~ ., data=wafer, 
+                                     betaprior = bic.prior() ,family = Gamma(link = "log"))
+  
+  # do not expect warning FIXME
+  
+  expect_warning(coef(wafer_bas), NA)
+  
 })

@@ -110,7 +110,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' used in the fitting process.
 #' @param weights an optional vector of weights to be used in the fitting
 #' process. Should be NULL or a numeric vector. If non-NULL, Bayes estimates
-#' are obtained assuming that Y ~ N(Xb, sigma^2 diag(1/weights)).
+#' are obtained assuming that \eqn{Y_i \sim N(x^T_i\beta, \sigma^2/w_i)}.
 #' @param contrasts an optional list. See the contrasts.arg of `model.matrix.default()`.
 #' @param na.action a function which indicates what should happen when the data
 #' contain NAs. The default is "na.omit".
@@ -162,8 +162,9 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' Zellner's g-prior, alpha = g, for the Liang et al hyper-g or hyper-g-n
 #' method, recommended choice is alpha are between (2 < alpha < 4), with alpha
 #' = 3 the default.  For the Zellner-Siow prior alpha = 1 by default, but can be used
-#' to modify the rate parameter in the gamma prior on g,  1/g ~ G(1/2, n*alpha/2) so that
-#' beta ~ C(0, sigma^2 alpha (X'X/n)^{-1}).
+#' to modify the rate parameter in the gamma prior on g,  
+#' \deqn{1/g \sim G(1/2, n*\alpha/2)} so that
+#' \deqn{\beta \sim C(0, \sigma^2 \alpha (X'X/n)^{-1})}.
 #' @param modelprior A function for a family of prior distribution on the models.  Choices
 #' include \code{\link{uniform}} \code{\link{Bernoulli}} or
 #' \code{\link{beta.binomial}}, \code{\link{tr.beta.binomial}},
@@ -229,7 +230,7 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' @param lambda Parameter in the AMCMC algorithm (deprecated).
 #' @param delta truncation parameter to prevent sampling probabilities to
 #' degenerate to 0 or 1 prior to enumeration for sampling without replacement.
-#' @param thin For "MCMC", thin the MCMC chain every "thin" iterations; default is no
+#' @param thin For "MCMC" or "MCMC+BAS", thin the MCMC chain every "thin" iterations; default is no
 #' thinning.  For large p, thinning can be used to significantly reduce memory
 #' requirements as models and associated summaries are saved only every thin iterations.  For thin = p, the  model and associated output are recorded every p iterations,
 #' similar to the Gibbs sampler in SSVS.
@@ -491,7 +492,7 @@ bas.lm <- function(formula,
     "JZS"
   )
 
-  if (!(prior %in% priormethods)) {
+  if (is.null(prior) | !(prior %in% priormethods)) {
     stop(paste(
       "prior ",
       prior,
@@ -658,10 +659,14 @@ bas.lm <- function(formula,
       NULL
     )
   }
-
+  
+  
+  # start  nocov
+  # shouldn't be able to get here
   if (is.null(alpha)) {
-    alpha <- 0.0
+    stop("Error in BAS code, please report on GitHub")
   }
+  # end nocov 
 
   parents <- matrix(1, 1, 1)
   if (method == "MCMC+BAS" |
@@ -681,12 +686,12 @@ bas.lm <- function(formula,
   prob <- normalize.initprobs.lm(initprobs, p)
 
   if (is.null(bestmodel)) {
-    #bestmodel = as.integer(initprobs)
     bestmodel = as.integer(prob)
-    #bestmodel <- c(1, rep(0, p - 1))
   }
 
   bestmodel[keep] <- 1
+  
+
 
   if (force.heredity) {
     update <- NULL # do not update tree  FIXME LATER
@@ -698,7 +703,7 @@ bas.lm <- function(formula,
   }
 
 
-
+  bestmodel = as.integer(bestmodel)
   n.models <- normalize.n.models(n.models, p, prob,
                                   method, bigmem)
   #  print(n.models)
@@ -765,7 +770,10 @@ bas.lm <- function(formula,
       as.integer(MCMC.iterations),
       as.numeric(lambda),
       as.numeric(delta),
-      Rparents = parents
+      Rthin = as.integer(thin),
+      Rparents = parents,
+      Rpivot = pivot,
+      Rtol = tol
     ),
     "MCMC" = .Call(
       C_mcmc_new,
@@ -785,7 +793,7 @@ bas.lm <- function(formula,
       as.integer(MCMC.iterations),
       as.numeric(lambda),
       as.numeric(delta),
-      as.integer(thin),
+      Rthin = as.integer(thin),
       Rparents = parents,
       Rpivot = pivot,
       Rtol = tol

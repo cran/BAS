@@ -52,7 +52,8 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 		*variance=REAL(Rvariance);
 
 	double  one = 1.0,  tol, devold, devnew;
-
+	double disp;
+	
 	int   i, j, l, rank=1, *pivot=INTEGER(Rpivot), conv=0;
 
   // char  trans[]="N";
@@ -91,6 +92,9 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 			}
 		}
 
+		disp = glmfamily->dispersion(residuals, weights, n, rank);
+		
+		
 		rank = 1;
 		for (j=0; j<p; j++) {
 			pivot[j] = j+1;
@@ -100,10 +104,10 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 			&residuals[0], &effects[0], &rank, &pivot[0], &qraux[0], &work[0]);
 
 		//    Rprintf("rank %ld \n", rank);
-
-		if (n < rank) {
-			Rprintf("X has rank %ld but there are only %ld observations");
-			conv = 1;
+    //    should no get here
+		if (n < rank) { // # nocov start
+			error("X has rank %d but there are only %d observations", rank, n);
+			conv = 1;  // # nocov end
 		}
 
 		for (j=0; j<p; j++) {
@@ -135,9 +139,14 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 		} else {
 			QR2cov(&Xwork[0], &R[0], &cov[0], rank, n);
 			for (j=0; j < rank; j++) {
-				se[pivot[j]-1] = sqrt(cov[j*rank + j]);
+				se[pivot[j]-1] = cov[j*rank + j];
 			}
 		}
+		
+		for (j=0; j < p; j++) {
+		  se[j] = sqrt(se[j]*disp);
+		}
+		
 
 		regSS[0] = quadform(coefwork, R, rank);
 

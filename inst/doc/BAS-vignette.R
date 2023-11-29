@@ -2,6 +2,7 @@
 # require(knitr)
 require(MASS)
 require(dplyr)
+require(GGally)
 
 ## ----install, eval=FALSE------------------------------------------------------
 #  install.packages("BAS")
@@ -24,7 +25,7 @@ crime.ZS <- bas.lm(y ~ .,
   force.heredity = FALSE, pivot = TRUE
 )
 
-## ---- fig.show='hold'---------------------------------------------------------
+## ----fig.show='hold'----------------------------------------------------------
 plot(crime.ZS, ask = F)
 
 ## ----pip, fig.width=5, fig.height=5-------------------------------------------
@@ -53,10 +54,10 @@ confint(coef.ZS)
 ## ----plot-confint, fig.width=7------------------------------------------------
 plot(confint(coef.ZS, parm = 2:16))
 
-## ---- warning=FALSE,  fig.width=7---------------------------------------------
+## ----warning=FALSE,  fig.width=7----------------------------------------------
 plot(confint(coef(crime.ZS, estimator = "HPM")))
 
-## ---- warning=FALSE,  fig.width=7, eval=FALSE---------------------------------
+## ----warning=FALSE,  fig.width=7, eval=FALSE----------------------------------
 #  plot(confint(coef(crime.ZS, estimator = "MPM")))
 
 ## ----choice of estimator------------------------------------------------------
@@ -66,7 +67,7 @@ BMA <- predict(crime.ZS, estimator = "BMA")
 # predict has additional slots for fitted values under BMA, predictions under each model
 names(BMA)
 
-## ---- fig.width=5, fig.height=5-----------------------------------------------
+## ----fig.width=5, fig.height=5------------------------------------------------
 par(mar = c(9, 9, 3, 3))
 plot(muhat.BMA, BMA$fit,
   pch = 16,
@@ -91,7 +92,7 @@ variable.names(MPM)
 BPM <- predict(crime.ZS, estimator = "BPM")
 variable.names(BPM)
 
-## ---- fig.width=6, fig.height=6-----------------------------------------------
+## ----fig.width=6, fig.height=6------------------------------------------------
 GGally::ggpairs(data.frame(
   HPM = as.vector(HPM$fit), # this used predict so we need to extract fitted values
   MPM = as.vector(MPM$fit), # this used fitted
@@ -172,7 +173,7 @@ data(ToothGrowth)
 ToothGrowth$dose <- factor(ToothGrowth$dose)
 levels(ToothGrowth$dose) <- c("Low", "Medium", "High")
 
-## ---- fig.width=7-------------------------------------------------------------
+## ----fig.width=7--------------------------------------------------------------
 TG.bas <- bas.lm(len ~ supp*dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS"
@@ -180,7 +181,7 @@ TG.bas <- bas.lm(len ~ supp*dose,
 
 image(TG.bas)
 
-## ---- fig.width=7-------------------------------------------------------------
+## ----fig.width=7--------------------------------------------------------------
 TG.bas <- bas.lm(len ~ supp * dose,
   data = ToothGrowth,
   modelprior = uniform(), method = "BAS", force.heredity = TRUE

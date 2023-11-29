@@ -11,7 +11,7 @@ test_that("initprobs out of range", {
                       include.always=~1 + X3,
                       initprobs =  c(1, -.4, .3, 1.0, .8),
                       data=Hald, prior="BIC")
-  expect_equal(bas_hald2$probne0, bas_hald2$probne0)
+  expect_equal(bas_hald1$probne0, bas_hald2$probne0)
   expect_equal(bas_hald2$probne0, bas_hald3$probne0)
   bas_hald1 <- bas.lm(Y ~ ., data=Hald, prior="BIC",
                       method="MCMC+BAS",
@@ -21,7 +21,7 @@ test_that("initprobs out of range", {
                       include.always=~1 + X3,
                       initprobs =  c(1, -.4, .3, 1.0, .8),
                       data=Hald, prior="BIC")
-  expect_equal(bas_hald2$probne0, bas_hald2$probne0)
+  expect_equal(bas_hald1$probne0, bas_hald2$probne0)
   expect_equal(bas_hald2$probne0, bas_hald3$probne0)
   bas_hald1 <- bas.lm(Y ~ ., data=Hald, prior="BIC",
                       method="deterministic",
@@ -31,7 +31,7 @@ test_that("initprobs out of range", {
                       include.always=~1 + X3,
                       initprobs =  c(1, -.4, .3, 1.0, .8),
                       data=Hald, prior="BIC")
-  expect_equal(bas_hald2$probne0, bas_hald2$probne0)
+  expect_equal(bas_hald1$probne0, bas_hald2$probne0)
   expect_equal(bas_hald2$probne0, bas_hald3$probne0)
 })
 
@@ -298,7 +298,8 @@ test_that("heredity and bas.lm", {
 })
 
 
-# add more testing for update.bas
+#
+
 #
 test_that("as.matrix tools", {
   data(Hald)
@@ -317,4 +318,208 @@ test_that("as.matrix tools", {
 })
 
 
+test_that("initialize with null model MCMC+BAS", {
+  data(Hald)
+  best = as.integer(c(1, rep(0, 4)))
+  set.seed(42)
+  hald.mcmc = bas.lm(Y ~ .,
+                     prior = "BIC", method = "MCMC+BAS", 
+                     MCMC.iterations = 1000, n.models=2^4,
+                     #                    bestmodel=best,  # default is null
+                     modelprior = uniform(), data = Hald)
+  
+  best = as.integer(c(1, rep(0, 4)))
+  
+  
+  set.seed(42)
+  hald.mcmcbest    = bas.lm(Y ~ .,
+                            prior = "BIC", method = "MCMC+BAS", 
+                            MCMC.iterations = 1000, n.models=2^4,
+                            bestmodel=best,
+                            modelprior = uniform(), data = Hald)
+  
+  # should be equal and order  
+  expect_equal(hald.mcmcbest$postprob, hald.mcmc$postprob)
+  
+  
+})
 
+# issue 69
+test_that("MCMC+BAS equiv to BAS w/ MCMC.it = 0", {
+  data(Hald)
+  # start with Full Model
+  
+  best = as.integer(rep(1, 5))
+  
+  set.seed(42)
+  hald.bas    = bas.lm(Y ~ .,
+                       prior = "BIC", method = "BAS", 
+                       MCMC.iterations = 0, n.models=2^4,
+                       bestmodel=best,  update=8,
+                       modelprior = uniform(), data = Hald)
+  
+  set.seed(42)
+  hald.mcmcbas    = bas.lm(Y ~ .,
+                           prior = "BIC", method = "MCMC+BAS", 
+                           MCMC.iterations = 0, n.models=2^4,
+                           bestmodel=best, update=8,
+                           modelprior = uniform(), data = Hald)
+  
+  expect_equal(hald.bas$postprobs, hald.mcmcbas$postprobs)
+  expect_equal(hald.bas$size, hald.mcmcbas$size)
+  
+})
+
+# issue #69
+test_that("initialize with Full model  MCMC and BAS", {
+  data(Hald)
+  best = rep(1, 5)
+  expect_no_error(bas.lm(Y ~ .,
+                     prior = "BIC", 
+                     bestmodel = best,
+                     modelprior = uniform(), data = Hald
+  ))
+  
+  
+  expect_no_error(bas.lm(Y ~ .,
+                               prior = "BIC",
+                               method = "MCMC",
+                               bestmodel=best, thin = 2,
+                               modelprior = uniform(), data = Hald))
+  
+ expect_no_error(bas.lm(Y ~ .,
+                         prior = "BIC",
+                         method = "MCMC+BAS",
+                         bestmodel=best,
+                         modelprior = uniform(), data = Hald))
+})
+
+# issue #69
+
+test_that("initialize with Full model MCMC+BAS", {
+  data(Hald)
+ # start with Full Model
+  best = as.integer(rep(1, 5))
+  
+  nm = 6
+  it.mcmc = 10000
+  
+  set.seed(42)
+  hald.mcmc    = bas.lm(Y ~ .,
+                        prior = "BIC", method = "MCMC", 
+                        MCMC.iterations = it.mcmc, n.models=nm,
+                        bestmodel=best, 
+                        modelprior = uniform(), data = Hald)
+  
+  
+  set.seed(42)
+  # OK as it skips SWOR step (by chance)
+  hald.mcmcbas    = bas.lm(Y ~ .,
+                           prior = "BIC", method = "MCMC+BAS", 
+                           MCMC.iterations = it.mcmc, n.models=nm,
+                           bestmodel=best, 
+                           modelprior = uniform(), data = Hald)
+
+  expect_equal(hald.mcmcbas$freq, hald.mcmc$freq)
+  expect_equal(hald.mcmcbas$R2, hald.mcmc$R2)
+  expect_equal(hald.mcmcbas$logmarg, hald.mcmc$logmarg)
+  
+  set.seed(42)
+  expect_no_error(bas.lm(Y ~ .,
+                         prior = "BIC", method = "BAS", 
+                         n.models=2^4,
+                         bestmodel=best, update=8,
+                         modelprior = uniform(), data = Hald))
+  
+  set.seed(42)
+#  issue #69
+# skip("FIXME")  
+expect_no_error(
+                 bas.lm(Y ~ .,
+                        prior = "BIC", method = "MCMC+BAS", 
+                         MCMC.iterations = 1000, n.models=2^4,
+                         bestmodel=best, update=8,
+                       modelprior = uniform(), data = Hald)
+    )
+  set.seed(42)
+  
+# OK  as it bypasses updating tree witn no MCMC same as BAS
+expect_no_error(bas.lm(Y ~ .,
+                         prior = "BIC", method = "MCMC+BAS", 
+                         MCMC.iterations = 0, n.models=2^4,
+                         bestmodel=best,
+                         modelprior = uniform(), data = Hald))
+
+})
+
+
+test_that("MCMC with initial prior probabilities returning 0", {
+  data(Hald)
+  # start with Full Model
+  best = as.integer(rep(1, 5))
+  
+ 
+  it.mcmc = 100000
+  
+ set.seed(42)
+ expect_error(
+                bas.lm(Y ~ .,
+                        prior = "BIC", method = "MCMC", 
+                        MCMC.iterations = it.mcmc, n.models=2^4,
+                        bestmodel = best,
+                        modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+      )
+ expect_error(
+              bas.lm(Y ~ .,
+                     prior = "BIC", method = "MCMC+BAS", 
+                     MCMC.iterations = it.mcmc, n.models=2^4,
+                     bestmodel = best,
+                     modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+ )
+ 
+ 
+ expect_no_error(
+                 bas.lm(Y ~ .,
+                        prior = "BIC", method = "BAS", 
+                        n.models=2^4,
+                        bestmodel = best,
+                        modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+ )
+ 
+})
+  
+test_that("MCMC with prior probabilities returning 0", {
+  data(Hald)
+  # start with Full Model
+  best = c(1,1,0,0,0)
+  
+  
+  it.mcmc = 100000
+  
+  set.seed(42)
+  expect_no_error(
+    bas.lm(Y ~ .,
+           prior = "BIC", method = "MCMC", 
+           MCMC.iterations = it.mcmc, n.models=2^4,
+           bestmodel = best, thin = 2,
+           modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+  )
+  expect_no_error(
+    bas.lm(Y ~ .,
+           prior = "BIC", method = "MCMC+BAS", 
+           MCMC.iterations = it.mcmc, n.models=2^4,
+           bestmodel = best, thin=2,
+           modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+  )
+  
+  
+  expect_no_error(
+    bas.lm(Y ~ .,
+           prior = "BIC", method = "BAS", 
+           n.models=2^4,
+           bestmodel = best,
+           modelprior = tr.poisson(lambda=4, tr=2), data = Hald)
+  )
+  
+}) 
+  

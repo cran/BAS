@@ -39,7 +39,7 @@ each model.}
 
 \item{family}{a description of the error distribution and link function for
 exponential family; currently only `binomial()` with the logistic link and
-`poisson()` with the log link are available.}
+`poisson()` and `Gamma()`with the log link are available.}
 
 \item{data}{data frame}
 
@@ -64,9 +64,15 @@ of iterations exceeds the min of 'n.models' or 'MCMC.iterations' and on exit
 sampled.}
 
 \item{betaprior}{Prior on coefficients for model coefficients (except
-intercept).  Options include \code{\link{g.prior}}, \code{\link{CCH}},
-\code{\link{robust}}, \code{\link{intrinsic}}, \code{\link{beta.prime}},
-\code{\link{EB.local}}, \code{\link{AIC}}, and \code{\link{BIC}}.}
+intercept).  Options include 
+\code{\link{g.prior}}, 
+\code{\link{CCH}},
+\code{\link{robust}}, 
+\code{\link{intrinsic}}, 
+\code{\link{beta.prime}},
+\code{\link{EB.local}}, 
+\code{\link{AIC}}, and 
+\code{\link{BIC}}.}
 
 \item{modelprior}{Family of prior distribution on the models.  Choices
 include \code{\link{uniform}}, \code{\link{Bernoulli}},
@@ -254,6 +260,15 @@ if(requireNamespace("glmbb", quietly=TRUE)) {
                       betaprior=EB.local(), modelprior=uniform(),
                       method='MCMC', n.models=2^10, MCMC.iterations=2500,
                       prob.rw=.95)
+  
+ # Gamma example
+ if(requireNamespace("faraway", quietly=TRUE)) {
+    data(wafer, package='faraway')
+                      
+    wafer_bas = bas.glm(resist~ ., data=wafer,  include.always = ~ .,
+                        betaprior = bic.prior() ,
+                        family = Gamma(link = "log"))
+  }
 }
 }
 \references{
