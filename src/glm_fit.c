@@ -51,8 +51,10 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 		*residuals=REAL(Rresiduals), *dev=REAL(Rdeviance), *regSS = REAL(RregSS),
 		*variance=REAL(Rvariance);
 
-	double  one = 1.0,  tol, devold, devnew;
-	double disp;
+
+	double one = 1.0,  tol, devold, devnew;
+	double disp = 1.0;
+
 	
 	int   i, j, l, rank=1, *pivot=INTEGER(Rpivot), conv=0;
 
@@ -133,7 +135,8 @@ SEXP glm_bas(SEXP RX, SEXP RY, glmstptr *glmfamily, SEXP Roffset, SEXP Rweights,
 		it += 1;
 
 		dev[0] = devnew;
-
+		memset(se, 0.0, p*sizeof(double));
+		
 		if (rank == p)   {
 			chol2se(&Xwork[0], &se[0], &R[0], &cov[0], p, n);
 		} else {
