@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "mconf.h"
 #include <math.h>
 #include <string.h>
@@ -52,7 +53,6 @@ struct Node {
 };
 
 
-
 /* Subroutines. */
 
 double CalculateRSquareFull(double *XtY, double *XtX, double *XtXwork, double *XtYwork,
@@ -77,12 +77,19 @@ int no_prior_inclusion_is_1(int p, double *probs);
 double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior, int noInclusionIs1);
 void compute_margprobs_old(Bit **models, SEXP Rmodelprobs, double *margprobs, int k, int p);
 void compute_modelprobs(SEXP modelprobs, SEXP logmarg, SEXP priorprobs,  int k);
+void compute_modelprobs_HT(SEXP Rmodelprobs,  SEXP Rlogmarg, SEXP Rpriorprobs, SEXP Rsampleprobs, 
+                           int k, int MC);
 void set_bits(char *bits, int subset, int *pattern, int *position, int n);
 int compare(struct Var *i, struct Var *j);
 	/* For sim. */
 double *makeprob(double *prob, double *y, double c, double w, double
 		 sigma2, int p, int inc_int);
-void update_tree(SEXP modelspace, struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, int *model);
+void update_tree(SEXP modelspace, struct Node *tree, SEXP modeldim, 
+                 struct Var *vars, int k, int p, int n, int kt, int *model);
+void update_tree_AMC(SEXP modelspace, struct Node *tree, SEXP modeldim, 
+                 struct Var *vars, int k, int p, int n, int kt, int *model, 
+                 double *real_model, double *marg_probs, double *Cov, double delta);
+  
 void update_tree_file(struct Node *tree, SEXP modeldim, struct Var *vars, int k, int p, int n, int kt, FILE *file);
 double random_switch_heredity(int *model, struct Var *vars, int n, int pmodel, int *varin, int *varout, SEXP Rparents);
 double random_walk_heredity(int *model, struct Var *vars, int n, SEXP Rparents);
@@ -298,6 +305,9 @@ void chol2se(double *qr, double *se, double *cov, double *covwork, int p, int n)
 void QR2cov(double *qr, double *cov, double *covwork, int p, int n);
 #endif
 
+void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_probs, double lambda, int n, int m, int print);
+double cond_prob(double *model, int j, int n, double *mean, double *beta_matrix , double delta) ;
+
 void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models);
 
 int *GetModel_m(SEXP Rmodel_m, int *model, int p);
@@ -315,7 +325,10 @@ double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int ns
 void GetNextModel_swop(NODEPTR branch, struct Var *vars, int *model, int n, int m,  double *pigamma,
                        double problocal, SEXP modeldim,int *bestmodel,
                        SEXP Rparents);
-
+double GetNextModel_AMC(struct Var *vars,
+                      int *model, int n, int m, SEXP modeldim,
+                      SEXP Rparents, double *real_model, double*marg_probs, 
+                      double *Cov, double delta);
 void Substract_visited_probability_mass(NODEPTR branch, struct Var *vars, int *model, int n, int m, double *pigamma, double eps);
 
 void SetModel1(SEXP Rfit, SEXP Rmodel_m,

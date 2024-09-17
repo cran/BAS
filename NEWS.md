@@ -1,3 +1,14 @@
+# BAS 1.7.2
+
+* added `method="AMCMC"` for `bas.lm` to use adaptive independent Metropolis Hastings for sampling
+models.  With option `importance.sampling = TRUE` the adaptive independet proposal and be used for importance sampling with improved estimation of model probabilities and inclusion probabilities based on the Horivitz-Thompsom / Hajek estimator.
+
+* added unit tests for link functions implemented in `family.c`
+
+* fixed (issue #81) Removed legacy definitions of ‘PI’ and ‘Free’ and replaced with‘M_PI’ and ‘R_Free’ to comply with ‘STRICT_R_HEADERS’ prevent package removal on 9/23/2024
+
+* fixed (issue #82) avoid SETLENGTH as non-API function when truncating vectors
+
 # BAS 1.7.1
 
 ## Minor Improvements and Fixes

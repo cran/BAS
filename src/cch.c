@@ -98,7 +98,7 @@ double phi1_int(double a, double b, double c, double x, double y, int div, doubl
          // # nocov start
          warning("phi return: int %lf W=%lf div= %lf scale=%le \n",   
                  log(result), x, (double) div, scale);
-         // # #nocov end
+         // # nocov end
      }
     
     if (scale > 0) offset = (double) div * log(scale);
@@ -237,7 +237,7 @@ double HyperTwo(double a, double b, double c, double x, double y) {
   double F, zf=1.0, zfg;
 
   if (y<0)
-    F=exp(x)*R_pow(1-y,-b)*HyperTwo(c-a,b,c,-x,y/(y-1));
+    F=exp(x)*R_pow(1-y,-b)*HyperTwo(c-a,b,c,-x,y/(y-1)); // # nocov 
   else {
     zfg=hyperg2F1(b,a,c,y);
     F=zfg;

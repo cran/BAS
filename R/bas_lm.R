@@ -212,6 +212,14 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' calculate marginal inclusion probabilities and then samples without
 #' replacement as in BAS.  For BAS, the sampling probabilities can be updated
 #' as more models are sampled. (see update below).
+#' \item  "AMCMC" uses an adaptive proposal 
+#' based on factoring the proposal distribution as a product conditional probabilities
+#' estimated from the past draws. If 
+#' `importance.sampling = FALSE` this uses an adaptive independent Metropolis-Hasting
+#' algorithm, with if `importance.sampling = TRUE`  uses importance sampline 
+#' combined with Horiwitz-Thompson estimates of posterior model and inclusion
+#' probabilities.
+#' can be 
 #' }
 #' @param update number of iterations between potential updates of the sampling
 #' probabilities for method "BAS" or "MCMC+BAS". If NULL do not update, otherwise the
@@ -225,9 +233,13 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' @param prob.rw For any of the MCMC methods, probability of using the
 #' random-walk Metropolis proposal; otherwise use a random "flip" move
 #' to propose swap a variable that is excluded with a variable in the model.
+#' @param burnin.iterations Number of burnin iterations for the MCMC sampler; the
+#' default is n.models*10 if not set by the user.
 #' @param MCMC.iterations Number of iterations for the MCMC sampler; the
 #' default is n.models*10 if not set by the user.
-#' @param lambda Parameter in the AMCMC algorithm (deprecated).
+#' @param lambda Parameter in the AMCMC algorithm to insure positive definite 
+#' covariance of gammas for adaptive conditional probabilities prior based on prior degrees of freedom pseudo
+#' in Inverse-Wishart.  Default is set to p + 2.
 #' @param delta truncation parameter to prevent sampling probabilities to
 #' degenerate to 0 or 1 prior to enumeration for sampling without replacement.
 #' @param thin For "MCMC" or "MCMC+BAS", thin the MCMC chain every "thin" iterations; default is no
@@ -240,6 +252,8 @@ normalize.n.models <- function(n.models, p, initprobs, method, bigmem) {
 #' while the former may have less variability.  May be compared via the
 #' diagnostic plot function \code{\link{diagnostics}}.
 #' See details in Clyde and Ghosh (2012).
+#' @param importance.sampling whether to use importance sampling or an independent
+#'  Metropolis-Hastings algorithm with sampling method="AMCMC" (see above).
 #' @param force.heredity  Logical variable to force all levels of a factor to be
 #' included together and to include higher order interactions only if lower
 #' order terms are included.  Currently supported with `method='MCMC'`
@@ -467,11 +481,13 @@ bas.lm <- function(formula,
                    bestmodel = NULL,
                    prob.local = 0.0,
                    prob.rw = 0.5,
+                   burnin.iterations = NULL,
                    MCMC.iterations = NULL,
                    lambda = NULL,
                    delta = 0.025,
                    thin = 1,
-                   renormalize = FALSE,
+                   renormalize = FALSE, 
+                   importance.sampling = FALSE,
                    force.heredity = FALSE,
                    pivot = TRUE,
                    tol = 1e-7,
@@ -501,10 +517,11 @@ bas.lm <- function(formula,
     ))
   }
 
-  if (!(method %in% c("BAS", "deterministic", "MCMC", "MCMC+BAS"))) {
+  if (!(method %in% c("BAS", "deterministic", "MCMC", "MCMC+BAS", "AMCMC"))) {
     stop(paste("No available sampling method:", method))
   }
-
+ 
+  
   # from lm
   mfall <- match.call(expand.dots = FALSE)
   m <- match(
@@ -611,16 +628,16 @@ bas.lm <- function(formula,
   }
 
   if (is.null(n.models)) {
-    n.models <- min(2^p, 2^19)
+    n.models <- min(2^p, 2^16)
   }
   if (is.null(MCMC.iterations)) {
     MCMC.iterations <- as.integer(n.models * 10)
   }
-  Burnin.iterations <- as.integer(MCMC.iterations)
+  if (is.null(burnin.iterations)){
+    burnin.iterations <- as.integer(n.models * 10)
+    }
 
-  if (is.null(lambda)) {
-    lambda <- 1.0
-  }
+  
 
 
 
@@ -661,16 +678,17 @@ bas.lm <- function(formula,
   }
   
   
-  # start  nocov
+ 
   # shouldn't be able to get here
   if (is.null(alpha)) {
-    stop("Error in BAS code, please report on GitHub")
+    stop("Error in BAS code, please report on GitHub") # nocov
   }
-  # end nocov 
+  
 
   parents <- matrix(1, 1, 1)
   if (method == "MCMC+BAS" |
-    method == "deterministic" ) {
+      method == "deterministic" |
+      method == "AMCMC") {
     force.heredity <- FALSE
   } # does not work with updating the tree
   if (force.heredity) {
@@ -726,9 +744,7 @@ bas.lm <- function(formula,
   modeldim <- as.integer(rep(0, n.models))
   n.models <- as.integer(n.models)
 
-
-
-
+  if (is.null(lambda)) lambda = 0.0  # set default in C code
 
   #  sampleprobs = as.double(rep(0.0, n.models))
   result <- switch(
@@ -766,7 +782,7 @@ bas.lm <- function(formula,
       update = as.integer(update),
       Rbestmodel = as.integer(bestmodel),
       plocal = as.numeric(1.0 - prob.rw),
-      as.integer(Burnin.iterations),
+      as.integer(burnin.iterations),
       as.integer(MCMC.iterations),
       as.numeric(lambda),
       as.numeric(delta),
@@ -789,7 +805,7 @@ bas.lm <- function(formula,
       update = as.integer(update),
       Rbestmodel = as.integer(bestmodel),
       plocal = as.numeric(1.0 - prob.rw),
-      as.integer(Burnin.iterations),
+      as.integer(burnin.iterations),
       as.integer(MCMC.iterations),
       as.numeric(lambda),
       as.numeric(delta),
@@ -797,6 +813,30 @@ bas.lm <- function(formula,
       Rparents = parents,
       Rpivot = pivot,
       Rtol = tol
+    ),
+    "AMCMC" = .Call(
+      C_amcmc,
+      Yvec,
+      X,
+      sqrt(weights),
+      prob,
+      modeldim,
+      incint = as.integer(int),
+      alpha = as.numeric(alpha),
+      method = as.integer(method.num),
+      modelprior = modelprior,
+      update = as.integer(update),
+      Rbestmodel = as.integer(bestmodel),
+      plocal = as.numeric(1.0 - prob.rw),
+      as.integer(burnin.iterations),
+      as.integer(MCMC.iterations),
+      as.numeric(lambda),
+      as.numeric(delta),
+      Rthin = as.integer(thin),
+      Rparents = parents,
+      Rpivot = pivot,
+      Rtol = tol,
+      RIS = importance.sampling
     ),
     "deterministic" = .Call(
       C_deterministic,
@@ -832,29 +872,38 @@ bas.lm <- function(formula,
   result$probne0.RN <- result$probne0
   result$postprobs.RN <- result$postprobs
   result$include.always <- keep
-  
-# github issue #74. drop models with zero prior probability
-  
-  if (any(result$priorprobs == 0)) {
-    drop.models = result$priorprobs != 0
-    
-    result$mle = result$mle[drop.models]
-    result$mle.se = result$mle.se[drop.models]
-    result$mse = result$mse[drop.models]
-    result$which = result$which[drop.models]
-    result$freq = result$freq[drop.models]
-    result$shrinkage = result$shrinkage[drop.models]
-    result$R2 = result$R2[drop.models]
-    result$logmarg = result$logmarg[drop.models]
-    result$size = result$size[drop.models]
-    result$rank = result$rank[drop.models]
-    result$sampleprobs = result$sampleprobs[drop.models]
-    result$postprobs = result$postprobs[subset = drop.models]
-    result$priorprobs = result$priorprobs[subset = drop.models]
-    result$n.models = length(result$postprobs)
+
+ 
+  if (importance.sampling) {
+    keep.models = (result$sampleprobs != 0.0)  & (result$priorprobs != 0.0)
+  }
+  else {
+    # github issue #74. drop models with zero prior probability
+    keep.models =  result$priorprobs != 0.0
   }
 
-  if (method == "MCMC" || method == "MCMC_new") {
+
+  if (any(!keep.models)) {
+ #   keep.models = result$priorprobs != 0
+    result$mle = result$mle[keep.models]
+    result$mle.se = result$mle.se[keep.models]
+    result$mse = result$mse[keep.models]
+    result$which = result$which[keep.models]
+    result$freq = result$freq[keep.models]
+    result$shrinkage = result$shrinkage[keep.models]
+    result$R2 = result$R2[keep.models]
+    result$logmarg = result$logmarg[keep.models]
+    result$size = result$size[keep.models]
+    result$rank = result$rank[keep.models]
+    result$sampleprobs = result$sampleprobs[keep.models]
+    result$postprobs = result$postprobs[subset = keep.models]
+    result$postprobs.RN = result$postprobs.RN[subset = keep.models]
+    result$priorprobs = result$priorprobs[subset = keep.models]
+    result$n.models = length(result$postprobs)
+  }
+  
+  if (importance.sampling) renormalize = TRUE # do not use MCMC probs and use HT
+  if (method == "MCMC" || method == "AMCMC") {
     result$n.models <- result$n.Unique
     result$postprobs.MCMC <- result$freq / sum(result$freq)
 

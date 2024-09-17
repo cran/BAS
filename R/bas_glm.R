@@ -1,35 +1,3 @@
-
-normalize.initprobs.glm <- function(initprobs, glm.obj) {
-  p <- dim(glm.obj$x)[2]
-  if (!is.numeric(initprobs)) {
-    initprobs <- switch(initprobs,
-      "eplogp" = eplogprob(glm.obj),
-      "uniform" = c(1.0, rep(.5, p - 1)),
-      "Uniform" = c(1.0, rep(.5, p - 1))
-    )
-  }
-  if (length(initprobs) == (p - 1)) {
-    initprobs <- c(1.0, initprobs)
-  }
-  if (length(initprobs) != p) {
-    stop(paste("length of initprobs is not", p))
-  }
-  if (initprobs[1] < 1.0 | initprobs[1] > 1.0) initprobs[1] <- 1.0
-  # intercept is always included otherwise we get a segmentation
-  # fault (relax later)
-  prob <- as.numeric(initprobs)
-
-  pval <- summary(glm.obj)$coefficients[, 4]
-  if (any(is.na(pval))) {
-    warning(paste("warning full model is rank deficient; use caution when interpreting restults."))
-#   prob[is.na(pval)] <- 0.0
-  }
-
-  return(prob)
-}
-
-
-
 #' Bayesian Adaptive Sampling Without Replacement for Variable Selection in
 #' Generalized Linear Models
 #'
@@ -462,11 +430,11 @@ bas.glm <- function(formula, family = binomial(link = "logit"),
   
   if (!inherits(betaprior, "prior")) stop("prior on coeeficients must be an object of type 'prior'")
   
-  loglik_null <- as.numeric(-0.5 * glm(Y ~ 1,
-                                       weights = weights,
-                                       offset = offset,
-                                       family = eval(call$family)
-                                       )$null.deviance)
+  null.deviance = glm(Y ~ 1,
+                      weights = weights,
+                      offset = offset,
+                      family = eval(call$family))$null.deviance
+  loglik_null <- as.numeric(-0.5 * null.deviance)
 
   betaprior$hyper.parameters$loglik_null <- loglik_null
   #  	browser()
@@ -574,7 +542,7 @@ bas.glm <- function(formula, family = binomial(link = "logit"),
 
   if (betaprior$class == "IC") df <- df - result$size + 1
   result$df <- df
-  result$R2 <- .R2.glm.bas(result$deviance, result$size, call)
+  result$R2 <- 1.0 - result$deviance/null.deviance
   result$n.vars <- p
   result$Y <- Yvec
   result$X <- X
@@ -669,19 +637,3 @@ bas.glm <- function(formula, family = binomial(link = "logit"),
   return(probs)
 }
 
-.R2.glm.bas <- function(deviance, size, call) {
-  n.models <- length(deviance)
-  null.model <- (1:n.models)[size == 1]
-  if (is.null(null.model)) {
-    null.deviance <- glm(eval(call$formula),
-      data = eval(call$data),
-      family = eval(call$family)
-    )$null.deviance
-  }
-  else {
-    null.deviance <- deviance[null.model]
-  }
-
-  R2 <- 1 - deviance / null.deviance
-  return(R2)
-}

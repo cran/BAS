@@ -289,11 +289,11 @@ double LogBF_ZS_null(double R2, int n, int d) {
 	        Rprintf("\n More than one positive root  R2=%lf n=%d k=%d\n",R2,n,k);}
         }
           //    else{return(lik_null(root,R2,n,k)+(log(4.*asin(1.)) - log(info_null(root,R2,n,k)))/2.);}
-        else{return(lik_null(root,R2,n,k)+ log(sqrt(2.*PI)) - .5*log(info_null(root,R2,n,k)));}
+        else{return(lik_null(root,R2,n,k)+ log(sqrt(2.*M_PI)) - .5*log(info_null(root,R2,n,k)));}
     // # nocov  end
     // theorertically should not occur 
     }
-  return(NA_REAL);
+  return(NA_REAL);  // # nocov
 }
 
 double find_mode_g_JZS(double R2, int n, int d, double *root, double *status) {

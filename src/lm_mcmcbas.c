@@ -4,11 +4,9 @@
 #include "bas.h"
 
 void   update_MCMC_freq(double *MCMC_probs, int *model, int p, int m);
-double cond_prob(double *model, int j, int n, double *mean, double *beta_matrix , double eps);
 
 void update_cond_tree(SEXP modelspace, struct Node *tree, SEXP modeldim, struct Var *vars, int p, int n, int kt, int *model, double *real_model, double *marg_probs, double *beta_matrix, double eps);
 
-void  update_Cov(double *Cov, double *priorCov, double *SSgam, double *marg_probs, int n, int m, int print);
 
 void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models);
 
@@ -47,6 +45,34 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim,
   SEXP logmarg = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
   SEXP sampleprobs = PROTECT(allocVector(REALSXP, nModels)); ++nProtected;
   SEXP NumUnique = PROTECT(allocVector(INTSXP, 1)); ++nProtected;
+  
+  PROTECT_INDEX counts_idx;
+  PROTECT_WITH_INDEX(counts, &counts_idx);
+  PROTECT_INDEX R2_idx;
+  PROTECT_WITH_INDEX(R2, &R2_idx);
+  PROTECT_INDEX shrinkage_idx;
+  PROTECT_WITH_INDEX(shrinkage, &shrinkage_idx);
+  PROTECT_INDEX modelspace_idx;
+  PROTECT_WITH_INDEX(modelspace, &modelspace_idx);
+  PROTECT_INDEX modeldim_idx;
+  PROTECT_WITH_INDEX(modeldim, &modeldim_idx);
+  PROTECT_INDEX rank_idx;
+  PROTECT_WITH_INDEX(rank, &rank_idx);
+  PROTECT_INDEX beta_idx;
+  PROTECT_WITH_INDEX(beta, &beta_idx);
+  PROTECT_INDEX se_idx;
+  PROTECT_WITH_INDEX(se, &se_idx);
+  PROTECT_INDEX mse_idx;
+  PROTECT_WITH_INDEX(mse, &mse_idx);
+  PROTECT_INDEX modelprobs_idx;
+  PROTECT_WITH_INDEX(modelprobs, &modelprobs_idx);
+  PROTECT_INDEX priorprobs_idx;
+  PROTECT_WITH_INDEX(priorprobs, &priorprobs_idx);
+  PROTECT_INDEX logmarg_idx;
+  PROTECT_WITH_INDEX(logmarg, &logmarg_idx);
+  PROTECT_INDEX sampleprobs_idx;
+  PROTECT_WITH_INDEX(sampleprobs, &sampleprobs_idx);
+  
 
   double *Xwork, *Ywork, *wts, *probs, shrinkage_m, mse_m, R2_m, RSquareFull,
           Rbestmarg, logmargy,  MH=0.0, postold, postnew;
@@ -387,18 +413,24 @@ SEXP mcmcbas(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP Rmodeldim,
  /*. for when add heridity 
  if (m < k) {  // resize
    k = m;
-   SETLENGTH(modelspace, m);
-   SETLENGTH(logmarg, m);
-   SETLENGTH(modelprobs, m);
-   SETLENGTH(priorprobs, m);
-   SETLENGTH(sampleprobs, m);
-   SETLENGTH(beta, m);
-   SETLENGTH(se, m);
-   SETLENGTH(mse, m);
-   SETLENGTH(shrinkage, m);
-   SETLENGTH(modeldim, m);
-   SETLENGTH(R2, m);
-   SETLENGTH(rank, m);
+  nModels = nUnique;
+  REPROTECT(logmarg= Rf_lengthgets(logmarg, m), logmarg_idx);
+  REPROTECT(modelprobs= Rf_lengthgets(modelprobs, m), modelprobs_idx);
+  REPROTECT(priorprobs= Rf_lengthgets(priorprobs, m), priorprobs_idx);
+  REPROTECT(sampleprobs= Rf_lengthgets(sampleprobs, m), sampleprobs_idx);
+  REPROTECT(deviance = Rf_lengthgets(deviance, m), deviance_idx);
+  REPROTECT(shrinkage = Rf_lengthgets(shrinkage, m), shrinkage_idx);
+  REPROTECT(modeldim= Rf_lengthgets(modeldim, m), modeldim_idx);
+  REPROTECT(R2= Rf_lengthgets(R2, m), R2_idx);
+  REPROTECT(se= Rf_lengthgets(se, m), se_idx);
+  //	  REPROTECT(rank = Rf_lengthgets(rank, m), rank_idx);
+  REPROTECT(modelspace = Rf_lengthgets(modelspace, m), modelspace_idx);
+  REPROTECT(beta = Rf_lengthgets(beta, m), beta_idx);
+  REPROTECT(se= Rf_lengthgets(se, m), se_idx);
+  REPROTECT(Q= Rf_lengthgets(Q, m), Q_idx);
+  REPROTECT(Rintercept= Rf_lengthgets(Rintercept, m), Rintercept_idx);
+  REPROTECT(counts= Rf_lengthgets(counts, m), counts_idx);
+  
    //  	Rprintf("m %d k %d", m, LENGTH(modelprobs));
  }
 */  

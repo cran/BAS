@@ -14,15 +14,17 @@ NODEPTR make_node(double pr) {
   return(newnode);
 }
 
+// not used now
+// # nocov start
 void deallocate_tree(struct Node *tree);
 
 void deallocate_tree(struct Node *tree) {
   if (!tree) return;
   deallocate_tree(tree->one);
   deallocate_tree(tree->zero);
-  Free(tree);
+  R_Free(tree);
 }
-
+// # nocov end
 
 
 void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, 
@@ -75,9 +77,11 @@ int sortvars(struct Var *vars, double *prob, int p)
 	for (i = 0; i < p; i++) {
 		if (vars[i].prob < 0.0) {
 //			REprintf("Warning: Probability %d (%lf) less than zero, setting to zero.\n",
-//				i, vars[i].prob);
+//				i, vars[i].prob);  
+// # nocov start
 			vars[i].leaveout = TRUE;
 			vars[i].prob = 0.0;
+// # nocov end			
 		}
 		else if (vars[i].prob == 0.0)
 			vars[i].leaveout = TRUE;	/* Must be out. */
@@ -98,8 +102,10 @@ int sortvars(struct Var *vars, double *prob, int p)
 		else {
 /*			REprintf("Warning: Probability %d (%lf) more than one, setting to one.\n",
 				i, vars[i].prob); */
+// # nocov start
 			vars[i].leaveout = TRUE;
 			vars[i].prob = 1.0;
+// # nocov end			
 		}
 	}
 
@@ -219,6 +225,63 @@ void update_tree(SEXP modelspace, struct Node *tree, SEXP modeldim,
   }
 }
 
+void update_tree_AMC(SEXP modelspace, struct Node *tree, SEXP modeldim, 
+                 struct Var *vars, int k, int p, int n, int kt, int *model, double *real_model, double *marg_probs, double *Cov, double delta)
+{
+  int i,m, bit;
+  double prone, pigamma, przero;
+  SEXP model_m;
+  struct Node *branch;
+  
+  memset(model, 0, n*sizeof(int));
+  memset(real_model, 0.0, n*sizeof(double));
+  for (m = 0;  m <= kt; m++) {
+    branch = tree;
+    PROTECT(model_m = VECTOR_ELT(modelspace, m));
+    
+    for (i = 0; i < INTEGER(modeldim)[m]; i++)
+      model[INTEGER(model_m)[i]] = 1;
+    
+    pigamma = 0.0;
+    for (i = 0; i < n; i++) {
+      real_model[i] = (double) model[vars[i].index];
+      if (branch->update != kt) {
+        branch->prob = cond_prob(real_model,i, n, marg_probs,Cov, delta);
+        branch->update = kt;
+      }
+      bit = model[vars[i].index];
+      if (bit ==  1)  {
+        pigamma += log(branch->prob);
+        branch = branch->one;
+      } else {
+        pigamma += log(1.0 - branch->prob);
+        branch = branch->zero;
+      }
+    }
+    
+    branch = tree;
+    for (i = 0; i < n; i++) {
+      bit = model[vars[i].index];
+      if (bit == 1) {
+        prone = (branch->prob - exp(pigamma));
+        przero = 1.0 - branch->prob;
+        pigamma -= log(branch->prob);
+      } else {
+        prone = branch->prob;
+        przero = 1.0 - branch->prob  - exp(pigamma);
+        pigamma -= log(1.0 - branch->prob);
+      }
+      if  (prone <= 0.0 )  prone = 0.;
+      if  (przero <= 0.0 )  przero = 0.;
+      branch->prob  = prone/(prone + przero);
+      if (prone <= 0.0) branch->prob = 0.;
+      
+      if (bit == 1) branch = branch->one;
+      else branch = branch->zero;
+    }
+    UNPROTECT(1);
+  }
+}
 
 void CreateTree_with_pigamma(NODEPTR branch, struct Var *vars,
                              int *bestmodel, int *model, int n,
@@ -296,6 +359,36 @@ void Substract_visited_probability_mass(NODEPTR branch, struct Var *vars, int *m
     else  branch = branch->zero;
   }
 }
+
+double GetNextModel_AMC(struct Var *vars,
+                       int *model, int n, int m, SEXP modeldim,
+                       SEXP Rparents, double *real_model, double*marg_probs, 
+                       double *Cov, double delta) {
+  double prob_parents = 1.0, pigamma = 1.0, prob = 0;
+  int bit;
+  
+  for (int i = 0; i< n; i++) {
+    
+    prob = cond_prob(real_model,i, n, marg_probs,Cov, delta);
+    bit = withprob(prob);
+    model[vars[i].index] = bit;
+    real_model[i] = (double) model[vars[i].index];
+    
+    if (bit == 1) {
+        pigamma *= prob;  // calculate log probabilty of model
+     }
+    else {
+      pigamma *= 1.0 - prob;
+    }
+   if (i < n-1) {
+        //  check if parents
+        prob_parents *=  got_parents(model, Rparents, i+1, vars, n);
+      }
+  }
+  if (prob_parents <= 0) pigamma = 0;
+  return(pigamma);
+}
+
 void GetNextModel_swop(NODEPTR branch, struct Var *vars,
                        int *model, int n, int m,  double *pigamma,
                        double problocal, SEXP modeldim, int *bestmodel,
@@ -353,7 +446,8 @@ double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int ns
       if ((parents[var[level].index + p*var[j].index]) == 1.0) {
         if (model[var[j].index] == 0) {
           // missing parent so probability of model is 0
-          prob *= 0.0;}
+          prob *= 0.0;  // # nocov
+          }
         if (model[var[j].index] == 1) {
           // got parent so probability of variable is 1
           prob *= 1.0;
@@ -371,7 +465,7 @@ double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int ns
             // missing parent so probability of model is 0
             prob *= 0.0;}
           if (model[var[j].index] == 1) {
-            // got parent so probability of variable is 1
+            // got parent so probability doesn't change
             prob *= 1.0;
             nsibs += parents[var[j].index + p*var[level].index];
           }
@@ -390,9 +484,6 @@ double got_parents(int *model, SEXP Rparents, int level, struct Var *var, int ns
   return(prob);
 }
 
-
-
-void insert_model_tree(struct Node *tree, struct Var *vars,  int n, int *model, int num_models);
 
 int *GetModel_m(SEXP Rmodel_m, int *model, int p) {
   int *model_m = INTEGER(Rmodel_m);
@@ -461,7 +552,7 @@ double FitModel(SEXP Rcoef_m, SEXP Rse_m, double *XtY, double *XtX, int *model_m
 
 void SetModel2(double logmargy, double shrinkage_m, double prior_m,
                SEXP sampleprobs, SEXP logmarg, SEXP shrinkage, SEXP priorprobs, int m) {
-  REAL(sampleprobs)[m] = 1.0;
+  REAL(sampleprobs)[m] = 0.0;
   REAL(logmarg)[m] = logmargy;
   REAL(shrinkage)[m] = shrinkage_m;
   REAL(priorprobs)[m] = prior_m;
@@ -492,154 +583,6 @@ void SetModel_lm(SEXP Rcoef_m, SEXP Rse_m, SEXP Rmodel_m, double mse_m, double R
   
 }
 
-
-double GetNextModelCandidate(int pmodel_old, int n, int n_sure, int *model, struct Var *vars, double problocal,
-                             int *varin, int *varout, SEXP Rparents) {
-  double MH = 1.0;
-  if (pmodel_old == n_sure || pmodel_old == n_sure + n){
-    MH =  random_walk_heredity(model, vars,  n, Rparents);
-    MH =  1.0 - problocal;
-  } else {
-    if (unif_rand() < problocal) {
-      // random
-      MH =  random_switch_heredity(model, vars, n, pmodel_old, varin, varout, Rparents );
-    } else {
-      // Random walk proposal flip bit//
-      MH =  random_walk_heredity(model, vars,  n, Rparents);
-    }
-  }
-  return MH;
-}
-
-double random_walk(int *model, struct Var *vars, int n) {
-  int index;
-  index = ftrunc(n*unif_rand());
-  model[vars[index].index] = 1 - model[vars[index].index];
-  return(1.0);
-}
-
-double random_switch(int *model, struct Var *vars, int n, int pmodel, int *varin, int *varout) {
-  int  j, k, swapin, swapout, num_to_swap_in, num_to_swap_out;
-  
-  
-  j = 0; k = 0;
-  while (j < n && k < pmodel)
-  {
-    if (model[vars[j].index]==1) {varin[k] = vars[j].index; k++;}
-    j++ ;
-  }
-  num_to_swap_in = k;
-  j = 0; k = 0;
-  
-  while (j< n)
-  {
-    if (model[vars[j].index]==0) {varout[k] = vars[j].index; k++;}
-    j++ ;
-  }
-  num_to_swap_out = k;
-  
-  swapin = ftrunc(unif_rand()*num_to_swap_in);    // swapin :corresponds to position of randomly chosen included variable
-  swapout = ftrunc(unif_rand()*num_to_swap_out);  // swapout :corresponds to position of randomly chosen excluded variable
-  
-  model[varin[swapin]] = 0;
-  model[varout[swapout]] =1;
-  
-  
-  return(1.0);
-}
-
-double random_walk_heredity(int *model, struct Var *vars, int n, SEXP Rparents) {
-  int index,p,j;
-  double *parents;
-  
-  parents = REAL(Rparents);
-  
-  index = ftrunc(n*unif_rand());
-  model[vars[index].index] = 1 - model[vars[index].index];
-  
-  
-  int *dims = INTEGER(getAttrib(Rparents,R_DimSymbol));
-  p = dims[0];
-  
-  
-  if (p > 1) {
-    // force in parents
-    //  Rprintf("%d %d %d %d\n",n,p,  vars[index].index, model[vars[index].index]);
-    if (model[vars[index].index] == 1) {
-      //  traverse row index of parents to add any missing parents/sibs
-      for (j = 0; j < p; j++) {
-        //     Rprintf("%d ", (int) parents[vars[index].index*p + j]);
-        if (parents[vars[index].index + p*j] == 1.0) {
-          model[j] =  model[vars[index].index];
-        }
-      }}
-    else {
-      //  to drop index, traverse column of parents to identify children/sibs
-      //  that also need to be dropped.
-      for (j = 0; j < p; j++) {
-        //      Rprintf("%d ", (int) parents[vars[index].index + p*j]);
-        if (parents[vars[index].index*p +j] == 1.0) {
-          model[j] =  model[vars[index].index];
-        } }
-    }
-    //    Rprintf("\n");
-    
-  }
-  return(1.0);
-}
-
-double random_switch_heredity(int *model, struct Var *vars, int n,
-                              int pmodel, int *varin, int *varout, SEXP Rparents)
-{
-  int  j, k, p, swapin, swapout, num_to_swap_in, num_to_swap_out;
-  double *parents;
-  
-  j = 0; k = 0;
-  while (j < n && k < pmodel)
-  {
-    if (model[vars[j].index]==1) {
-      varin[k] = vars[j].index;
-      k++;}
-    j++ ;
-  }
-  num_to_swap_in = k;
-  j = 0; k = 0;
-  
-  while (j< n)
-  {
-    if (model[vars[j].index]==0) {
-      varout[k] = vars[j].index;
-      k++;}
-    j++ ;
-  }
-  num_to_swap_out = k;
-  
-  swapin = ftrunc(unif_rand()*num_to_swap_in);    // swapin :corresponds to position of randomly chosen included variable
-  swapout = ftrunc(unif_rand()*num_to_swap_out);  // swapout :corresponds to position of randomly chosen excluded variable
-  
-  model[varin[swapin]] = 0;
-  model[varout[swapout]] = 1;
-  
-  parents = REAL(Rparents);
-  int *dims = INTEGER(getAttrib(Rparents,R_DimSymbol));
-  p = dims[0];
-  
-  // force in parents and sibs of variable that was swapped in
-  
-  if (p > 1) {
-    //  to drop swapin, traverse column of parents to identify children/sibs
-    //  that also need to be dropped.  ignore others
-    for (j = 0; j < p; j++) {
-      if (parents[varin[swapin]*p +j] == 1.0)   model[j] = 0;
-    }
-    
-    //  now traverse row of added variable in parents to add any missing parents/sibs
-    for (j = 0; j < p; j++) {
-      if (parents[varout[swapout] + p*j] == 1.0)   model[j] = 1;
-    }
-  }
-  return(1.0);
-}
 
 
 

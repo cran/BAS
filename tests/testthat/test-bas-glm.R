@@ -29,6 +29,23 @@ test_that("bas.glm initprobs" , {
                        betaprior = bic.prior(), family = binomial(),
                        modelprior = uniform())
   expect_equal(pima_bas1$postprobs, pima_bas2$postprobs)
+  
+  expect_error(bas.glm(type ~ .,
+                       data = Pima.tr, subset = 1:6,
+                       method = "BAS",
+                       initprobs= "eplogp",
+                       betaprior = bic.prior(), family = binomial(),
+                       modelprior = uniform())
+  )
+  
+  Pima.tr$type = NA
+  expect_warning(expect_error(bas.glm(type ~ .,
+                       data = Pima.tr,
+                       method = "BAS",
+                       initprobs= "eplogp",
+                       betaprior = bic.prior(), family = binomial(),
+                       modelprior = uniform()))
+  )
 })
 
 test_that("GLM logit", {
@@ -405,11 +422,19 @@ test_that("include always MCMC", {
   data("Pima.tr", package="MASS")
   pima_BAS = bas.glm(type ~ .,
                        data = Pima.tr, method = "MCMC",
-                       include.always = ~ bp,
+                       include.always = type ~ bp, 
                        betaprior = g.prior(g=100), family = binomial(),
                        modelprior = beta.binomial(1, 1))
   x = pima_BAS$probne0[match(c("Intercept", "bp") ,pima_BAS$namesx)]
   expect_equal(2, sum(x), tolerance=.002)
+  
+  expect_equal(0, sum(pima_BAS$R2 < 0))
+  
+ expect_warning(bas.glm(type ~ poly(bp,2),
+                     data = Pima.tr, method = "BAS",
+                     force.heredity = TRUE, bestmodel = c(1,0,1),
+                     betaprior = g.prior(g=100), family = binomial(),
+                     modelprior = beta.binomial(1, 1)))
 
 #  pima_BAS = bas.glm(type ~ .,
 #                     data = Pima.tr, method = "BAS",
@@ -420,8 +445,8 @@ test_that("include always MCMC", {
 ##  check why method='BAS' does not have 1.0 for keep.
 })
 
-# FIXED issue #35
-test_that("MCMC+BAS: missing MCMC.iterations and n.models arg", {
+# FIXED issue #35  missing MCMC.iterations and n.models arg
+test_that("MCMC+BAS", {
   data(Pima.tr, package = "MASS")
   set.seed(1)
   pima_BAS <- bas.glm(type ~ .,
@@ -447,6 +472,14 @@ test_that("MCMC+BAS: missing MCMC.iterations and n.models arg", {
   expect_equal(pima_BAS$probne0, pima_2$probne0)
   expect_equal(pima_BAS$n.models, pima_1$n.models)
   expect_equal(pima_BAS$n.models, pima_2$n.models)
+  
+  set.seed(42)
+  pima_BAS <- bas.glm(type ~ .,
+                      data = Pima.tr, method = "MCMC+BAS",
+                      betaprior = bic.prior(),
+                      family = binomial(),
+                      modelprior = uniform(), MCMC.iterations = 5,  update =  50)
+  expect_equal(6, sum(pima_BAS$freq))
 })
 
 # issue 38 (in progress)  check that it works with other prior
@@ -472,6 +505,20 @@ test_that("herdity and BAS", {
   expect_equal(0L, sum(pima_BAS_no$probne0[-1] > 1.0))
   expect_equal(pima_BAS$probne0, pima_BAS_no$probne0)
   expect_equal(0L, sum(duplicated(pima_BAS$which)))
+  
+  pima_BAS <-  bas.glm(type ~ (bp + glu + npreg),
+                       data = Pima.tr, method = "BAS",
+                       betaprior = bic.prior(),
+                       family = binomial(), update=NULL,
+                       modelprior =uniform(),
+                       force.heredity=TRUE)
+  pima_BAS_no <-  bas.glm(type ~ (bp + glu + npreg),
+                          data = Pima.tr, method = "BAS",
+                          betaprior = bic.prior(),
+                          family = binomial(),  update=NULL,
+                          modelprior =uniform(),
+                          force.heredity=FALSE)
+  expect_equal(pima_BAS$probne0, pima_BAS_no$probne0)
 })
 
 # issue 55 in progress
