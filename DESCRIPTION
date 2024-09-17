@@ -1,6 +1,6 @@
 Package: BAS
-Version: 1.7.2
-Date: 2024-9-16
+Version: 1.7.3
+Date: 2024-9-17
 Title: Bayesian Variable Selection and Model Averaging using Bayesian
         Adaptive Sampling
 Authors@R: c(person("Merlise", "Clyde", email="clyde@duke.edu",
@@ -55,7 +55,7 @@ ByteCompile: yes
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.3.2
-Packaged: 2024-09-16 23:33:38 UTC; clyde
+Packaged: 2024-09-17 21:10:41 UTC; clyde
 Author: Merlise Clyde [aut, cre, cph] (ORCID=0000-0002-3595-1872),
   Michael Littman [ctb],
   Joyee Ghosh [ctb],
@@ -64,4 +64,4 @@ Author: Merlise Clyde [aut, cre, cph] (ORCID=0000-0002-3595-1872),
   Don van de Bergh [ctb],
   Quanli Wang [ctb]
 Maintainer: Merlise Clyde <clyde@duke.edu>
-Date/Publication: 2024-09-17 00:00:02 UTC
+Date/Publication: 2024-09-17 22:50:02 UTC
