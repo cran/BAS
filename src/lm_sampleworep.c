@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Merlise Clyde and contributors to BAS. All rights reserved.
+// This work is licensed under a GNU GENERAL PUBLIC LICENSE Version 3.0
+// License text is available at https://www.gnu.org/licenses/gpl-3.0.html
+// SPDX-License-Identifier: GPL-3.0
+//
 /* version  5/20/2005 */
 /* Rsample.c program for sampling without replacement in R  MC 11/2002 */
 /* based on sim.c: program for running simulations with random and
@@ -218,7 +223,10 @@ extern SEXP sampleworep_new(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit,
 		}
 	}
 
-  if (m < k) {  // resize
+  if (m < k) { 
+ // warning("allocated %d models but only %d sampled; using SETLENGTH to resize\n", k, m); 
+ // resize
+ // consider using force.heredity
     k = m;
 
     SETLENGTH(modelspace, m);

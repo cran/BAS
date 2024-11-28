@@ -1,3 +1,34 @@
+# BAS 1.7.5
+
+## Features
+
+Version 1.7.5 of the `BAS` package adds an internal function to count the number of models
+that satisfy "hereditary" constraints.  This is used in the `force.heredity` option 
+in `bas.lm` to reduce the number of models considered in the sampling process and should
+reduce the memory requirements and speed up the sampling process.  This currently works only
+for factors included in the model formula, but not with factors always included in the model
+orwith other hereditaty constraints such as with polynomials. (the`force.heredity` option
+does work with these other constraints).  This is a first step in reducing the number of models
+aallocated in the sampling process.  Future updates will include other hereditary constraints.
+
+* added hexagon sticker
+
+* add copyright to source files to satisfy OpenSSF Best Practice
+
+
+## Bug Fixes
+
+* fixed (issue #89) reported as Error on CRAN Check page for compiling BAS under R-devel
+with clang19.  Removed legacy definitions of `MACHEPS` and `MAXNUM` from Cephes
+and replaced with `DLB_EPSILON` and `DBL_MAX` in `R`. Files in `src/`  `mconf.h` and `const.c` are no longer
+used and will be reomved from in the future.
+
+* fixed (issue #87) prior inclusion probabilities using a Bernoulli prior other than 0.5
+were incorrect if `include.always` was used to include some variables always.  
+Added unit test in `test-priorprobs.R`
+
+
+
 # BAS 1.7.3
 
 * reverted back to code using `SETLENGTH` (issue #82) to address stack imbalance issues seen in interactive checks and not flagged in `R CMD check`.
@@ -5,7 +36,8 @@
 # BAS 1.7.2
 
 * added `method="AMCMC"` for `bas.lm` to use adaptive independent Metropolis Hastings for sampling
-models.  With option `importance.sampling = TRUE` the adaptive independet proposal and be used for importance sampling with improved estimation of model probabilities and inclusion probabilities based on the Horivitz-Thompsom / Hajek estimator.
+models.  With option `importance.sampling = TRUE` the adaptive independent proposal 
+and be used for importance sampling with improved estimation of model probabilities and inclusion probabilities based on the Horivitz-Thompsom / Hajek estimator.
 
 * added unit tests for link functions implemented in `family.c`
 

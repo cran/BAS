@@ -109,7 +109,24 @@ method, recommended choice is alpha are between (2 < alpha < 4), with alpha
 = 3 the default.  For the Zellner-Siow prior alpha = 1 by default, but can be used
 to modify the rate parameter in the gamma prior on g,  
 \deqn{1/g \sim G(1/2, n*\alpha/2)} so that
-\deqn{\beta \sim C(0, \sigma^2 \alpha (X'X/n)^{-1})}.}
+\deqn{\beta \sim C(0, \sigma^2 \alpha (X'X/n)^{-1})}.
+If alpha = NULL, then the following defaults are used currently:
+\itemize{
+\item  "g-prior" = n,
+\item "hyper-g" = 3,
+\item "EB-local" = 2,
+\item "BIC" = n,
+\item "ZS-null" = 1,
+\item "ZS-full" = n,
+\item "hyper-g-laplace" = 3,
+\item "AIC" = 0,
+\item "EB-global" = 2,
+\item "hyper-g-n" = 3,
+\item "JZS" = 1,
+}
+Note that Porwal & Raftery (2022) recommend alpha = sqrt(n) for the g-prior
+based on extensive range of simulations and examples for comparing BMA.
+This will become the default in the future.}
 
 \item{modelprior}{A function for a family of prior distribution on the models.  Choices
 include \code{\link{uniform}} \code{\link{Bernoulli}} or
@@ -168,7 +185,6 @@ estimated from the past draws. If
 algorithm, with if `importance.sampling = TRUE`  uses importance sampline 
 combined with Horiwitz-Thompson estimates of posterior model and inclusion
 probabilities.
-can be 
 }}
 
 \item{update}{number of iterations between potential updates of the sampling
@@ -218,8 +234,16 @@ Metropolis-Hastings algorithm with sampling method="AMCMC" (see above).}
 \item{force.heredity}{Logical variable to force all levels of a factor to be
 included together and to include higher order interactions only if lower
 order terms are included.  Currently supported with `method='MCMC'`
-and experimentally with `method='BAS'` on non-Solaris platforms.
-Default is FALSE.}
+and experimentally with `method='BAS'` on non-Solaris platforms. This is not
+compatible currently for enforcing hierachical constraints with orthogonal 
+polynomials, poly(x, degree = 3). Without hereditary constraints the number of 
+possible models with all possible interactions is 2^2^k where k is the number 
+of factors with more than 2 levels.  With hereditary constraints the number of
+models is much less, but computing this for k can be quite expensive 
+for large k. For the model y ~ x1*x2*x3*x4*x5*x6) there are 7828353 models, 
+which is more than 2^22.  With n.models given, this will limit the number of
+models to the min(n.models, # models under the heredity constraints)
+Default is FALSE currently.}
 
 \item{pivot}{Logical variable to allow pivoting of columns when obtaining the
 OLS estimates of a model so that models that are not full rank can be fit.
@@ -231,9 +255,8 @@ interpreting BMA estimates of parameters.}
 
 \item{bigmem}{Logical variable to indicate that there is access to
 large amounts of memory (physical or virtual) for enumeration
-with large model spaces, e.g. > 2^25. default; used in determining rank of X^TX in cholesky
-decomposition
-with pivoting.}
+with large model spaces, e.g. > 2^25. default; used in determining rank of 
+X^TX in cholesky decomposition with pivoting.}
 }
 \value{
 \code{bas} returns an object of class \code{bas}
@@ -441,6 +464,10 @@ Liang, F., Paulo, R., Molina, G., Clyde, M. and Berger, J.O. (2008) Mixtures
 of g-priors for Bayesian Variable Selection. Journal of the American
 Statistical Association.  103:410-423.  \cr
 \doi{10.1198/016214507000001337}
+
+Porwal, A. and Raftery, A. E. (2022) Comparing methods for statistical inference with model uncertainty
+PNAS 119 (16) e2120737119
+\doi{10.1073/pnas.2120737119} 
 
 Zellner, A. (1986) On assessing prior distributions and Bayesian regression
 analysis with g-prior distributions. In Bayesian Inference and Decision

@@ -1,4 +1,10 @@
 // # nocov start
+
+/*
+ Cephes Math Library Release 2.0:  April, 1987
+ Copyright 1984, 1987 by Stephen L. Moshier
+ Direct inquiries to 30 Frost Street, Cambridge, MA 02140
+ */
 /*							mtherr.c
  *
  *	Library common error handling routine
@@ -49,15 +55,24 @@
  *
  */
 
-/*
-Cephes Math Library Release 2.0:  April, 1987
-Copyright 1984, 1987 by Stephen L. Moshier
-Direct inquiries to 30 Frost Street, Cambridge, MA 02140
-*/
+
 
 #include <stdio.h>
 #include <R.h> 
-#include "mconf.h"
+// #include "mconf.h"
+
+/* Constant definitions for math error conditions
+ */
+
+#define DOMAIN		1	/* argument domain error */
+#define SING		2	/* argument singularity */
+#define OVERFLOW	3	/* overflow range error */
+#define UNDERFLOW	4	/* underflow range error */
+#define TLOSS		5	/* total loss of precision */
+#define PLOSS		6	/* partial loss of precision */
+
+#define EDOM		33
+#define ERANGE		34
 
 int merror = 0;
 

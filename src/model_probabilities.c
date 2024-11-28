@@ -1,3 +1,8 @@
+// Copyright (c) 2024 Merlise Clyde and contributors to BAS. All rights reserved.
+// This work is licensed under a GNU GENERAL PUBLIC LICENSE Version 3.0
+// License text is available at https://www.gnu.org/licenses/gpl-3.0.html
+// SPDX-License-Identifier: GPL-3.0
+//
 #include "bas.h"
 
 void compute_modelprobs(SEXP Rmodelprobs,  SEXP Rlogmarg, SEXP Rpriorprobs, int k)
@@ -112,6 +117,11 @@ double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior, int
   family = CHAR(STRING_ELT(getListElement(modelprior, "family"),0));
   hyper_parameters = REAL(getListElement(modelprior,"hyper.parameters"));
 
+  // do not reduce p by the number of predictors that are always included
+  // Gitub issue # 87
+  if (strcmp(family, "Bernoulli") == 0)
+    priorprob = Bernoulli(model, p, hyper_parameters);
+  
   // reduce the model space by the number of predictors that are always included 
   p -= noInclusionIs1;
   modeldim -= noInclusionIs1;
@@ -124,8 +134,6 @@ double compute_prior_probs(int *model, int modeldim, int p, SEXP modelprior, int
     priorprob = trunc_poisson(modeldim, p, hyper_parameters);
   if  (strcmp(family, "Trunc-Power-Prior") == 0)
     priorprob = trunc_power_prior(modeldim, p, hyper_parameters);
-  if (strcmp(family, "Bernoulli") == 0)
-    priorprob = Bernoulli(model, p, hyper_parameters);
 // Need to add
 //  if (strcmp(family, "Hereditary") == 0)
 //    priorprob = Hereditary(model, p, hyper_parameters);

@@ -1,10 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# [BAS: Bayesian Variable Selection and Model Averaging using Bayesian Adaptive Sampling](https://github.com/merliseclyde/BAS/)
+# BAS <a href="https://merliseclyde.github.io/BAS/"><img src="man/figures/logo.png" align="right" height="139" alt="BAS website" /></a>
 
-[![CII Best
-Practices](https://bestpractices.coreinfrastructure.org/projects/2055/badge)](https://bestpractices.coreinfrastructure.org/projects/2055)
+## [BAS: Bayesian Variable Selection and Model Averaging using Bayesian Adaptive Sampling](https://github.com/merliseclyde/BAS/)
+
+[![OpenSSF Best
+Practices](https://www.bestpractices.dev/projects/2055/badge)](https://www.bestpractices.dev/projects/2055)
 [![](https://app.travis-ci.com/merliseclyde/BAS.svg?branch=master)](https://app.travis-ci.com/merliseclyde/BAS)
 [![R-CMD-check](https://github.com/merliseclyde/BAS/workflows/R-CMD-check/badge.svg)](https://github.com/merliseclyde/BAS/actions)
 [![](https://www.r-pkg.org/badges/version/BAS)](https://cran.r-project.org/package=BAS/)
@@ -13,7 +15,7 @@ Practices](https://bestpractices.coreinfrastructure.org/projects/2055/badge)](ht
 [![Coverage
 Status](https://img.shields.io/codecov/c/github/merliseclyde/BAS/master.svg)](https://app.codecov.io/github/merliseclyde/BAS?branch=master)
 [![Rdoc](https://api.rdocumentation.org/badges/version/BAS)](https://www.rdocumentation.org/packages/BAS/)
-[![DOI](https://zenodo.org/badge/25048366.svg)](https://zenodo.org/doi/10.5281/zenodo.595639)
+[![DOI](https://zenodo.org/badge/25048366.svg)](https://doi.org/10.5281/zenodo.595639)
 
 The `BAS` [R](https://www.r-project.org/) package is designed to provide
 an easy to use package and fast code for implementing Bayesian Model

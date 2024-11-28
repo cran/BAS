@@ -5,10 +5,10 @@ require(dplyr)
 require(GGally)
 
 ## ----install, eval=FALSE------------------------------------------------------
-#  install.packages("BAS")
+# install.packages("BAS")
 
 ## ----devtools, eval=FALSE-----------------------------------------------------
-#  devtools::install_github("merliseclyde/BAS")
+# devtools::install_github("merliseclyde/BAS")
 
 ## ----data---------------------------------------------------------------------
 data(UScrime, package = "MASS")
@@ -58,7 +58,7 @@ plot(confint(coef.ZS, parm = 2:16))
 plot(confint(coef(crime.ZS, estimator = "HPM")))
 
 ## ----warning=FALSE,  fig.width=7, eval=FALSE----------------------------------
-#  plot(confint(coef(crime.ZS, estimator = "MPM")))
+# plot(confint(coef(crime.ZS, estimator = "MPM")))
 
 ## ----choice of estimator------------------------------------------------------
 muhat.BMA <- fitted(crime.ZS, estimator = "BMA")
@@ -145,14 +145,14 @@ diagnostics(crime.ZS, type = "pip", pch = 16)
 diagnostics(crime.ZS, type = "model", pch = 16)
 
 ## ----biggerMCMC, eval=FALSE---------------------------------------------------
-#  crime.ZS <- bas.lm(y ~ .,
-#    data = UScrime,
-#    prior = "ZS-null",
-#    modelprior = uniform(),
-#    method = "MCMC", MCMC.iterations = 10^6
-#  )
-#  
-#  diagnostics(crime.ZS, type="model", pch=16)
+# crime.ZS <- bas.lm(y ~ .,
+#   data = UScrime,
+#   prior = "ZS-null",
+#   modelprior = uniform(),
+#   method = "MCMC", MCMC.iterations = 10^6
+# )
+# 
+# diagnostics(crime.ZS, type="model", pch=16)
 
 ## ----add-out------------------------------------------------------------------
 data("stackloss")
