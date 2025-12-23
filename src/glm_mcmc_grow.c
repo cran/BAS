@@ -38,22 +38,27 @@ SEXP glm_mcmc_grow(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights,
 	SET_STRING_ELT(ANS_names, 1, mkChar("which"));
 	
 	SEXP logmarg = allocVector(REALSXP, nModels); 
+	memset(REAL(logmarg), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 2, logmarg);
 	SET_STRING_ELT(ANS_names, 2, mkChar("logmarg"));
 	
 	SEXP modelprobs = allocVector(REALSXP, nModels);  
+	memset(REAL(modelprobs), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 3, modelprobs);
 	SET_STRING_ELT(ANS_names, 3, mkChar("postprobs"));
 	
 	SEXP priorprobs = allocVector(REALSXP, nModels); 
+	memset(REAL(priorprobs), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 4, priorprobs);
 	SET_STRING_ELT(ANS_names, 4, mkChar("priorprobs"));
 	
 	SEXP sampleprobs = allocVector(REALSXP, nModels); 
+	memset(REAL(sampleprobs), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 5, sampleprobs);
 	SET_STRING_ELT(ANS_names, 5, mkChar("sampleprobs"));
 	
 	SEXP deviance = allocVector(REALSXP, nModels); 
+	memset(REAL(deviance), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 6, deviance);
 	SET_STRING_ELT(ANS_names, 6, mkChar("deviance"));
 	
@@ -66,6 +71,7 @@ SEXP glm_mcmc_grow(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights,
 	SET_STRING_ELT(ANS_names, 8, mkChar("mle.se"));
 	
 	SEXP shrinkage = allocVector(REALSXP, nModels); 
+	memset(REAL(shrinkage), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 9, shrinkage);
 	SET_STRING_ELT(ANS_names, 9, mkChar("shrinkage"));
 	
@@ -75,6 +81,7 @@ SEXP glm_mcmc_grow(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights,
 	SET_STRING_ELT(ANS_names, 10, mkChar("size"));
 	
 	SEXP R2 = allocVector(REALSXP, nModels); 
+	memset(REAL(R2), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 11, R2);
 	SET_STRING_ELT(ANS_names, 11, mkChar("R2"));
 	
@@ -93,10 +100,12 @@ SEXP glm_mcmc_grow(SEXP Y, SEXP X, SEXP Roffset, SEXP Rweights,
 	SET_STRING_ELT(ANS_names, 14, mkChar("n.Unique"));
 	
 	SEXP Q = allocVector(REALSXP, nModels); 
+	memset(REAL(Q), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 15, Q);
 	SET_STRING_ELT(ANS_names, 15, mkChar("Q"));
 	
 	SEXP Rintercept = allocVector(REALSXP, nModels); 
+	memset(REAL(Rintercept), 0, nModels * sizeof(double));
 	SET_VECTOR_ELT(ANS, 16, Rintercept);
 	SET_STRING_ELT(ANS_names, 16, mkChar("intercept"));
 	

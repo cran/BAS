@@ -20,7 +20,7 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
   
   double expand = REAL(Rexpand)[0]; // increase to grow vectors 
   
-  Rprintf("running AMCMC_GROWABLE with %d\n", nModels0);
+ // Rprintf("running AMCMC_GROWABLE with %d\n", nModels0);
   
   // allocate return objects
   int nProtected = 0;
@@ -37,22 +37,27 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
   SET_STRING_ELT(ANS_names, 1, mkChar("which"));
   
   SEXP Rlogmarg = allocVector(REALSXP, nModels); 
+  memset(REAL(Rlogmarg), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 2, Rlogmarg);
   SET_STRING_ELT(ANS_names, 2, mkChar("logmarg"));
   
   SEXP modelprobs = allocVector(REALSXP, nModels);  
+  memset(REAL(modelprobs), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 3, modelprobs);
   SET_STRING_ELT(ANS_names, 3, mkChar("postprobs"));
   
   SEXP priorprobs = allocVector(REALSXP, nModels); 
+  memset(REAL(priorprobs), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 4, priorprobs);
   SET_STRING_ELT(ANS_names, 4, mkChar("priorprobs"));
   
   SEXP sampleprobs = allocVector(REALSXP, nModels); 
+  memset(REAL(sampleprobs), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 5, sampleprobs);
   SET_STRING_ELT(ANS_names, 5, mkChar("sampleprobs"));
   
   SEXP mse = allocVector(REALSXP, nModels); 
+  memset(REAL(mse), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 6, mse);
   SET_STRING_ELT(ANS_names, 6, mkChar("mse"));
   
@@ -65,18 +70,22 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
   SET_STRING_ELT(ANS_names, 8, mkChar("mle.se"));
   
   SEXP shrinkage = allocVector(REALSXP, nModels); 
+  memset(REAL(shrinkage), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 9, shrinkage);
   SET_STRING_ELT(ANS_names, 9, mkChar("shrinkage"));
   
   SEXP modeldim =  allocVector(INTSXP, nModels); 
+  memset(INTEGER(modeldim), 0, nModels * sizeof(int));
   SET_VECTOR_ELT(ANS, 10, modeldim);
   SET_STRING_ELT(ANS_names, 10, mkChar("size"));
   
   SEXP R2 = allocVector(REALSXP, nModels); 
+  memset(REAL(R2), 0.0, sizeof(double) *nModels);
   SET_VECTOR_ELT(ANS, 11, R2);
   SET_STRING_ELT(ANS_names, 11, mkChar("R2"));
   
   SEXP rank = allocVector(INTSXP, nModels); 
+  memset(INTEGER(rank), 0, nModels * sizeof(int));
   SET_VECTOR_ELT(ANS, 12, rank);
   SET_STRING_ELT(ANS_names, 12, mkChar("rank"));
   
@@ -93,6 +102,7 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
   SEXP NumUnique = allocVector(INTSXP, 1); 
   SET_VECTOR_ELT(ANS, 15, NumUnique);
   SET_STRING_ELT(ANS_names, 15, mkChar("n.Unique"));
+
   
   setAttrib(ANS, R_NamesSymbol, ANS_names);
   
@@ -335,7 +345,7 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
 		  // expand nModels and grow result vectors
 		  nModels = (int) (expand*nModels); //add checks to ensure it is not above max int
 		  
-		  Rprintf("Grow vectors:  Number of unique models %d; nModels is now %d\n", nUnique, nModels); // Need to use growable vector here
+		  // Rprintf("Grow vectors:  Number of unique models %d; nModels is now %d\n", nUnique, nModels); // Need to use growable vector here
 		  
 		  modelspace = resizeVector(modelspace, nModels);
 		  SET_VECTOR_ELT(ANS, 1, modelspace);
@@ -411,7 +421,7 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
 	*/
   // now use AMCMC
   
-  Rprintf("Now start AMCMC with %d nUnique models out of %d at it %d\n", nUnique, nModels, m);
+  // Rprintf("Now start AMCMC with %d nUnique models out of %d at it %d\n", nUnique, nModels, m);
   if (IS) thin = 1; // no need to thin
   
   while (nUnique < nModels && m < (INTEGER(BURNIN_Iterations)[0] + INTEGER(MCMC_Iterations)[0])) {
@@ -508,7 +518,7 @@ SEXP amcmc_grow(SEXP Y, SEXP X, SEXP Rweights, SEXP Rprobinit, SEXP RnModels,
       // expand nModels and grow result vectors
       nModels = (int) (expand*nModels); //add checks to ensure it is not above max int
       
-      Rprintf("Grow vectors:  Number of unique models %d; nModels is now %d\n", nUnique, nModels); // Need to use growable vector here
+      // Rprintf("Grow vectors:  Number of unique models %d; nModels is now %d\n", nUnique, nModels); // Need to use growable vector here
       
       modelspace = resizeVector(modelspace, nModels);
       SET_VECTOR_ELT(ANS, 1, modelspace);
